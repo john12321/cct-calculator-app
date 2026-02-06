@@ -36,8 +36,8 @@ A client-side calculator for working out **Certificate of Completion of Training
 
 ```bash
 # Clone the repository
-git clone https://github.com/john12321/cct-admin-app.git
-cd cct-admin-app
+git clone https://github.com/john12321/cct-calculator-app.git
+cd cct-calculator-app
 
 # Install dependencies
 npm install
@@ -82,7 +82,7 @@ src/
 
 ## How It Works
 
-1. **Programme Details** — enter the programme name, start date, and end date (which doubles as the original CCT date).
+1. **Programme Details** — enter the programme name, start date, and current CCT date (preferrably the curriculum end date over the programme end date as it's more reliable).
 2. **CCT Calculations** — select a change type, enter dates and (for LTFT) a WTE percentage, then calculate. Each calculation adds days to the CCT date. Multiple calculations can be chained sequentially.
 3. **Summary** — review all changes in a table, export to CSV, or print a PDF-ready summary to share at ARCP.
 
