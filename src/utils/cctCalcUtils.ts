@@ -26,6 +26,25 @@ export const selectCalculationType = (
   return baseCalculation;
 };
 
+export const resolveCalculationBaseDate = (
+  editingIndex: number | null,
+  calculationChanges: CalculationChange[],
+  programmeEndDate: string,
+  cctDate: string
+): string => {
+  if (editingIndex === null) {
+    return cctDate;
+  }
+
+  if (editingIndex === 0) {
+    return programmeEndDate;
+  }
+
+  return (
+    calculationChanges[editingIndex - 1]?.resultingCctDate || programmeEndDate
+  );
+};
+
 export const performCalculation = (
   newCalculation: DraftCalculation,
   programmeEndDate: string,

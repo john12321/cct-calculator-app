@@ -5,6 +5,7 @@ import { CalculationRow } from "./CalculationRow";
 import { Card } from "nhsuk-react-components";
 import {
   performCalculation,
+  resolveCalculationBaseDate,
   selectCalculationType
 } from "../utils/cctCalcUtils";
 import type {
@@ -74,10 +75,17 @@ export const CctCalculations: FC = () => {
       return;
     }
 
+    const calculationBaseDate = resolveCalculationBaseDate(
+      editingIndex,
+      calculationChanges,
+      programmeEndDate,
+      cctDate
+    );
+
     const { newCctDate, completeCalculation } = performCalculation(
       draftCalculation,
       programmeEndDate,
-      cctDate
+      calculationBaseDate
     );
 
     setValue("cctDate", newCctDate);
