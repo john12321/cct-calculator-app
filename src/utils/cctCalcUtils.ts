@@ -55,42 +55,18 @@ export const performCalculation = (
 } => {
   // first calc check
   const originalCctDate = dayjs(cctDate).isValid() ? cctDate : programmeEndDate;
-  let daysAdded = 0;
 
-  if (newCalculation.type === "LTFT") {
-    if (
-      newCalculation.changeDate &&
-      newCalculation.startWte &&
-      newCalculation.endWte
-    ) {
-      const endDateForCalc =
-        newCalculation.endDate ||
-        (newCalculation.untilEndOfProgramme ? programmeEndDate : null);
+  const endDateForCalc = newCalculation.untilEndOfProgramme
+    ? programmeEndDate
+    : newCalculation.endDate;
 
-      if (endDateForCalc) {
-        const chunkDays = dayjs(endDateForCalc).diff(
-          newCalculation.changeDate,
-          "days"
-        );
+  const ftDays =
+    dayjs(endDateForCalc).diff(newCalculation.changeDate, "days") + 1; // inclusive of change date
+  let daysAdded = ftDays;
 
-        const chunkDaysWTE =
-          (chunkDays * newCalculation.startWte) / newCalculation.endWte;
-
-        daysAdded = Math.ceil(chunkDaysWTE - chunkDays);
-      }
-    }
-  } else {
-    // For all other types (OOP, MATERNITY, etc.), simply calculate the date difference
-    const startDate = dayjs(newCalculation.changeDate);
-    const endDate = newCalculation.endDate
-      ? dayjs(newCalculation.endDate)
-      : newCalculation.untilEndOfProgramme
-        ? dayjs(programmeEndDate)
-        : null;
-
-    if (endDate) {
-      daysAdded = endDate.diff(startDate, "day");
-    }
+  if (newCalculation.type === "LTFT" && newCalculation.endWte) {
+    const wteDays = ftDays * (newCalculation.endWte / 100);
+    daysAdded = Math.round(ftDays - wteDays);
   }
 
   const newCctDate = dayjs(originalCctDate)

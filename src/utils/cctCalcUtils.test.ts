@@ -112,9 +112,9 @@ describe("performCalculation", () => {
 
     const result = performCalculation(draft, "2028-01-01", "2027-08-01");
 
-    expect(result.completeCalculation.daysAdded).toBe(10);
-    expect(result.newCctDate).toBe("2027-08-11");
-    expect(result.completeCalculation.resultingCctDate).toBe("2027-08-11");
+    expect(result.completeCalculation.daysAdded).toBe(11);
+    expect(result.newCctDate).toBe("2027-08-12");
+    expect(result.completeCalculation.resultingCctDate).toBe("2027-08-12");
   });
 
   it("uses programme end date when untilEndOfProgramme is true", () => {
@@ -126,8 +126,8 @@ describe("performCalculation", () => {
 
     const result = performCalculation(draft, "2026-01-11", "2027-08-01");
 
-    expect(result.completeCalculation.daysAdded).toBe(10);
-    expect(result.newCctDate).toBe("2027-08-11");
+    expect(result.completeCalculation.daysAdded).toBe(11);
+    expect(result.newCctDate).toBe("2027-08-12");
   });
 
   it("falls back to programme end date if input cctDate is invalid", () => {
@@ -139,7 +139,7 @@ describe("performCalculation", () => {
 
     const result = performCalculation(draft, "2027-08-01", "");
 
-    expect(result.newCctDate).toBe("2027-08-11");
+    expect(result.newCctDate).toBe("2027-08-12");
   });
 
   it("applies LTFT WTE formula and rounds up added days", () => {
@@ -153,11 +153,11 @@ describe("performCalculation", () => {
 
     const result = performCalculation(draft, "2028-01-01", "2027-08-01");
 
-    expect(result.completeCalculation.daysAdded).toBe(3);
-    expect(result.newCctDate).toBe("2027-08-04");
+    expect(result.completeCalculation.daysAdded).toBe(2);
+    expect(result.newCctDate).toBe("2027-08-03");
   });
 
-  it("adds zero days when LTFT inputs are incomplete", () => {
+  it("uses full-time day span when LTFT endWte is missing", () => {
     const draft: DraftCalculation = {
       type: "LTFT",
       changeDate: "2026-01-01",
@@ -167,8 +167,8 @@ describe("performCalculation", () => {
 
     const result = performCalculation(draft, "2028-01-01", "2027-08-01");
 
-    expect(result.completeCalculation.daysAdded).toBe(0);
-    expect(result.newCctDate).toBe("2027-08-01");
+    expect(result.completeCalculation.daysAdded).toBe(11);
+    expect(result.newCctDate).toBe("2027-08-12");
   });
 });
 
