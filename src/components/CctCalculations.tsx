@@ -4,8 +4,9 @@ import { CctCalcSelector } from "./CctCalcSelector";
 import { CalculationRow } from "./CalculationRow";
 import { Card } from "nhsuk-react-components";
 import {
-  performCalculation,
-  resolveCalculationBaseDate,
+  calculateExtensionDays,
+  calculateInclusiveDaySpan,
+  calculateNewCct,
   selectCalculationType
 } from "../utils/cctCalcUtils";
 import type {
@@ -51,6 +52,8 @@ export const CctCalculations: FC = () => {
   const handleCalculate = async () => {
     if (!draftCalculation.type) return;
 
+    console.log("Draft calculation before validation:", draftCalculation);
+
     // First validate all necessary fields
     const calculationType = watch("draftType");
     const fieldsToValidate: FieldPath<CctFormValues>[] = [
@@ -75,18 +78,45 @@ export const CctCalculations: FC = () => {
       return;
     }
 
-    const calculationBaseDate = resolveCalculationBaseDate(
-      editingIndex,
-      calculationChanges,
-      programmeEndDate,
-      cctDate
+    const calculationBaseDate = programmeEndDate;
+
+    console.log("Calculation base date:", calculationBaseDate);
+
+    const calculationId =
+      editingIndex !== null
+        ? calculationChanges[editingIndex].id
+        : `calc-${Date.now()}`;
+
+    console.log("Calculation ID:", calculationId);
+
+    const changeEndDate = draftCalculation.untilEndOfProgramme
+      ? programmeEndDate
+      : draftCalculation.endDate;
+
+    const changeDaySpan = calculateInclusiveDaySpan(
+      draftCalculation?.changeDate as string,
+      changeEndDate as string
     );
 
-    const { newCctDate, completeCalculation } = performCalculation(
-      draftCalculation,
-      programmeEndDate,
-      calculationBaseDate
+    console.log("Change day span:", changeDaySpan);
+
+    const daysAdded = calculateExtensionDays(
+      changeDaySpan,
+      draftCalculation?.endWte
     );
+
+    console.log("CCT extension days:", daysAdded);
+
+    const newCctDate = calculateNewCct(calculationBaseDate, daysAdded);
+
+    console.log("New calculated CCT date:", newCctDate);
+
+    const completeCalculation: CalculationChange = {
+      ...draftCalculation,
+      id: calculationId,
+      daysAdded,
+      resultingCctDate: newCctDate
+    } as CalculationChange;
 
     setValue("cctDate", newCctDate);
     if (editingIndex !== null) {

@@ -26,62 +26,55 @@ export const selectCalculationType = (
   return baseCalculation;
 };
 
-export const resolveCalculationBaseDate = (
-  editingIndex: number | null,
-  calculationChanges: CalculationChange[],
-  programmeEndDate: string,
-  cctDate: string
-): string => {
-  if (editingIndex === null) {
-    return cctDate;
+export const calculateInclusiveDaySpan = (
+  startDate: string,
+  endDate: string
+): number => dayjs(endDate).diff(startDate, "days") + 1;
+
+export const calculateExtensionDays = (
+  fullTimeDays: number,
+  endWte?: number
+): number => {
+  if (!endWte) {
+    return fullTimeDays;
   }
 
-  if (editingIndex === 0) {
-    return programmeEndDate;
-  }
-
-  return (
-    calculationChanges[editingIndex - 1]?.resultingCctDate || programmeEndDate
-  );
+  const wteDays = fullTimeDays * (endWte / 100);
+  return Math.round(fullTimeDays - wteDays);
 };
 
-export const performCalculation = (
+export const calculateDaysAdded = (
   newCalculation: DraftCalculation,
-  programmeEndDate: string,
-  cctDate: string
-): {
-  newCctDate: string;
-  completeCalculation: CalculationChange;
-} => {
-  // first calc check
-  const originalCctDate = dayjs(cctDate).isValid() ? cctDate : programmeEndDate;
-
-  const endDateForCalc = newCalculation.untilEndOfProgramme
-    ? programmeEndDate
-    : newCalculation.endDate;
-
-  const ftDays =
-    dayjs(endDateForCalc).diff(newCalculation.changeDate, "days") + 1; // inclusive of change date
-  let daysAdded = ftDays;
-
-  if (newCalculation.type === "LTFT" && newCalculation.endWte) {
-    const wteDays = ftDays * (newCalculation.endWte / 100);
-    daysAdded = Math.round(ftDays - wteDays);
+  fullTimeDays: number
+): number => {
+  if (newCalculation.type === "LTFT") {
+    return calculateExtensionDays(fullTimeDays, newCalculation.endWte);
   }
 
-  const newCctDate = dayjs(originalCctDate)
-    .add(daysAdded, "day")
-    .format("YYYY-MM-DD");
-
-  const completeCalculation: CalculationChange = {
-    ...(newCalculation as CalculationChange),
-    id: `calc-${Date.now()}`,
-    daysAdded: daysAdded,
-    resultingCctDate: newCctDate
-  };
-
-  return { newCctDate, completeCalculation };
+  return fullTimeDays;
 };
+
+export const extendCctDateByDays = (
+  baseDate: string,
+  daysAdded: number
+): string => dayjs(baseDate).add(daysAdded, "day").format("YYYY-MM-DD");
+
+export const createCompleteCalculationChange = (
+  newCalculation: DraftCalculation,
+  id: string,
+  daysAdded: number,
+  resultingCctDate: string
+): CalculationChange => ({
+  ...(newCalculation as CalculationChange),
+  id,
+  daysAdded,
+  resultingCctDate
+});
+
+export const calculateNewCct = (
+  baseDate: string,
+  extensionDays: number
+): string => dayjs(baseDate).add(extensionDays, "day").format("YYYY-MM-DD");
 
 export const removeLastCalculation = (
   calculationChanges: CalculationChange[],
