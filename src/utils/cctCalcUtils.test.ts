@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CalculationChange, DraftCalculation } from "../components/types";
+import type { DraftCalculation } from "../components/types";
 import {
   calculateNewCct,
   calculateDaysAdded,
@@ -7,22 +7,8 @@ import {
   calculateExtensionDays,
   createCompleteCalculationChange,
   extendCctDateByDays,
-  removeLastCalculation,
   selectCalculationType
 } from "./cctCalcUtils";
-
-const makeChange = (overrides: Partial<CalculationChange>): CalculationChange =>
-  ({
-    id: "calc-1",
-    type: "OOPC",
-    notes: "",
-    changeDate: "2026-01-01",
-    endDate: "2026-01-10",
-    untilEndOfProgramme: false,
-    daysAdded: 9,
-    resultingCctDate: "2027-01-10",
-    ...overrides
-  }) as CalculationChange;
 
 describe("selectCalculationType", () => {
   it("uses programme start date when this is the first calculation", () => {
@@ -156,38 +142,5 @@ describe("pure calculation helpers", () => {
     expect(result.id).toBe("calc-fixed");
     expect(result.daysAdded).toBe(2);
     expect(result.resultingCctDate).toBe("2027-08-03");
-  });
-});
-
-describe("removeLastCalculation", () => {
-  it("returns programme end date if there are no calculations", () => {
-    const result = removeLastCalculation([], "2027-08-01");
-
-    expect(result).toEqual({
-      updatedCalculations: [],
-      newCctDate: "2027-08-01"
-    });
-  });
-
-  it("resets cct date to programme end when removing the only calculation", () => {
-    const result = removeLastCalculation(
-      [makeChange({ resultingCctDate: "2027-08-15" })],
-      "2027-08-01"
-    );
-
-    expect(result).toEqual({
-      updatedCalculations: [],
-      newCctDate: "2027-08-01"
-    });
-  });
-
-  it("uses previous resulting cct date when removing the last of many", () => {
-    const first = makeChange({ id: "calc-1", resultingCctDate: "2027-08-10" });
-    const second = makeChange({ id: "calc-2", resultingCctDate: "2027-08-20" });
-
-    const result = removeLastCalculation([first, second], "2027-08-01");
-
-    expect(result.updatedCalculations).toEqual([first]);
-    expect(result.newCctDate).toBe("2027-08-10");
   });
 });

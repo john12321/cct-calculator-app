@@ -1,4 +1,5 @@
 import type { FC, ChangeEvent } from "react";
+import { getCalculationTypeLabel } from "../core/calculationTypeLabels";
 import type { CalculationType } from "./types";
 
 type CctCalcSelectorProps = {
@@ -9,27 +10,21 @@ type CctCalcSelectorProps = {
 const calculationTypeGroups = [
   {
     label: "Work Pattern Changes",
-    options: [{ value: "LTFT", label: "LTFT" }]
+    options: ["LTFT"] as CalculationType[]
   },
   {
     label: "Leave Types",
     options: [
-      { value: "MATERNITY", label: "Maternity Leave" },
-      { value: "OOPC", label: "OOPC (Career Break)" },
-      { value: "OOPE", label: "OOPE (Experience)" },
-      { value: "PATERNITY", label: "Paternity Leave" },
-      { value: "PARENTAL", label: "Shared Parental Leave" },
-      { value: "SICKNESS", label: "Sickness (2 weeks minimum)" },
-
-      { value: "UNPAID", label: "Unpaid Leave" }
-    ]
+      "OOPC",
+      "OOPE",
+      "PARENTAL",
+      "SICKNESS",
+      "UNPAID"
+    ] as CalculationType[]
   },
   {
     label: "Health & Return",
-    options: [
-      { value: "SHIELDING", label: "COVID-19 Shielding" },
-      { value: "PHASED", label: "Phased Return" }
-    ]
+    options: ["SHIELDING", "PHASED"] as CalculationType[]
   }
 ];
 
@@ -59,8 +54,8 @@ export const CctCalcSelector: FC<CctCalcSelectorProps> = ({
         {calculationTypeGroups.map(group => (
           <optgroup key={group.label} label={group.label}>
             {group.options.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+              <option key={option} value={option}>
+                {getCalculationTypeLabel(option, "full")}
               </option>
             ))}
           </optgroup>

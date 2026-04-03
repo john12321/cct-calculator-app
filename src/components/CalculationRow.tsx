@@ -9,6 +9,7 @@ import {
 } from "react-hook-form";
 import CreatableSelect from "react-select/creatable";
 import { colourStyles } from "../utils/selectFieldUtils";
+import { getCalculationTypeLabel } from "../core/calculationTypeLabels";
 import type { CSSObjectWithLabel, ControlProps } from "react-select";
 import type { CalculationType, DraftCalculation } from "./types";
 
@@ -186,7 +187,7 @@ export const CalculationRow: FC<CalculationRowProps> = ({
     <>
       {isEditing && (
         <h3 className="nhsuk-heading-m nhsuk-u-color-blue">
-          {calculationType} Calculation
+          {getCalculationTypeLabel(calculationType, "short")} Calculation
         </h3>
       )}
 

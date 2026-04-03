@@ -2,6 +2,7 @@ import type { FC } from "react";
 import dayjs from "dayjs";
 import { useFormContext } from "react-hook-form";
 import { Table } from "nhsuk-react-components";
+import { getCalculationTypeLabel } from "../core/calculationTypeLabels";
 import type { CalculationChange, CctFormValues } from "./types";
 
 export const FinalSummary: FC = () => {
@@ -40,7 +41,7 @@ export const FinalSummary: FC = () => {
     const rows = changesWithCumulative.map(
       (change: CalculationChange & { cumulativeDaysAdded: number }) => {
         const row = [
-          change.type,
+          getCalculationTypeLabel(change.type, "short"),
           dayjs(change.changeDate).format("DD/MM/YYYY"),
           change.untilEndOfProgramme
             ? dayjs(programmeEndDate).format("DD/MM/YYYY")
@@ -126,7 +127,9 @@ export const FinalSummary: FC = () => {
             {changesWithCumulative.map(
               (change: CalculationChange & { cumulativeDaysAdded: number }) => (
                 <Table.Row key={change.id}>
-                  <Table.Cell>{change.type}</Table.Cell>
+                  <Table.Cell>
+                    {getCalculationTypeLabel(change.type, "short")}
+                  </Table.Cell>
                   <Table.Cell>
                     {dayjs(change.changeDate).format("DD/MM/YYYY")}
                   </Table.Cell>

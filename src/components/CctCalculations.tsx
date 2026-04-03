@@ -3,6 +3,7 @@ import { useFormContext, useFieldArray, type FieldPath } from "react-hook-form";
 import { CctCalcSelector } from "./CctCalcSelector";
 import { CalculationRow } from "./CalculationRow";
 import { Card } from "nhsuk-react-components";
+import { getCalculationTypeLabel } from "../core/calculationTypeLabels";
 import {
   calculateExtensionDays,
   calculateInclusiveDaySpan,
@@ -52,8 +53,6 @@ export const CctCalculations: FC = () => {
   const handleCalculate = async () => {
     if (!draftCalculation.type) return;
 
-    console.log("Draft calculation before validation:", draftCalculation);
-
     // First validate all necessary fields
     const calculationType = watch("draftType");
     const fieldsToValidate: FieldPath<CctFormValues>[] = [
@@ -80,14 +79,10 @@ export const CctCalculations: FC = () => {
 
     const calculationBaseDate = programmeEndDate;
 
-    console.log("Calculation base date:", calculationBaseDate);
-
     const calculationId =
       editingIndex !== null
         ? calculationChanges[editingIndex].id
         : `calc-${Date.now()}`;
-
-    console.log("Calculation ID:", calculationId);
 
     const changeEndDate = draftCalculation.untilEndOfProgramme
       ? programmeEndDate
@@ -98,18 +93,12 @@ export const CctCalculations: FC = () => {
       changeEndDate as string
     );
 
-    console.log("Change day span:", changeDaySpan);
-
     const daysAdded = calculateExtensionDays(
       changeDaySpan,
       draftCalculation?.endWte
     );
 
-    console.log("CCT extension days:", daysAdded);
-
     const newCctDate = calculateNewCct(calculationBaseDate, daysAdded);
-
-    console.log("New calculated CCT date:", newCctDate);
 
     const completeCalculation: CalculationChange = {
       ...draftCalculation,
@@ -188,7 +177,7 @@ export const CctCalculations: FC = () => {
               <Fragment key={fields[index].id}>
                 <Card>
                   <Card.Content>
-                    <h4>{`${index + 1}. ${change.type} change`}</h4>
+                    <h4>{`${index + 1}. ${getCalculationTypeLabel(change.type, "short")} change`}</h4>
                     {isEditing ? (
                       <>
                         <CalculationRow
