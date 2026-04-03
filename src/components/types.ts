@@ -23,6 +23,7 @@ export type {
   DraftCalculation,
   OopeCalculationChange,
   OopcCalculationChange,
+  OoppCalculationChange,
   ParentalCalculationChange,
   PhasedReturnCalculationChange,
   ShieldingCalculationChange,

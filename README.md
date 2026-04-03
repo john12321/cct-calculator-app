@@ -7,7 +7,7 @@ A client-side calculator for working out **Certificate of Completion of Training
 ## Features
 
 - **Multi-step form** — guided three-step workflow (Programme Details → CCT Calculations → Summary)
-- **Multiple calculation types** — supports LTFT, OOPC (Career Break), OOPE (Experience), Parental Leave, Sickness, Unpaid Leave, COVID-19 Shielding, and Phased Return
+- **Multiple calculation types** — supports LTFT, OOPC (Career Break), OOPP (Pause), OOPE (Experience), Parental Leave, Sickness, Unpaid Leave, COVID-19 Shielding, and Phased Return
 - **Cumulative calculations** — chain multiple changes together; each one builds on the previous CCT date
 - **Edit & remove** — amend or remove the last calculation at any time
 - **Export CSV** — download a summary table of all calculations

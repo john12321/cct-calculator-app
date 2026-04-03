@@ -26,6 +26,15 @@ describe("selectCalculationType", () => {
     expect(result.changeDate).toBe("2026-08-11");
   });
 
+  it("initialises OOPP like other non-LTFT OOP types", () => {
+    const result = selectCalculationType("OOPP", null, "2026-08-01");
+
+    expect(result).toMatchObject({
+      type: "OOPP",
+      changeDate: "2026-08-01"
+    });
+  });
+
   it("initialises LTFT with a default startWte", () => {
     const result = selectCalculationType("LTFT", null, "2026-08-01");
 

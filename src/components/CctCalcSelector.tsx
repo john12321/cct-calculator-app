@@ -17,6 +17,7 @@ const calculationTypeGroups = [
     options: [
       "OOPC",
       "OOPE",
+      "OOPP",
       "PARENTAL",
       "SICKNESS",
       "UNPAID"

@@ -1,6 +1,7 @@
 export type CalculationType =
   | "LTFT"
   | "OOPC"
+  | "OOPP"
   | "OOPE"
   | "PARENTAL"
   | "PHASED"
@@ -27,6 +28,10 @@ export type WteCalculationChange = BaseCalculationChange & {
 
 export type OopcCalculationChange = BaseCalculationChange & {
   type: "OOPC";
+};
+
+export type OoppCalculationChange = BaseCalculationChange & {
+  type: "OOPP";
 };
 
 export type OopeCalculationChange = BaseCalculationChange & {
@@ -56,6 +61,7 @@ export type UnpaidCalculationChange = BaseCalculationChange & {
 export type CalculationChange =
   | WteCalculationChange
   | OopcCalculationChange
+  | OoppCalculationChange
   | OopeCalculationChange
   | ParentalCalculationChange
   | PhasedReturnCalculationChange

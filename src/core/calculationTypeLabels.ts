@@ -19,6 +19,10 @@ export const calculationTypeLabels: Record<
     full: "Out of Programme Career Break (OOPC)",
     short: "OOPC"
   },
+  OOPP: {
+    full: "Out of Programme Pause (OOPP)",
+    short: "OOPP"
+  },
   OOPE: {
     full: "Out of Programme Experience (OOPE)",
     short: "OOPE"
