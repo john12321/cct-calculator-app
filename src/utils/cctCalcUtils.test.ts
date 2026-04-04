@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { DraftCalculation } from "../components/types";
 import {
   calculateNewCct,
-  calculateDaysAdded,
   calculateInclusiveDaySpan,
   calculateExtensionDays,
   createCompleteCalculationChange,
@@ -60,7 +59,7 @@ describe("pure calculation helpers", () => {
     expect(result).toBe(1);
   });
 
-  it("calculateLtftExtensionDays rounds to nearest whole day", () => {
+  it("calculateExtensionDays rounds to nearest whole day", () => {
     const result = calculateExtensionDays(11, 80);
 
     expect(result).toBe(2);
@@ -72,27 +71,10 @@ describe("pure calculation helpers", () => {
     expect(result).toBe(11);
   });
 
-  it("calculateDaysAdded uses full-time days for non-LTFT", () => {
-    const result = calculateDaysAdded(
-      {
-        type: "OOPC"
-      },
-      11
-    );
+  it("calculateExtensionDays returns zero extension when endWte is 100", () => {
+    const result = calculateExtensionDays(11, 100);
 
-    expect(result).toBe(11);
-  });
-
-  it("calculateDaysAdded uses LTFT formula when type is LTFT", () => {
-    const result = calculateDaysAdded(
-      {
-        type: "LTFT",
-        endWte: 80
-      },
-      11
-    );
-
-    expect(result).toBe(2);
+    expect(result).toBe(0);
   });
 
   it("extendCctDateByDays adds whole days to date", () => {
@@ -139,7 +121,7 @@ describe("pure calculation helpers", () => {
       draft.changeDate as string,
       draft.endDate as string
     );
-    const daysAdded = calculateDaysAdded(draft, fullTimeDays);
+    const daysAdded = calculateExtensionDays(fullTimeDays, draft.endWte);
     const newCctDate = calculateNewCct("2027-08-01", daysAdded);
     const result = createCompleteCalculationChange(
       draft,
