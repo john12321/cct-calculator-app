@@ -8,6 +8,8 @@ import type { CalculationChange, CctFormValues } from "./types";
 export const FinalSummary: FC = () => {
   const { watch } = useFormContext<CctFormValues>();
 
+  const formatWtePercent = (wte: number) => `${wte * 100}%`;
+
   const calculationChanges = watch("calculationChanges") || [];
   const cctDate = watch("cctDate");
   const programmeEndDate = watch("programmeEndDate");
@@ -47,7 +49,11 @@ export const FinalSummary: FC = () => {
             ? dayjs(programmeEndDate).format("DD/MM/YYYY")
             : dayjs(change.endDate).format("DD/MM/YYYY"),
           ...(hasWteChanges
-            ? [change.type === "LTFT" ? change.endWte : "-"]
+            ? [
+                change.type === "LTFT" && change.endWte !== undefined
+                  ? formatWtePercent(change.endWte)
+                  : "-"
+              ]
             : []),
           change.daysAdded > 0 ? `+${change.daysAdded}` : change.daysAdded,
           change.cumulativeDaysAdded > 0
@@ -140,7 +146,9 @@ export const FinalSummary: FC = () => {
                   </Table.Cell>
                   {hasWteChanges && (
                     <Table.Cell>
-                      {change.type === "LTFT" ? change.endWte : "-"}
+                      {change.type === "LTFT" && change.endWte !== undefined
+                        ? formatWtePercent(change.endWte)
+                        : "-"}
                     </Table.Cell>
                   )}
                   <Table.Cell>

@@ -7,20 +7,15 @@ export const calculateInclusiveDaySpan = (
 
 export const calculateExtensionDays = (
   fullTimeDays: number,
-  endWte?: number
+  endWte?: number // endWte is always a decimal (e.g., 0.8 for 80%)
 ): number => {
   if (!endWte) {
     return fullTimeDays;
   }
 
-  const wteDays = fullTimeDays * (endWte / 100);
+  const wteDays = fullTimeDays * endWte;
   return Math.round(fullTimeDays - wteDays);
 };
-
-export const extendCctDateByDays = (
-  baseDate: string,
-  daysAdded: number
-): string => dayjs(baseDate).add(daysAdded, "day").format("YYYY-MM-DD");
 
 export const calculateNewCct = (
   baseDate: string,

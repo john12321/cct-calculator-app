@@ -5,7 +5,6 @@ import {
   calculateInclusiveDaySpan,
   calculateExtensionDays,
   createCompleteCalculationChange,
-  extendCctDateByDays,
   selectCalculationType
 } from "./cctCalcUtils";
 
@@ -60,7 +59,7 @@ describe("pure calculation helpers", () => {
   });
 
   it("calculateExtensionDays rounds to nearest whole day", () => {
-    const result = calculateExtensionDays(11, 80);
+    const result = calculateExtensionDays(11, 0.8);
 
     expect(result).toBe(2);
   });
@@ -71,14 +70,14 @@ describe("pure calculation helpers", () => {
     expect(result).toBe(11);
   });
 
-  it("calculateExtensionDays returns zero extension when endWte is 100", () => {
-    const result = calculateExtensionDays(11, 100);
+  it("calculateExtensionDays returns zero extension when endWte is 1", () => {
+    const result = calculateExtensionDays(11, 1);
 
     expect(result).toBe(0);
   });
 
-  it("extendCctDateByDays adds whole days to date", () => {
-    const result = extendCctDateByDays("2027-08-01", 11);
+  it("calculateNewCct adds whole days to date", () => {
+    const result = calculateNewCct("2027-08-01", 11);
 
     expect(result).toBe("2027-08-12");
   });
@@ -114,7 +113,7 @@ describe("pure calculation helpers", () => {
       changeDate: "2026-01-01",
       endDate: "2026-01-11",
       startWte: 100,
-      endWte: 80
+      endWte: 0.8
     };
 
     const fullTimeDays = calculateInclusiveDaySpan(

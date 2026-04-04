@@ -157,12 +157,24 @@ export const CalculationRow: FC<CalculationRowProps> = ({
 
   // WTE options and handling
   const wteOptions = [
-    { value: 100, label: "100%" },
-    { value: 80, label: "80%" },
-    { value: 70, label: "70%" },
-    { value: 60, label: "60%" },
-    { value: 50, label: "50%" }
+    { value: 1, label: "100%" },
+    { value: 0.8, label: "80%" },
+    { value: 0.7, label: "70%" },
+    { value: 0.6, label: "60%" },
+    { value: 0.5, label: "50%" }
   ];
+
+  const formatWtePercentLabel = (value: number) => `${value * 100}%`;
+
+  const toDecimalWte = (value: string | number): number => {
+    const parsed = Number.parseFloat(value.toString());
+    if (Number.isNaN(parsed)) {
+      return parsed;
+    }
+
+    // free-text input, normalise to decimal.
+    return parsed > 1 ? parsed / 100 : parsed;
+  };
 
   const selectStyles = {
     ...colourStyles,
@@ -335,16 +347,16 @@ export const CalculationRow: FC<CalculationRowProps> = ({
                       id={`end-wte-select-${fieldId}`}
                       options={wteOptions}
                       value={
-                        field.value
+                        field.value !== null && field.value !== undefined
                           ? {
                               value: field.value,
-                              label: `${field.value}%`
+                              label: formatWtePercentLabel(field.value)
                             }
                           : null
                       }
                       onChange={option => {
                         const value = option
-                          ? Number.parseInt(option.value.toString())
+                          ? toDecimalWte(option.value)
                           : null;
                         field.onChange(value);
                       }}
@@ -352,6 +364,7 @@ export const CalculationRow: FC<CalculationRowProps> = ({
                       isClearable
                       isDisabled={!isEditing}
                       formatCreateLabel={inputValue => `Add "${inputValue}%"`}
+                      getOptionLabel={option => option.label}
                       styles={selectStyles}
                       onBlur={field.onBlur}
                     />
