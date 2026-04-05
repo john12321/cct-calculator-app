@@ -157,23 +157,20 @@ export const CalculationRow: FC<CalculationRowProps> = ({
 
   // WTE options and handling
   const wteOptions = [
-    { value: 1, label: "100%" },
-    { value: 0.8, label: "80%" },
-    { value: 0.7, label: "70%" },
-    { value: 0.6, label: "60%" },
-    { value: 0.5, label: "50%" }
+    { value: 80, label: "80%" },
+    { value: 70, label: "70%" },
+    { value: 60, label: "60%" },
+    { value: 50, label: "50%" }
   ];
 
-  const formatWtePercentLabel = (value: number) => `${value * 100}%`;
+  const validWteValues = new Set([10, 20, 30, 40, 50, 60, 70, 80, 90]);
 
-  const toDecimalWte = (value: string | number): number => {
-    const parsed = Number.parseFloat(value.toString());
-    if (Number.isNaN(parsed)) {
-      return parsed;
-    }
+  const formatWtePercentLabel = (value: number) => `${value}%`;
 
-    // free-text input, normalise to decimal.
-    return parsed > 1 ? parsed / 100 : parsed;
+  const isValidWte = (inputValue: string): number | null => {
+    const parsed = Number.parseInt(inputValue, 10);
+    if (Number.isNaN(parsed) || !validWteValues.has(parsed)) return null;
+    return parsed;
   };
 
   const selectStyles = {
@@ -355,12 +352,21 @@ export const CalculationRow: FC<CalculationRowProps> = ({
                           : null
                       }
                       onChange={option => {
-                        const value = option
-                          ? toDecimalWte(option.value)
-                          : null;
-                        field.onChange(value);
+                        field.onChange(option ? option.value : null);
                       }}
-                      placeholder="Select or enter WTE %"
+                      isValidNewOption={inputValue =>
+                        isValidWte(inputValue) !== null
+                      }
+                      onCreateOption={inputValue => {
+                        const value = isValidWte(inputValue);
+                        if (value !== null) field.onChange(value);
+                      }}
+                      onKeyDown={e => {
+                        if (e.key.length === 1 && !/\d/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      placeholder="Select or enter a %"
                       isClearable
                       isDisabled={!isEditing}
                       formatCreateLabel={inputValue => `Add "${inputValue}%"`}

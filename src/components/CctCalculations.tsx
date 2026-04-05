@@ -93,10 +93,11 @@ export const CctCalculations: FC = () => {
       changeEndDate as string
     );
 
-    const daysAdded = calculateExtensionDays(
-      changeDaySpan,
-      draftCalculation?.endWte
-    );
+    const endWteDecimal = draftCalculation?.endWte
+      ? draftCalculation.endWte / 100
+      : undefined;
+
+    const daysAdded = calculateExtensionDays(changeDaySpan, endWteDecimal);
 
     const newCctDate = calculateNewCct(calculationBaseDate, daysAdded);
 

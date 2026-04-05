@@ -159,7 +159,7 @@ export const App = () => {
         )}
 
         <FormProvider {...methods}>
-          <form>
+          <form onSubmit={e => e.preventDefault()}>
             <div className="nhsuk-card">
               <div className="nhsuk-card__content">
                 <h2 className="nhsuk-card__heading nhsuk-u-color-blue">

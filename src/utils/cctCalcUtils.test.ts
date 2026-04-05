@@ -70,10 +70,10 @@ describe("pure calculation helpers", () => {
     expect(result).toBe(11);
   });
 
-  it("calculateExtensionDays returns zero extension when endWte is 1", () => {
-    const result = calculateExtensionDays(11, 1);
-
-    expect(result).toBe(0);
+  it("calculateExtensionDays throws RangeError for invalid endWte", () => {
+    expect(() => calculateExtensionDays(11, 0.55)).toThrow(RangeError);
+    expect(() => calculateExtensionDays(11, 1)).toThrow(RangeError);
+    expect(() => calculateExtensionDays(11, 0)).toThrow(RangeError);
   });
 
   it("calculateNewCct adds whole days to date", () => {
@@ -113,14 +113,15 @@ describe("pure calculation helpers", () => {
       changeDate: "2026-01-01",
       endDate: "2026-01-11",
       startWte: 100,
-      endWte: 0.8
+      endWte: 80
     };
 
     const fullTimeDays = calculateInclusiveDaySpan(
       draft.changeDate as string,
       draft.endDate as string
     );
-    const daysAdded = calculateExtensionDays(fullTimeDays, draft.endWte);
+    const endWteDecimal = draft.endWte ? draft.endWte / 100 : undefined;
+    const daysAdded = calculateExtensionDays(fullTimeDays, endWteDecimal);
     const newCctDate = calculateNewCct("2027-08-01", daysAdded);
     const result = createCompleteCalculationChange(
       draft,
