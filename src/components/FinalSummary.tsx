@@ -8,7 +8,7 @@ import type { CalculationChange, CctFormValues } from "./types";
 export const FinalSummary: FC = () => {
   const { watch } = useFormContext<CctFormValues>();
 
-  const formatWtePercent = (wte: number) => `${wte * 100}%`;
+  const formatWtePercent = (wte: number) => `${wte}%`;
 
   const calculationChanges = watch("calculationChanges") || [];
   const cctDate = watch("cctDate");
