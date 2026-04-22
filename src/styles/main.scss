@@ -1,0 +1,53 @@
+$nhsuk-font-family: frutiger, Arial, sans-serif;
+$nhsuk-page-width: 1800px;
+@import "../../node_modules/nhsuk-frontend/packages/core/all";
+@import "../../node_modules/nhsuk-frontend/packages/nhsuk";
+
+@media print {
+  .table-wrapper {
+    width: 100%;
+
+    table {
+      width: 100%;
+    }
+
+    th {
+      padding: 4px 8px;
+      font-size: 12px;
+      &:first-child {
+        padding: 4px 0 0 0;
+      }
+    }
+
+    td {
+      padding: 2px 8px;
+      font-size: 14px;
+      &:first-child {
+        padding: 2px 0 0 0;
+      }
+    }
+  }
+
+  @page {
+    margin: 8px;
+  }
+
+  .nhsuk-width-container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+// NHS Blue utility class — replaces inline style={{ color: "#005eb8" }}
+.nhsuk-u-color-blue {
+  color: #005eb8;
+}
