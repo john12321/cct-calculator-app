@@ -9,67 +9,25 @@ export type CalculationType =
   | "SICKNESS"
   | "UNPAID";
 
-export type BaseCalculationChange = {
+export type PastChange = {
   id: string;
   type: CalculationType;
-  notes: string;
-  changeDate: string;
+  startDate: string;
   endDate: string;
-  untilEndOfProgramme: boolean;
-  daysAdded: number;
-  resultingCctDate: string;
+  wte: number | null;
+  notes: string;
 };
 
-export type WteCalculationChange = BaseCalculationChange & {
-  type: "LTFT";
-  startWte: number;
-  endWte: number;
+export type ProposedChangeKind = "FULL_TIME" | "LTFT";
+
+export type ProposedChange = {
+  kind: ProposedChangeKind;
+  startDate: string;
+  wte: number | null;
 };
 
-export type OopcCalculationChange = BaseCalculationChange & {
-  type: "OOPC";
-};
-
-export type OoppCalculationChange = BaseCalculationChange & {
-  type: "OOPP";
-};
-
-export type OopeCalculationChange = BaseCalculationChange & {
-  type: "OOPE";
-};
-
-export type ParentalCalculationChange = BaseCalculationChange & {
-  type: "PARENTAL";
-};
-
-export type PhasedReturnCalculationChange = BaseCalculationChange & {
-  type: "PHASED";
-};
-
-export type ShieldingCalculationChange = BaseCalculationChange & {
-  type: "SHIELDING";
-};
-
-export type SicknessCalculationChange = BaseCalculationChange & {
-  type: "SICKNESS";
-};
-
-export type UnpaidCalculationChange = BaseCalculationChange & {
-  type: "UNPAID";
-};
-
-export type CalculationChange =
-  | WteCalculationChange
-  | OopcCalculationChange
-  | OoppCalculationChange
-  | OopeCalculationChange
-  | ParentalCalculationChange
-  | PhasedReturnCalculationChange
-  | ShieldingCalculationChange
-  | SicknessCalculationChange
-  | UnpaidCalculationChange;
-
-export type DraftCalculation = Partial<BaseCalculationChange> & {
-  startWte?: number;
-  endWte?: number;
+export type ProgrammeDetails = {
+  name: string;
+  startDate: string;
+  lengthMonths: number;
 };

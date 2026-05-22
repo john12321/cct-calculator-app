@@ -27,54 +27,63 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
             key={`step-${step.title.replace(/\s+/g, "-").toLowerCase()}`}
             className="nhsuk-u-margin-bottom-3"
           >
-            <div className="nhsuk-grid-row nhsuk-u-padding-bottom-2">
-              <div className="nhsuk-grid-column-one-half">
-                {index <= maxReachedStep ? (
-                  <button
-                    type="button"
-                    onClick={() => onStepClick(index)}
-                    // move inline styles later
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      fontWeight: index === currentStep ? "bold" : "normal",
-                      fontSize: index === currentStep ? "1.25rem" : "inherit",
-                      color: index === currentStep ? "#005eb8" : "inherit"
-                    }}
-                  >
-                    <span
-                      className="nhsuk-tag"
-                      style={{
-                        borderRadius: "50%",
-                        backgroundColor: getStepBackgroundColor(index)
-                      }}
-                    >
-                      {index + 1}
-                    </span>
-                    <span className="nhsuk-u-margin-left-2">{step.title}</span>
-                  </button>
-                ) : (
-                  <>
-                    <span
-                      className="nhsuk-tag"
-                      style={{
-                        borderRadius: "50%",
-                        backgroundColor: getStepBackgroundColor(index),
-                        color: "white",
-                        border: "none"
-                      }}
-                    >
-                      {index + 1}
-                    </span>
-                    <span className="nhsuk-u-margin-left-2">{step.title}</span>
-                  </>
-                )}
+            {index <= maxReachedStep ? (
+              <button
+                type="button"
+                onClick={() => onStepClick(index)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  width: "100%",
+                  textAlign: "left",
+                  fontWeight: index === currentStep ? "bold" : "normal",
+                  fontSize: index === currentStep ? "1.25rem" : "inherit",
+                  color: index === currentStep ? "#005eb8" : "inherit"
+                }}
+              >
+                <span
+                  className="nhsuk-tag"
+                  style={{
+                    borderRadius: "50%",
+                    backgroundColor: getStepBackgroundColor(index),
+                    flexShrink: 0
+                  }}
+                >
+                  {index + 1}
+                </span>
+                <span
+                  className="nhsuk-u-margin-left-2"
+                  style={{ whiteSpace: "nowrap" }}
+                >
+                  {step.title}
+                </span>
+              </button>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <span
+                  className="nhsuk-tag"
+                  style={{
+                    borderRadius: "50%",
+                    backgroundColor: getStepBackgroundColor(index),
+                    color: "white",
+                    border: "none",
+                    flexShrink: 0
+                  }}
+                >
+                  {index + 1}
+                </span>
+                <span
+                  className="nhsuk-u-margin-left-2"
+                  style={{ whiteSpace: "nowrap" }}
+                >
+                  {step.title}
+                </span>
               </div>
-            </div>
+            )}
           </li>
         ))}
       </ul>
