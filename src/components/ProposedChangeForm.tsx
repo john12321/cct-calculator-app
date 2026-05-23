@@ -11,6 +11,8 @@ type ProposedChangeFormProps = {
   programme: ProgrammeDetails;
   pastChanges: PastChange[];
   initial: ProposedChange | null;
+  submitDisabled?: boolean;
+  submitDisabledReason?: string;
   onSubmit: (proposed: ProposedChange) => void;
 };
 
@@ -18,6 +20,8 @@ export const ProposedChangeForm: FC<ProposedChangeFormProps> = ({
   programme,
   pastChanges,
   initial,
+  submitDisabled = false,
+  submitDisabledReason,
   onSubmit
 }) => {
   const [kind, setKind] = useState<ProposedChangeKind>(
@@ -135,7 +139,13 @@ export const ProposedChangeForm: FC<ProposedChangeFormProps> = ({
         </div>
       )}
 
-      <button type="submit" className="nhsuk-button">
+      {submitDisabled && submitDisabledReason && (
+        <p className="nhsuk-u-margin-top-3">
+          <em>{submitDisabledReason}</em>
+        </p>
+      )}
+
+      <button type="submit" className="nhsuk-button" disabled={submitDisabled}>
         {initial
           ? "Update Completion date calculation"
           : "Calculate projected completion date"}

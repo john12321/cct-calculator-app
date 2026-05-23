@@ -1,10 +1,12 @@
 import type { FC } from "react";
 import dayjs from "dayjs";
 import { Table } from "nhsuk-react-components";
+import { GradeTable } from "./GradeTable";
 import { NextPostSummary } from "./NextPostSummary";
 import {
   calendarMonthsFor,
   computeWteAccrual,
+  findSpecialty,
   getCalculationTypeLabel,
   programmeOriginalEndDate,
   projectedCompletionDate,
@@ -37,6 +39,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
   const accrual = computeWteAccrual(programme, sorted, proposed.startDate);
   const newCct = projectedCompletionDate(proposed, accrual.monthsRemaining);
   const originalEnd = programmeOriginalEndDate(programme);
+  const specialtyMeta = findSpecialty(programme.specialty);
 
   const totalPastCalendar = sorted.reduce(
     (sum, c) => sum + calendarMonthsFor(c),
@@ -48,8 +51,15 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
     <section className={variant === "page" ? "nhsuk-u-margin-top-3" : ""}>
       <dl className="nhsuk-summary-list">
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">Programme</dt>
-          <dd className="nhsuk-summary-list__value">{programme.name}</dd>
+          <dt className="nhsuk-summary-list__key">Specialty</dt>
+          <dd className="nhsuk-summary-list__value">
+            {programme.specialty}
+            {specialtyMeta?.dual && (
+              <span className="nhsuk-u-margin-left-2">
+                <strong>({specialtyMeta.dual})</strong>
+              </span>
+            )}
+          </dd>
         </div>
         <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">Start date</dt>
@@ -89,7 +99,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
         </div>
       </dl>
 
-      <h3 className="nhsuk-heading-s">Past changes</h3>
+      <h3 className="nhsuk-heading-m nhsuk-u-color-blue">Past changes</h3>
       {sorted.length === 0 ? (
         <p className="nhsuk-body-s">No past changes recorded.</p>
       ) : (
@@ -142,8 +152,18 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
         </div>
       )}
 
-      <h3 className="nhsuk-heading-s nhsuk-u-margin-top-4">Next Post</h3>
+      <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
+        Next post
+      </h3>
       <NextPostSummary
+        programme={programme}
+        pastChanges={pastChanges}
+        proposed={proposed}
+      />
+      <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
+        Grade progression
+      </h3>
+      <GradeTable
         programme={programme}
         pastChanges={pastChanges}
         proposed={proposed}

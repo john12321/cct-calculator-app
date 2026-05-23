@@ -126,7 +126,7 @@ export const validateProposedChange = (
 export const validateProgrammeDetails = (
   programme: ProgrammeDetails
 ): ValidationResult => {
-  if (!programme.name.trim()) return err("Please enter a programme name.");
+  if (!programme.specialty.trim()) return err("Please choose a specialty.");
   if (!programme.startDate) return err("Please enter a programme start date.");
   if (!Number.isFinite(programme.lengthMonths) || programme.lengthMonths <= 0) {
     return err("Programme length must be greater than zero.");
@@ -135,5 +135,6 @@ export const validateProgrammeDetails = (
   if (rounded !== programme.lengthMonths) {
     return err("Programme length can have at most 1 decimal place.");
   }
+  if (!programme.startGrade.trim()) return err("Please choose a start grade.");
   return ok;
 };

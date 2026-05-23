@@ -1,4 +1,5 @@
 import { useState, type FC } from "react";
+import { GradeTable } from "../components/GradeTable";
 import { NextPostSummary } from "../components/NextPostSummary";
 import { PastChangeForm } from "../components/PastChangeForm";
 import { PastChangesList } from "../components/PastChangesList";
@@ -77,6 +78,26 @@ export const SetupPage: FC<SetupPageProps> = ({
     setShowProposedForm(true);
   };
 
+  const summaryPastChangeIssues = programme
+    ? pastChanges.filter(
+        change => !validatePastChange(change, programme, pastChanges).ok
+      )
+    : [];
+  const summaryProposedValidation =
+    programme && proposed
+      ? validateProposedChange(proposed, programme, pastChanges)
+      : null;
+  const summaryProposedError =
+    summaryProposedValidation && !summaryProposedValidation.ok
+      ? summaryProposedValidation.message
+      : null;
+  const canShowSummary =
+    programme !== null &&
+    proposed !== null &&
+    editingId === null &&
+    !showProposedForm &&
+    summaryProposedError === null;
+
   return (
     <>
       <ProgrammeDetailsSection
@@ -103,8 +124,42 @@ export const SetupPage: FC<SetupPageProps> = ({
             setShowProposedForm(false);
           }}
           onEditProposed={handleEditProposed}
-          onContinue={onContinue}
         />
+      )}
+      {programme && (
+        <section className="nhsuk-u-margin-top-4">
+          <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
+            Grade progression
+          </h2>
+          <p className="nhsuk-hint">
+            Updates automatically as you add past changes and your next post.
+          </p>
+          <GradeTable
+            programme={programme}
+            pastChanges={pastChanges}
+            proposed={proposed}
+          />
+          {canShowSummary && (
+            <>
+              {summaryPastChangeIssues.length > 0 && (
+                <p className="nhsuk-u-margin-top-3">
+                  <em>
+                    Fix the past change errors above before continuing to
+                    summary.
+                  </em>
+                </p>
+              )}
+              <button
+                type="button"
+                className="nhsuk-button nhsuk-u-margin-top-4"
+                onClick={onContinue}
+                disabled={summaryPastChangeIssues.length > 0}
+              >
+                Show summary
+              </button>
+            </>
+          )}
+        </section>
       )}
     </>
   );
@@ -125,7 +180,6 @@ type ChangesAndNextPostProps = {
   onShowProposedForm: () => void;
   onProposedSubmit: (proposed: ProposedChange) => void;
   onEditProposed: () => void;
-  onContinue: () => void;
 };
 
 const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
@@ -142,8 +196,7 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
   onRemovePast,
   onShowProposedForm,
   onProposedSubmit,
-  onEditProposed,
-  onContinue
+  onEditProposed
 }) => {
   const pastChangeIssues: {
     id: string;
@@ -178,7 +231,6 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
 
   return (
     <>
-      <hr className="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible" />
       <h2 className="nhsuk-heading-l nhsuk-u-color-blue">Past changes</h2>
 
       <section className="nhsuk-u-margin-bottom-6">
@@ -241,16 +293,17 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
         />
       </section>
 
-      {pastChanges.length > 0 && editingId === null && (
+      {editingId === null && (
         <>
           <hr className="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible" />
           <h2 className="nhsuk-heading-l nhsuk-u-color-blue">Next post </h2>
-          <section className="nhsuk-u-margin-top-5">
+          <section className="nhsuk-u-margin-bottom-2">
             {!showProposedForm && !proposed && (
               <>
                 <p className="nhsuk-body">
-                  When you've added all past changes, continue to enter your
-                  next post.
+                  If you have any past changes, add them above first. Then
+                  enter your next post to calculate your projected completion
+                  date.
                 </p>
                 <button
                   type="button"
@@ -268,6 +321,8 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
                 programme={programme}
                 pastChanges={pastChanges}
                 initial={proposed}
+                submitDisabled={pastChangeIssues.length > 0}
+                submitDisabledReason="Fix the past change errors above before calculating your projected completion date."
                 onSubmit={onProposedSubmit}
               />
             )}
@@ -285,15 +340,6 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
                   remove past changes.
                 </p>
 
-                {pastChangeIssues.length > 0 && (
-                  <p className="nhsuk-u-margin-top-3">
-                    <em>
-                      Fix the past change errors above before continuing to
-                      summary.
-                    </em>
-                  </p>
-                )}
-
                 <div className="nhsuk-button-group nhsuk-u-margin-top-4">
                   <button
                     type="button"
@@ -301,14 +347,6 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
                     onClick={onEditProposed}
                   >
                     Edit next post
-                  </button>
-                  <button
-                    type="button"
-                    className="nhsuk-button"
-                    onClick={onContinue}
-                    disabled={pastChangeIssues.length > 0}
-                  >
-                    Show summary
                   </button>
                 </div>
               </>

@@ -27,7 +27,8 @@ export type ProposedChange = {
 };
 
 export type ProgrammeDetails = {
-  name: string;
+  specialty: string;
   startDate: string;
   lengthMonths: number;
+  startGrade: string;
 };

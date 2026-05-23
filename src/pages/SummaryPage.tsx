@@ -42,7 +42,7 @@ export const SummaryPage: FC<SummaryPageProps> = ({
       proposed.kind === "LTFT" && proposed.wte != null ? proposed.wte : 100;
 
     const headerLines = [
-      ["Programme", programme.name],
+      ["Specialty", programme.specialty],
       ["Programme start", dayjs(programme.startDate).format("YYYY-MM-DD")],
       ["Programme length (months)", programme.lengthMonths.toFixed(1)],
       [
