@@ -23,6 +23,55 @@ const tripleCctProgramme: ProgrammeDetails = {
   startGradeOverrideNotes: ""
 };
 
+describe("grade end date display parity", () => {
+  it("displays projected grade dates using Excel fractional-day truncation", () => {
+    const rows = computeGradeProgression(tripleCctProgramme, [], null);
+
+    expect(rows.map(row => row.endDate)).toEqual([
+      "2026-12-31",
+      "2027-12-31",
+      "2028-12-30",
+      "2029-12-30",
+      "2030-12-30",
+      "2031-12-29",
+      "2032-12-28",
+      "2033-06-29"
+    ]);
+  });
+
+  it("walks completed absence and LTFT segments before projecting the next post", () => {
+    const rows = computeGradeProgression(
+      tripleCctProgramme,
+      [
+        {
+          id: "absence",
+          type: "OOPC",
+          startDate: "2026-07-01",
+          endDate: "2026-12-31",
+          wte: null,
+          notes: ""
+        },
+        {
+          id: "ltft",
+          type: "LTFT",
+          startDate: "2027-01-01",
+          endDate: "2027-12-31",
+          wte: 50,
+          notes: ""
+        }
+      ],
+      {
+        kind: "FULL_TIME",
+        startDate: "2028-01-01",
+        wte: null
+      }
+    );
+
+    expect(rows[0]?.endDate).toBe("2028-01-02");
+    expect(rows.at(-1)?.endDate).toBe("2034-06-30");
+  });
+});
+
 describe("programme training time adjustment limits", () => {
   it("accepts no adjustment and the Excel-aligned maximum additional time", () => {
     expect(validateProgrammeDetails(tripleCctProgramme)).toEqual({ ok: true });
@@ -114,6 +163,26 @@ describe("18-month final year", () => {
       ok: false,
       message: "Please enter a reason for the 18-month final year."
     });
+  });
+});
+
+describe("specialty-defined 24-month grade", () => {
+  it("extends the named grade and carries its twelve months through progression", () => {
+    const rows = computeGradeProgression(
+      {
+        ...tripleCctProgramme,
+        specialty: "Emergency medicine DRE-EM",
+        lengthMonths: 60,
+        startGrade: "ST3"
+      },
+      [],
+      null
+    );
+
+    expect(rows.map(row => row.grade)).toEqual(["ST3", "ST4", "ST5", "ST6"]);
+    expect(rows[0]?.extendedToTwentyFourMonths).toBe(true);
+    expect(rows[0]?.endDate).toBe("2027-12-31");
+    expect(rows.at(-1)?.endDate).toBe("2030-12-30");
   });
 });
 

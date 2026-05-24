@@ -120,11 +120,11 @@ const dateAtCumulativeWteMonths = (
     if (accumulated + segWteMonths >= targetMonths) {
       if (seg.wteFraction === 0) continue;
       const wteDeficit = targetMonths - accumulated;
-      const calendarDaysIntoSegment = Math.round(
+      const calendarDaysIntoSegment = Math.floor(
         (wteDeficit / seg.wteFraction) * seg.daysPerMonth
       );
       const date = dayjs(seg.startDate)
-        .add(calendarDaysIntoSegment - 1, "day")
+        .add(calendarDaysIntoSegment, "day")
         .format("YYYY-MM-DD");
       return date;
     }
