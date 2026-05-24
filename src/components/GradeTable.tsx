@@ -96,6 +96,18 @@ export const GradeTable: FC<GradeTableProps> = ({
         </Table>
       </div>
 
+      <div
+        className="nhsuk-inset-text nhsuk-u-margin-top-3"
+        style={{ borderLeftColor: "#005eb8" }}
+      >
+        <p className="nhsuk-u-margin-0">
+          <strong>About grade end dates:</strong> These dates are calculated
+          from the information you enter in this setup section. They may not
+          match confirmed end dates in your official training record. Check your
+          official training records if you need a confirmed grade end date.
+        </p>
+      </div>
+
       {hasEighteenMonthFinalYear && (
         <div
           className="nhsuk-inset-text nhsuk-u-margin-top-3"
@@ -108,8 +120,7 @@ export const GradeTable: FC<GradeTableProps> = ({
             This programme has an 18-month final year recorded for{" "}
             <strong>{programme.eighteenMonthFinalGrade}</strong>. It uses six
             months already included in the standard programme length, so it
-            changes the grade progression without itself extending the CCT
-            date.
+            changes the grade progression without itself extending the CCT date.
           </p>
         </div>
       )}
@@ -120,10 +131,10 @@ export const GradeTable: FC<GradeTableProps> = ({
           style={{ borderLeftColor: "#005eb8" }}
         >
           <p className="nhsuk-u-margin-0">
-            <strong>Why does {twentyFourMonthGrade} last 24 months?</strong>{" "}
-            For <em>{specialty.name}</em>, {twentyFourMonthGrade} is a
-            24-month grade rather than the standard 12. Subsequent grade years
-            shift accordingly, so the programme finishes at{" "}
+            <strong>Why does {twentyFourMonthGrade} last 24 months?</strong> For{" "}
+            <em>{specialty.name}</em>, {twentyFourMonthGrade} is a 24-month
+            grade rather than the standard 12. Subsequent grade years shift
+            accordingly, so the programme finishes at{" "}
             <strong>{finalGrade}</strong> rather than one grade higher within
             the standard {programme.lengthMonths}-month programme.
           </p>
@@ -136,12 +147,12 @@ export const GradeTable: FC<GradeTableProps> = ({
           style={{ borderLeftColor: "#005eb8" }}
         >
           <p className="nhsuk-u-margin-0">
-            <strong>Why is {programme.skippedGrade} not shown?</strong>{" "}
-            This programme records <strong>{programme.skippedGrade}</strong>{" "}
-            as a skipped grade year, so the displayed progression moves to the
+            <strong>Why is {programme.skippedGrade} not shown?</strong> This
+            programme records <strong>{programme.skippedGrade}</strong> as a
+            skipped grade year, so the displayed progression moves to the
             following grade from that point. This does not itself shorten the
-            CCT date; any reduced duration is recorded separately as
-            accelerated training time.
+            CCT date; any reduced duration is recorded separately as accelerated
+            training time.
           </p>
         </div>
       )}
