@@ -80,8 +80,8 @@ export const GradeTable: FC<GradeTableProps> = ({
             For <em>{specialty.name}</em>, {twentyFourMonthGrade} is a
             24-month grade rather than the standard 12. Subsequent grade years
             shift accordingly, so the programme finishes at{" "}
-            <strong>{finalGrade}</strong> rather than one grade higher, while
-            keeping the total length at {programme.lengthMonths} months.
+            <strong>{finalGrade}</strong> rather than one grade higher within
+            the standard {programme.lengthMonths}-month programme.
           </p>
         </div>
       )}

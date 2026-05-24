@@ -4,7 +4,9 @@ import { CalculationSummary } from "../components/CalculationSummary";
 import {
   calendarMonthsFor,
   computeWteAccrual,
+  findSpecialty,
   getCalculationTypeLabel,
+  programmeAdjustedEndDate,
   projectedCompletionDate,
   wteMonthsFor,
   type PastChange,
@@ -36,6 +38,10 @@ export const SummaryPage: FC<SummaryPageProps> = ({
   );
   const accrual = computeWteAccrual(programme, sorted, proposed.startDate);
   const newCct = projectedCompletionDate(proposed, accrual.monthsRemaining);
+  const specialtyMeta = findSpecialty(programme.specialty);
+  const startGradeIsOverridden =
+    specialtyMeta !== undefined &&
+    programme.startGrade !== specialtyMeta.entryGrade;
 
   const handleExportCsv = () => {
     const proposedWte =
@@ -45,6 +51,45 @@ export const SummaryPage: FC<SummaryPageProps> = ({
       ["Specialty", programme.specialty],
       ["Programme start", dayjs(programme.startDate).format("YYYY-MM-DD")],
       ["Programme length (months)", programme.lengthMonths.toFixed(1)],
+      ["Start grade", programme.startGrade],
+      ...(startGradeIsOverridden && programme.startGradeOverrideNotes
+        ? [["Start grade override notes", programme.startGradeOverrideNotes]]
+        : []),
+      ...(programme.additionalMonths > 0
+        ? [
+            [
+              "Additional training time (months)",
+              programme.additionalMonths.toFixed(1)
+            ],
+            ...(programme.additionalMonthsNotes
+              ? [["Additional training time notes", programme.additionalMonthsNotes]]
+              : [])
+          ]
+        : []),
+      ...(programme.acceleratedMonths > 0
+        ? [
+            [
+              "Accelerated training time (months)",
+              programme.acceleratedMonths.toFixed(1)
+            ],
+            ...(programme.acceleratedMonthsNotes
+              ? [
+                  [
+                    "Accelerated training time notes",
+                    programme.acceleratedMonthsNotes
+                  ]
+                ]
+              : [])
+          ]
+        : []),
+      ...(programme.additionalMonths > 0 || programme.acceleratedMonths > 0
+        ? [
+            [
+              "Adjusted full-time CCT date",
+              dayjs(programmeAdjustedEndDate(programme)).format("YYYY-MM-DD")
+            ]
+          ]
+        : []),
       [
         "Total WTE completed (months)",
         accrual.totalWteMonthsCompleted.toFixed(2)

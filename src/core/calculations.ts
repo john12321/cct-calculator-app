@@ -30,6 +30,20 @@ export const programmeOriginalEndDate = (
   return dayjs(programme.startDate).add(days, "day").format("YYYY-MM-DD");
 };
 
+export const programmeAdjustedLengthMonths = (
+  programme: ProgrammeDetails
+): number =>
+  programme.lengthMonths +
+  programme.additionalMonths -
+  programme.acceleratedMonths;
+
+export const programmeAdjustedEndDate = (
+  programme: ProgrammeDetails
+): string => {
+  const days = Math.round(programmeAdjustedLengthMonths(programme) * DAYS_PER_MONTH);
+  return dayjs(programme.startDate).add(days, "day").format("YYYY-MM-DD");
+};
+
 export type WteAccrualBreakdown = {
   totalCalendarMonthsBeforeProposed: number;
   pastChangesCalendarMonths: number;
@@ -69,7 +83,8 @@ export const computeWteAccrual = (
   const wteMonthsFromGaps = gapCalendarMonths;
 
   const totalWteMonthsCompleted = wteMonthsFromPastChanges + wteMonthsFromGaps;
-  const monthsRemaining = programme.lengthMonths - totalWteMonthsCompleted;
+  const monthsRemaining =
+    programmeAdjustedLengthMonths(programme) - totalWteMonthsCompleted;
 
   return {
     totalCalendarMonthsBeforeProposed,

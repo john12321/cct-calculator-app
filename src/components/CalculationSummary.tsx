@@ -8,6 +8,7 @@ import {
   computeWteAccrual,
   findSpecialty,
   getCalculationTypeLabel,
+  programmeAdjustedEndDate,
   programmeOriginalEndDate,
   projectedCompletionDate,
   wteMonthsFor,
@@ -39,7 +40,11 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
   const accrual = computeWteAccrual(programme, sorted, proposed.startDate);
   const newCct = projectedCompletionDate(proposed, accrual.monthsRemaining);
   const originalEnd = programmeOriginalEndDate(programme);
+  const adjustedEnd = programmeAdjustedEndDate(programme);
   const specialtyMeta = findSpecialty(programme.specialty);
+  const startGradeIsOverridden =
+    specialtyMeta !== undefined &&
+    programme.startGrade !== specialtyMeta.entryGrade;
 
   const totalPastCalendar = sorted.reduce(
     (sum, c) => sum + calendarMonthsFor(c),
@@ -67,6 +72,48 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
             {formatMonths(programme.lengthMonths)}
           </dd>
         </div>
+        {programme.additionalMonths > 0 && (
+          <div className="nhsuk-summary-list__row">
+            <dt className="nhsuk-summary-list__key">Additional training time</dt>
+            <dd className="nhsuk-summary-list__value">
+              {formatMonths(programme.additionalMonths)}
+              {programme.additionalMonthsNotes && (
+                <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                  {programme.additionalMonthsNotes}
+                </div>
+              )}
+            </dd>
+          </div>
+        )}
+        {programme.acceleratedMonths > 0 && (
+          <div className="nhsuk-summary-list__row">
+            <dt className="nhsuk-summary-list__key">Accelerated training time</dt>
+            <dd className="nhsuk-summary-list__value">
+              {formatMonths(programme.acceleratedMonths)}
+              {programme.acceleratedMonthsNotes && (
+                <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                  {programme.acceleratedMonthsNotes}
+                </div>
+              )}
+            </dd>
+          </div>
+        )}
+        <div className="nhsuk-summary-list__row">
+          <dt className="nhsuk-summary-list__key">Start grade</dt>
+          <dd className="nhsuk-summary-list__value">
+            {programme.startGrade}
+            {startGradeIsOverridden && (
+              <span className="nhsuk-hint nhsuk-u-margin-left-2">
+                (overridden - default {specialtyMeta?.entryGrade})
+              </span>
+            )}
+            {startGradeIsOverridden && programme.startGradeOverrideNotes && (
+              <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                {programme.startGradeOverrideNotes}
+              </div>
+            )}
+          </dd>
+        </div>
         <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">Start date</dt>
           <dd className="nhsuk-summary-list__value">
@@ -79,6 +126,20 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
             {formatDate(originalEnd)}
           </dd>
         </div>
+        {(programme.additionalMonths > 0 ||
+          programme.acceleratedMonths > 0) && (
+          <div className="nhsuk-summary-list__row">
+            <dt className="nhsuk-summary-list__key">
+              Adjusted full-time CCT date
+            </dt>
+            <dd className="nhsuk-summary-list__value">
+              {formatDate(adjustedEnd)}
+              <span className="nhsuk-hint nhsuk-u-margin-left-2">
+                (reflects the other training-time adjustments shown above)
+              </span>
+            </dd>
+          </div>
+        )}
         <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">
             Total WTE completed (to Next post)

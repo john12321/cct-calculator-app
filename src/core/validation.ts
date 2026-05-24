@@ -4,7 +4,10 @@ import type {
   ProgrammeDetails,
   ProposedChange
 } from "./calculationTypes";
-import { programmeOriginalEndDate } from "./calculations";
+import {
+  programmeAdjustedEndDate,
+  programmeAdjustedLengthMonths
+} from "./calculations";
 
 export type ValidationResult = { ok: true } | { ok: false; message: string };
 
@@ -18,7 +21,11 @@ export const validatePastChange = (
   programme: ProgrammeDetails,
   existing: PastChange[]
 ): ValidationResult => {
-  const programmeEnd = programmeOriginalEndDate(programme);
+  const programmeEnd = programmeAdjustedEndDate(programme);
+  const programmeEndLabel =
+    programme.additionalMonths > 0 || programme.acceleratedMonths > 0
+      ? "adjusted programme end"
+      : "original programme end";
   const today = dayjs().startOf("day");
 
   if (!candidate.startDate || !candidate.endDate) {
@@ -45,7 +52,7 @@ export const validatePastChange = (
 
   if (dayjs(candidate.endDate).isAfter(dayjs(programmeEnd))) {
     return err(
-      `End date cannot be after the original programme end (${formatDate(programmeEnd)}).`
+      `End date cannot be after the ${programmeEndLabel} (${formatDate(programmeEnd)}).`
     );
   }
 
@@ -90,10 +97,14 @@ export const validateProposedChange = (
     );
   }
 
-  const programmeEnd = programmeOriginalEndDate(programme);
+  const programmeEnd = programmeAdjustedEndDate(programme);
+  const programmeEndLabel =
+    programme.additionalMonths > 0 || programme.acceleratedMonths > 0
+      ? "adjusted programme end"
+      : "original programme end";
   if (dayjs(proposed.startDate).isAfter(dayjs(programmeEnd))) {
     return err(
-      `Proposed start date cannot be after the original programme end (${formatDate(programmeEnd)}).`
+      `Proposed start date cannot be after the ${programmeEndLabel} (${formatDate(programmeEnd)}).`
     );
   }
 
@@ -134,6 +145,29 @@ export const validateProgrammeDetails = (
   const rounded = Math.round(programme.lengthMonths * 10) / 10;
   if (rounded !== programme.lengthMonths) {
     return err("Programme length can have at most 1 decimal place.");
+  }
+  if (!Number.isFinite(programme.additionalMonths)) {
+    return err("Please enter additional training time in months.");
+  }
+  if (programme.additionalMonths < 0) {
+    return err("Additional training time cannot be less than zero.");
+  }
+  const roundedAdditional = Math.round(programme.additionalMonths * 10) / 10;
+  if (roundedAdditional !== programme.additionalMonths) {
+    return err("Additional training time can have at most 1 decimal place.");
+  }
+  if (!Number.isFinite(programme.acceleratedMonths)) {
+    return err("Please enter accelerated training time in months.");
+  }
+  if (programme.acceleratedMonths < 0) {
+    return err("Accelerated training time cannot be less than zero.");
+  }
+  const roundedAccelerated = Math.round(programme.acceleratedMonths * 10) / 10;
+  if (roundedAccelerated !== programme.acceleratedMonths) {
+    return err("Accelerated training time can have at most 1 decimal place.");
+  }
+  if (programmeAdjustedLengthMonths(programme) <= 0) {
+    return err("Adjusted training duration must be greater than zero.");
   }
   if (!programme.startGrade.trim()) return err("Please choose a start grade.");
   return ok;

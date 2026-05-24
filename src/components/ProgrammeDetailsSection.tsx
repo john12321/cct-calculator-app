@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import {
   TRAINING_GRADES,
   findSpecialty,
+  programmeAdjustedEndDate,
   programmeOriginalEndDate,
   validateProgrammeDetails,
   type ProgrammeDetails
@@ -20,24 +21,41 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
   onChange
 }) => {
   const initialSpecialty = findSpecialty(programme?.specialty ?? "");
-  const initialOverride =
-    programme !== null &&
-    initialSpecialty !== undefined &&
-    programme.lengthMonths !== initialSpecialty.lengthMonths;
   const initialGradeOverride =
     programme !== null &&
     initialSpecialty !== undefined &&
     programme.startGrade !== initialSpecialty.entryGrade;
+  const initialHasAdditionalTraining =
+    programme !== null && programme.additionalMonths > 0;
+  const initialHasAcceleratedTraining =
+    programme !== null && programme.acceleratedMonths > 0;
 
   const [editing, setEditing] = useState(programme === null);
   const [specialty, setSpecialty] = useState(programme?.specialty ?? "");
   const [startDate, setStartDate] = useState(programme?.startDate ?? "");
-  const [overrideLength, setOverrideLength] = useState(initialOverride);
-  const [lengthText, setLengthText] = useState(
-    programme ? String(programme.lengthMonths) : ""
-  );
   const [overrideGrade, setOverrideGrade] = useState(initialGradeOverride);
   const [startGrade, setStartGrade] = useState(programme?.startGrade ?? "");
+  const [startGradeOverrideNotes, setStartGradeOverrideNotes] = useState(
+    initialGradeOverride ? (programme?.startGradeOverrideNotes ?? "") : ""
+  );
+  const [hasAdditionalTraining, setHasAdditionalTraining] = useState(
+    initialHasAdditionalTraining
+  );
+  const [additionalMonthsText, setAdditionalMonthsText] = useState(
+    initialHasAdditionalTraining ? String(programme.additionalMonths) : ""
+  );
+  const [additionalMonthsNotes, setAdditionalMonthsNotes] = useState(
+    initialHasAdditionalTraining ? programme.additionalMonthsNotes : ""
+  );
+  const [hasAcceleratedTraining, setHasAcceleratedTraining] = useState(
+    initialHasAcceleratedTraining
+  );
+  const [acceleratedMonthsText, setAcceleratedMonthsText] = useState(
+    initialHasAcceleratedTraining ? String(programme.acceleratedMonths) : ""
+  );
+  const [acceleratedMonthsNotes, setAcceleratedMonthsNotes] = useState(
+    initialHasAcceleratedTraining ? programme.acceleratedMonthsNotes : ""
+  );
   const [error, setError] = useState<string | null>(null);
 
   const selectedSpecialty = findSpecialty(specialty);
@@ -47,10 +65,15 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       setEditing(true);
       setSpecialty("");
       setStartDate("");
-      setOverrideLength(false);
-      setLengthText("");
       setOverrideGrade(false);
       setStartGrade("");
+      setStartGradeOverrideNotes("");
+      setHasAdditionalTraining(false);
+      setAdditionalMonthsText("");
+      setAdditionalMonthsNotes("");
+      setHasAcceleratedTraining(false);
+      setAcceleratedMonthsText("");
+      setAcceleratedMonthsNotes("");
       setError(null);
       return;
     }
@@ -59,16 +82,31 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     setEditing(false);
     setSpecialty(programme.specialty);
     setStartDate(programme.startDate);
-    setOverrideLength(
-      nextSpecialty !== undefined &&
-        programme.lengthMonths !== nextSpecialty.lengthMonths
-    );
-    setLengthText(String(programme.lengthMonths));
     setOverrideGrade(
       nextSpecialty !== undefined &&
         programme.startGrade !== nextSpecialty.entryGrade
     );
     setStartGrade(programme.startGrade);
+    setStartGradeOverrideNotes(
+      nextSpecialty !== undefined &&
+        programme.startGrade !== nextSpecialty.entryGrade
+        ? programme.startGradeOverrideNotes
+        : ""
+    );
+    setHasAdditionalTraining(programme.additionalMonths > 0);
+    setAdditionalMonthsText(
+      programme.additionalMonths > 0 ? String(programme.additionalMonths) : ""
+    );
+    setAdditionalMonthsNotes(
+      programme.additionalMonths > 0 ? programme.additionalMonthsNotes : ""
+    );
+    setHasAcceleratedTraining(programme.acceleratedMonths > 0);
+    setAcceleratedMonthsText(
+      programme.acceleratedMonths > 0 ? String(programme.acceleratedMonths) : ""
+    );
+    setAcceleratedMonthsNotes(
+      programme.acceleratedMonths > 0 ? programme.acceleratedMonthsNotes : ""
+    );
     setError(null);
   }, [programme]);
 
@@ -76,38 +114,84 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     setSpecialty(next);
     const found = findSpecialty(next);
     if (found) {
-      setOverrideLength(false);
-      setLengthText(String(found.lengthMonths));
       setOverrideGrade(false);
       setStartGrade(found.entryGrade);
+      setStartGradeOverrideNotes("");
     } else {
-      setLengthText("");
       setStartGrade("");
-    }
-  };
-
-  const handleOverrideToggle = (checked: boolean) => {
-    setOverrideLength(checked);
-    if (!checked && selectedSpecialty) {
-      setLengthText(String(selectedSpecialty.lengthMonths));
+      setStartGradeOverrideNotes("");
     }
   };
 
   const handleGradeOverrideToggle = (checked: boolean) => {
     setOverrideGrade(checked);
-    if (!checked && selectedSpecialty) {
-      setStartGrade(selectedSpecialty.entryGrade);
+    if (!checked) {
+      setStartGradeOverrideNotes("");
+      if (selectedSpecialty) {
+        setStartGrade(selectedSpecialty.entryGrade);
+      }
+    }
+  };
+
+  const handleAdditionalTrainingToggle = (checked: boolean) => {
+    setHasAdditionalTraining(checked);
+    if (!checked) {
+      setAdditionalMonthsText("");
+      setAdditionalMonthsNotes("");
+    }
+  };
+
+  const handleAcceleratedTrainingToggle = (checked: boolean) => {
+    setHasAcceleratedTraining(checked);
+    if (!checked) {
+      setAcceleratedMonthsText("");
+      setAcceleratedMonthsNotes("");
     }
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const lengthMonths = Number.parseFloat(lengthText);
+    const lengthMonths = selectedSpecialty?.lengthMonths ?? Number.NaN;
+    const additionalMonths = hasAdditionalTraining
+      ? Number.parseFloat(additionalMonthsText)
+      : 0;
+    const acceleratedMonths = hasAcceleratedTraining
+      ? Number.parseFloat(acceleratedMonthsText)
+      : 0;
+    const isGradeOverridden =
+      overrideGrade &&
+      selectedSpecialty !== undefined &&
+      startGrade.trim() !== selectedSpecialty.entryGrade;
+    if (
+      hasAdditionalTraining &&
+      (!Number.isFinite(additionalMonths) || additionalMonths <= 0)
+    ) {
+      setError("Additional training time must be greater than zero.");
+      return;
+    }
+    if (
+      hasAcceleratedTraining &&
+      (!Number.isFinite(acceleratedMonths) || acceleratedMonths <= 0)
+    ) {
+      setError("Accelerated training time must be greater than zero.");
+      return;
+    }
     const next: ProgrammeDetails = {
       specialty: specialty.trim(),
       startDate,
       lengthMonths,
-      startGrade: startGrade.trim()
+      additionalMonths,
+      additionalMonthsNotes: hasAdditionalTraining
+        ? additionalMonthsNotes.trim()
+        : "",
+      acceleratedMonths,
+      acceleratedMonthsNotes: hasAcceleratedTraining
+        ? acceleratedMonthsNotes.trim()
+        : "",
+      startGrade: startGrade.trim(),
+      startGradeOverrideNotes: isGradeOverridden
+        ? startGradeOverrideNotes.trim()
+        : ""
     };
     const result = validateProgrammeDetails(next);
     if (!result.ok) {
@@ -123,10 +207,25 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     if (!programme) return;
     setSpecialty(programme.specialty);
     setStartDate(programme.startDate);
-    setLengthText(String(programme.lengthMonths));
-    setOverrideLength(initialOverride);
     setStartGrade(programme.startGrade);
     setOverrideGrade(initialGradeOverride);
+    setStartGradeOverrideNotes(
+      initialGradeOverride ? programme.startGradeOverrideNotes : ""
+    );
+    setHasAdditionalTraining(initialHasAdditionalTraining);
+    setAdditionalMonthsText(
+      initialHasAdditionalTraining ? String(programme.additionalMonths) : ""
+    );
+    setAdditionalMonthsNotes(
+      initialHasAdditionalTraining ? programme.additionalMonthsNotes : ""
+    );
+    setHasAcceleratedTraining(initialHasAcceleratedTraining);
+    setAcceleratedMonthsText(
+      initialHasAcceleratedTraining ? String(programme.acceleratedMonths) : ""
+    );
+    setAcceleratedMonthsNotes(
+      initialHasAcceleratedTraining ? programme.acceleratedMonthsNotes : ""
+    );
     setError(null);
     setEditing(false);
   };
@@ -138,8 +237,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       {editing ? (
         <form onSubmit={handleSubmit} noValidate>
           <p className="nhsuk-body">
-            Pick your specialty to auto-fill the programme length. You can
-            override the length if you need to.
+            Pick your specialty to auto-fill the standard programme length.
           </p>
 
           <div className="nhsuk-form-group">
@@ -162,7 +260,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
             <label className="nhsuk-label" htmlFor="programme-length">
               Programme length (months)
             </label>
-            {selectedSpecialty && !overrideLength && (
+            {selectedSpecialty && (
               <p className="nhsuk-hint nhsuk-u-margin-top-1">
                 Default for {selectedSpecialty.name} is{" "}
                 {selectedSpecialty.lengthMonths} months.
@@ -174,31 +272,9 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
               type="number"
               step="0.1"
               min="0"
-              value={lengthText}
-              onChange={e => setLengthText(e.target.value)}
-              readOnly={!overrideLength && selectedSpecialty !== undefined}
-              aria-describedby="programme-length-hint"
+              value={selectedSpecialty?.lengthMonths ?? ""}
+              readOnly
             />
-            {selectedSpecialty && (
-              <div
-                className="nhsuk-checkboxes__item nhsuk-u-margin-top-2"
-                style={{ paddingLeft: "32px" }}
-              >
-                <input
-                  className="nhsuk-checkboxes__input"
-                  id="programme-length-override"
-                  type="checkbox"
-                  checked={overrideLength}
-                  onChange={e => handleOverrideToggle(e.target.checked)}
-                />
-                <label
-                  className="nhsuk-label nhsuk-checkboxes__label"
-                  htmlFor="programme-length-override"
-                >
-                  Override default length
-                </label>
-              </div>
-            )}
             {selectedSpecialty?.info && (
               <p className="nhsuk-hint nhsuk-u-margin-top-2">
                 {selectedSpecialty.info}
@@ -257,8 +333,148 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   className="nhsuk-label nhsuk-checkboxes__label"
                   htmlFor="programme-start-grade-override"
                 >
-                  Override default start grade
+                  I am overriding default start grade because...
                 </label>
+              </div>
+            )}
+            {selectedSpecialty && overrideGrade && (
+              <div className="nhsuk-u-margin-top-3">
+                <label
+                  className="nhsuk-label"
+                  htmlFor="programme-start-grade-override-notes"
+                >
+                  Notes for start grade override (optional)
+                </label>
+                <input
+                  className="nhsuk-input nhsuk-input--width-30"
+                  id="programme-start-grade-override-notes"
+                  type="text"
+                  value={startGradeOverrideNotes}
+                  onChange={e => setStartGradeOverrideNotes(e.target.value)}
+                  placeholder="e.g. Entering programme at ST4"
+                />
+              </div>
+            )}
+          </div>
+
+          <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-5">
+            Other training time adjustments
+          </h3>
+
+          <div className="nhsuk-form-group">
+            <div
+              className="nhsuk-checkboxes__item"
+              style={{ paddingLeft: "32px" }}
+            >
+              <input
+                className="nhsuk-checkboxes__input"
+                id="programme-additional-training-toggle"
+                type="checkbox"
+                checked={hasAdditionalTraining}
+                onChange={e => handleAdditionalTrainingToggle(e.target.checked)}
+              />
+              <label
+                className="nhsuk-label nhsuk-checkboxes__label"
+                htmlFor="programme-additional-training-toggle"
+              >
+                Add additional training time
+              </label>
+            </div>
+            {hasAdditionalTraining && (
+              <div className="nhsuk-u-margin-top-3">
+                <label
+                  className="nhsuk-label"
+                  htmlFor="programme-additional-months"
+                >
+                  Additional training time (months)
+                </label>
+                <p className="nhsuk-hint">
+                  For example, additional time required following an ARCP
+                  outcome.
+                </p>
+                <input
+                  className="nhsuk-input nhsuk-input--width-5"
+                  id="programme-additional-months"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={additionalMonthsText}
+                  onChange={e => setAdditionalMonthsText(e.target.value)}
+                />
+                <label
+                  className="nhsuk-label nhsuk-u-margin-top-3"
+                  htmlFor="programme-additional-months-notes"
+                >
+                  Notes (optional)
+                </label>
+                <input
+                  className="nhsuk-input nhsuk-input--width-30"
+                  id="programme-additional-months-notes"
+                  type="text"
+                  value={additionalMonthsNotes}
+                  onChange={e => setAdditionalMonthsNotes(e.target.value)}
+                  placeholder="e.g. Outcome 3 following ARCP"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="nhsuk-form-group">
+            <div
+              className="nhsuk-checkboxes__item"
+              style={{ paddingLeft: "32px" }}
+            >
+              <input
+                className="nhsuk-checkboxes__input"
+                id="programme-accelerated-training-toggle"
+                type="checkbox"
+                checked={hasAcceleratedTraining}
+                onChange={e =>
+                  handleAcceleratedTrainingToggle(e.target.checked)
+                }
+              />
+              <label
+                className="nhsuk-label nhsuk-checkboxes__label"
+                htmlFor="programme-accelerated-training-toggle"
+              >
+                Add accelerated training time (reduce programme length)
+              </label>
+            </div>
+            {hasAcceleratedTraining && (
+              <div className="nhsuk-u-margin-top-3">
+                <label
+                  className="nhsuk-label"
+                  htmlFor="programme-accelerated-months"
+                >
+                  Accelerated training time (months)
+                </label>
+                <p className="nhsuk-hint">
+                  For example, recognised prior learning that reduces the
+                  remaining training requirement.
+                </p>
+                <input
+                  className="nhsuk-input nhsuk-input--width-5"
+                  id="programme-accelerated-months"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={acceleratedMonthsText}
+                  onChange={e => setAcceleratedMonthsText(e.target.value)}
+                />
+                <label
+                  className="nhsuk-label nhsuk-u-margin-top-3"
+                  htmlFor="programme-accelerated-months-notes"
+                >
+                  Notes (optional)
+                </label>
+                <input
+                  className="nhsuk-input nhsuk-input--width-30"
+                  id="programme-accelerated-months-notes"
+                  type="text"
+                  value={acceleratedMonthsNotes}
+                  onChange={e => setAcceleratedMonthsNotes(e.target.value)}
+                  placeholder="e.g. Recognised prior learning"
+                />
               </div>
             )}
           </div>
@@ -319,13 +535,38 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                 <dt className="nhsuk-summary-list__key">Length</dt>
                 <dd className="nhsuk-summary-list__value">
                   {formatMonths(programme.lengthMonths)}
-                  {initialOverride && initialSpecialty && (
-                    <span className="nhsuk-hint nhsuk-u-margin-left-2">
-                      (overridden — default {initialSpecialty.lengthMonths})
-                    </span>
-                  )}
                 </dd>
               </div>
+              {programme.additionalMonths > 0 && (
+                <div className="nhsuk-summary-list__row">
+                  <dt className="nhsuk-summary-list__key">
+                    Additional training time
+                  </dt>
+                  <dd className="nhsuk-summary-list__value">
+                    {formatMonths(programme.additionalMonths)}
+                    {programme.additionalMonthsNotes && (
+                      <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                        {programme.additionalMonthsNotes}
+                      </div>
+                    )}
+                  </dd>
+                </div>
+              )}
+              {programme.acceleratedMonths > 0 && (
+                <div className="nhsuk-summary-list__row">
+                  <dt className="nhsuk-summary-list__key">
+                    Accelerated training time
+                  </dt>
+                  <dd className="nhsuk-summary-list__value">
+                    {formatMonths(programme.acceleratedMonths)}
+                    {programme.acceleratedMonthsNotes && (
+                      <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                        {programme.acceleratedMonthsNotes}
+                      </div>
+                    )}
+                  </dd>
+                </div>
+              )}
               <div className="nhsuk-summary-list__row">
                 <dt className="nhsuk-summary-list__key">Start grade</dt>
                 <dd className="nhsuk-summary-list__value">
@@ -335,6 +576,12 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                       (overridden — default {initialSpecialty.entryGrade})
                     </span>
                   )}
+                  {initialGradeOverride &&
+                    programme.startGradeOverrideNotes && (
+                      <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                        {programme.startGradeOverrideNotes}
+                      </div>
+                    )}
                 </dd>
               </div>
               {initialSpecialty?.info && (
@@ -359,6 +606,20 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   )}
                 </dd>
               </div>
+              {(programme.additionalMonths > 0 ||
+                programme.acceleratedMonths > 0) && (
+                <div className="nhsuk-summary-list__row">
+                  <dt className="nhsuk-summary-list__key">
+                    Adjusted full-time CCT date
+                  </dt>
+                  <dd className="nhsuk-summary-list__value">
+                    {formatDate(programmeAdjustedEndDate(programme))}
+                    <span className="nhsuk-hint nhsuk-u-margin-left-2">
+                      (reflects the other training-time adjustments shown above)
+                    </span>
+                  </dd>
+                </div>
+              )}
             </dl>
             <button
               type="button"

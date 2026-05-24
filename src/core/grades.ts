@@ -1,5 +1,10 @@
 import dayjs from "dayjs";
-import { DAYS_PER_MONTH, calendarMonthsFor, wteFractionFor } from "./calculations";
+import {
+  DAYS_PER_MONTH,
+  calendarMonthsFor,
+  programmeAdjustedLengthMonths,
+  wteFractionFor
+} from "./calculations";
 import type {
   PastChange,
   ProgrammeDetails,
@@ -133,6 +138,7 @@ export const computeGradeProgression = (
   const segments = buildSegments(programme, pastChanges, proposed);
   const twentyFourMonthGrade =
     findSpecialty(programme.specialty)?.twentyFourMonthGrade ?? null;
+  const adjustedLengthMonths = programmeAdjustedLengthMonths(programme);
 
   const rows: GradeYear[] = [];
   let carriedExtension = 0;
@@ -151,8 +157,12 @@ export const computeGradeProgression = (
     const thisYearExtension = isTwentyFourMonth ? 12 : 0;
 
     const targetMonths = Math.min(
-      yearNumber * 12 + carriedExtension + thisYearExtension,
-      programme.lengthMonths
+      yearNumber * 12 +
+        carriedExtension +
+        thisYearExtension +
+        programme.additionalMonths -
+        programme.acceleratedMonths,
+      adjustedLengthMonths
     );
     const endDate = dateAtCumulativeWteMonths(segments, targetMonths);
 

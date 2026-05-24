@@ -30,5 +30,10 @@ export type ProgrammeDetails = {
   specialty: string;
   startDate: string;
   lengthMonths: number;
+  additionalMonths: number;
+  additionalMonthsNotes: string;
+  acceleratedMonths: number;
+  acceleratedMonthsNotes: string;
   startGrade: string;
+  startGradeOverrideNotes: string;
 };
