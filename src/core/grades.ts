@@ -5,11 +5,13 @@ import type {
   ProgrammeDetails,
   ProposedChange
 } from "./calculationTypes";
+import { findSpecialty } from "./specialties";
 
 export type GradeYear = {
   yearNumber: number;
   grade: string;
   endDate: string | null;
+  extendedToTwentyFourMonths: boolean;
 };
 
 type ParsedGrade = { prefix: string; year: number };
@@ -125,21 +127,44 @@ export const computeGradeProgression = (
   pastChanges: PastChange[],
   proposed: ProposedChange | null
 ): GradeYear[] => {
-  const parsed = parseGrade(programme.startGrade);
-  const yearsTotal = Math.ceil(programme.lengthMonths / 12);
-  if (yearsTotal <= 0) return [];
+  if (programme.lengthMonths <= 0) return [];
 
+  const parsed = parseGrade(programme.startGrade);
   const segments = buildSegments(programme, pastChanges, proposed);
+  const twentyFourMonthGrade =
+    findSpecialty(programme.specialty)?.twentyFourMonthGrade ?? null;
 
   const rows: GradeYear[] = [];
-  for (let i = 0; i < yearsTotal; i += 1) {
-    const yearNumber = i + 1;
-    const targetMonths = Math.min(yearNumber * 12, programme.lengthMonths);
+  let carriedExtension = 0;
+  const maxYears = 50;
+
+  for (let yearNumber = 1; yearNumber <= maxYears; yearNumber += 1) {
+    const gate = (yearNumber - 1) * 12 + 1 + carriedExtension;
+    if (gate > programme.lengthMonths) break;
+
     const grade = parsed
-      ? `${parsed.prefix}${parsed.year + i}`
+      ? `${parsed.prefix}${parsed.year + yearNumber - 1}`
       : programme.startGrade;
+
+    const isTwentyFourMonth =
+      twentyFourMonthGrade !== null && grade === twentyFourMonthGrade;
+    const thisYearExtension = isTwentyFourMonth ? 12 : 0;
+
+    const targetMonths = Math.min(
+      yearNumber * 12 + carriedExtension + thisYearExtension,
+      programme.lengthMonths
+    );
     const endDate = dateAtCumulativeWteMonths(segments, targetMonths);
-    rows.push({ yearNumber, grade, endDate });
+
+    rows.push({
+      yearNumber,
+      grade,
+      endDate,
+      extendedToTwentyFourMonths: isTwentyFourMonth
+    });
+
+    carriedExtension += thisYearExtension;
   }
+
   return rows;
 };
