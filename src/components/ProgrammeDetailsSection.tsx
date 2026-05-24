@@ -232,11 +232,19 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       setError("Additional training time must be greater than zero.");
       return;
     }
+    if (hasAdditionalTraining && additionalMonths > 24) {
+      setError("Additional training time cannot be more than 24 months.");
+      return;
+    }
     if (
       hasAcceleratedTraining &&
       (!Number.isFinite(acceleratedMonths) || acceleratedMonths <= 0)
     ) {
       setError("Accelerated training time must be greater than zero.");
+      return;
+    }
+    if (hasAcceleratedTraining && acceleratedMonths > 12) {
+      setError("Accelerated training time cannot be more than 12 months.");
       return;
     }
     if (overrideGrade && !startGradeOverrideNotes.trim()) {
@@ -517,7 +525,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                 </label>
                 <p className="nhsuk-hint">
                   For example, additional time required following an ARCP
-                  outcome.
+                  outcome. Enter up to 24 months.
                 </p>
                 <input
                   className="nhsuk-input nhsuk-input--width-5"
@@ -525,6 +533,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   type="number"
                   step="0.1"
                   min="0"
+                  max="24"
                   value={additionalMonthsText}
                   onChange={e => setAdditionalMonthsText(e.target.value)}
                 />
@@ -578,7 +587,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                 </label>
                 <p className="nhsuk-hint">
                   For example, recognised prior learning that reduces the
-                  remaining training requirement.
+                  remaining training requirement. Enter up to 12 months.
                 </p>
                 <input
                   className="nhsuk-input nhsuk-input--width-5"
@@ -586,6 +595,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   type="number"
                   step="0.1"
                   min="0"
+                  max="12"
                   value={acceleratedMonthsText}
                   onChange={e => setAcceleratedMonthsText(e.target.value)}
                 />

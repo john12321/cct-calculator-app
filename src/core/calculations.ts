@@ -6,6 +6,7 @@ import type {
 } from "./calculationTypes";
 
 export const DAYS_PER_MONTH = 30.4;
+export const COMPLETED_PERIOD_DAYS_PER_MONTH = 365 / 12;
 
 export const inclusiveDays = (start: string, end: string): number =>
   dayjs(end).diff(dayjs(start), "day") + 1;
@@ -18,7 +19,8 @@ export const wteFractionFor = (change: PastChange): number => {
 };
 
 export const calendarMonthsFor = (change: PastChange): number =>
-  inclusiveDays(change.startDate, change.endDate) / DAYS_PER_MONTH;
+  inclusiveDays(change.startDate, change.endDate) /
+  COMPLETED_PERIOD_DAYS_PER_MONTH;
 
 export const wteMonthsFor = (change: PastChange): number =>
   calendarMonthsFor(change) * wteFractionFor(change);
@@ -64,7 +66,7 @@ export const computeWteAccrual = (
     "day"
   );
   const totalCalendarMonthsBeforeProposed =
-    totalDaysBeforeProposed / DAYS_PER_MONTH;
+    totalDaysBeforeProposed / COMPLETED_PERIOD_DAYS_PER_MONTH;
 
   const pastChangesCalendarMonths = pastChanges.reduce(
     (sum, change) => sum + calendarMonthsFor(change),

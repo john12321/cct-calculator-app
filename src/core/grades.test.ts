@@ -23,6 +23,55 @@ const tripleCctProgramme: ProgrammeDetails = {
   startGradeOverrideNotes: ""
 };
 
+describe("programme training time adjustment limits", () => {
+  it("accepts no adjustment and the Excel-aligned maximum additional time", () => {
+    expect(validateProgrammeDetails(tripleCctProgramme)).toEqual({ ok: true });
+    expect(
+      validateProgrammeDetails({
+        ...tripleCctProgramme,
+        additionalMonths: 24,
+        additionalMonthsNotes: "Maximum additional time"
+      })
+    ).toEqual({ ok: true });
+  });
+
+  it("rejects additional training time above 24 months", () => {
+    const result = validateProgrammeDetails({
+      ...tripleCctProgramme,
+      additionalMonths: 24.1,
+      additionalMonthsNotes: "Outside Excel limit"
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      message: "Additional training time cannot be more than 24 months."
+    });
+  });
+
+  it("accepts the prompt-aligned maximum accelerated time", () => {
+    expect(
+      validateProgrammeDetails({
+        ...tripleCctProgramme,
+        acceleratedMonths: 12,
+        acceleratedMonthsNotes: "Maximum accelerated time"
+      })
+    ).toEqual({ ok: true });
+  });
+
+  it("rejects accelerated training time above 12 months", () => {
+    const result = validateProgrammeDetails({
+      ...tripleCctProgramme,
+      acceleratedMonths: 12.1,
+      acceleratedMonthsNotes: "Outside prompt limit"
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      message: "Accelerated training time cannot be more than 12 months."
+    });
+  });
+});
+
 describe("18-month final year", () => {
   it("allocates six existing programme months to the selected final grade", () => {
     const withoutFinalYear = computeGradeProgression(

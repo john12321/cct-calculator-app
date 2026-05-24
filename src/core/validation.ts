@@ -153,6 +153,9 @@ export const validateProgrammeDetails = (
   if (programme.additionalMonths < 0) {
     return err("Additional training time cannot be less than zero.");
   }
+  if (programme.additionalMonths > 24) {
+    return err("Additional training time cannot be more than 24 months.");
+  }
   const roundedAdditional = Math.round(programme.additionalMonths * 10) / 10;
   if (roundedAdditional !== programme.additionalMonths) {
     return err("Additional training time can have at most 1 decimal place.");
@@ -168,6 +171,9 @@ export const validateProgrammeDetails = (
   }
   if (programme.acceleratedMonths < 0) {
     return err("Accelerated training time cannot be less than zero.");
+  }
+  if (programme.acceleratedMonths > 12) {
+    return err("Accelerated training time cannot be more than 12 months.");
   }
   const roundedAccelerated = Math.round(programme.acceleratedMonths * 10) / 10;
   if (roundedAccelerated !== programme.acceleratedMonths) {

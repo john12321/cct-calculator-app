@@ -1,7 +1,8 @@
 import dayjs from "dayjs";
 import {
+  COMPLETED_PERIOD_DAYS_PER_MONTH,
   DAYS_PER_MONTH,
-  calendarMonthsFor,
+  inclusiveDays,
   programmeAdjustedLengthMonths,
   wteFractionFor
 } from "./calculations";
@@ -42,6 +43,7 @@ type Segment = {
   startDate: string;
   endDate: string;
   wteFraction: number;
+  daysPerMonth: number;
 };
 
 const buildSegments = (
@@ -62,13 +64,15 @@ const buildSegments = (
       segments.push({
         startDate: cursor.format("YYYY-MM-DD"),
         endDate: changeStart.subtract(1, "day").format("YYYY-MM-DD"),
-        wteFraction: 1
+        wteFraction: 1,
+        daysPerMonth: COMPLETED_PERIOD_DAYS_PER_MONTH
       });
     }
     segments.push({
       startDate: change.startDate,
       endDate: change.endDate,
-      wteFraction: wteFractionFor(change)
+      wteFraction: wteFractionFor(change),
+      daysPerMonth: COMPLETED_PERIOD_DAYS_PER_MONTH
     });
     cursor = dayjs(change.endDate).add(1, "day");
   }
@@ -79,7 +83,8 @@ const buildSegments = (
       segments.push({
         startDate: cursor.format("YYYY-MM-DD"),
         endDate: proposedStart.subtract(1, "day").format("YYYY-MM-DD"),
-        wteFraction: 1
+        wteFraction: 1,
+        daysPerMonth: COMPLETED_PERIOD_DAYS_PER_MONTH
       });
     }
     const proposedWte =
@@ -87,13 +92,15 @@ const buildSegments = (
     segments.push({
       startDate: proposed.startDate,
       endDate: dayjs(proposed.startDate).add(50 * 365, "day").format("YYYY-MM-DD"),
-      wteFraction: proposedWte
+      wteFraction: proposedWte,
+      daysPerMonth: DAYS_PER_MONTH
     });
   } else {
     segments.push({
       startDate: cursor.format("YYYY-MM-DD"),
       endDate: cursor.add(50 * 365, "day").format("YYYY-MM-DD"),
-      wteFraction: 1
+      wteFraction: 1,
+      daysPerMonth: DAYS_PER_MONTH
     });
   }
 
@@ -107,17 +114,14 @@ const dateAtCumulativeWteMonths = (
   let accumulated = 0;
   for (const seg of segments) {
     const segCalMonths =
-      calendarMonthsFor({
-        startDate: seg.startDate,
-        endDate: seg.endDate
-      } as PastChange);
+      inclusiveDays(seg.startDate, seg.endDate) / seg.daysPerMonth;
     const segWteMonths = segCalMonths * seg.wteFraction;
 
     if (accumulated + segWteMonths >= targetMonths) {
       if (seg.wteFraction === 0) continue;
       const wteDeficit = targetMonths - accumulated;
       const calendarDaysIntoSegment = Math.round(
-        (wteDeficit / seg.wteFraction) * DAYS_PER_MONTH
+        (wteDeficit / seg.wteFraction) * seg.daysPerMonth
       );
       const date = dayjs(seg.startDate)
         .add(calendarDaysIntoSegment - 1, "day")
