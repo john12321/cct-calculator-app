@@ -62,15 +62,15 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">Start date</dt>
-          <dd className="nhsuk-summary-list__value">
-            {formatDate(programme.startDate)}
-          </dd>
-        </div>
-        <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">Programme length</dt>
           <dd className="nhsuk-summary-list__value">
             {formatMonths(programme.lengthMonths)}
+          </dd>
+        </div>
+        <div className="nhsuk-summary-list__row">
+          <dt className="nhsuk-summary-list__key">Start date</dt>
+          <dd className="nhsuk-summary-list__value">
+            {formatDate(programme.startDate)}
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
@@ -80,7 +80,9 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">Total WTE completed</dt>
+          <dt className="nhsuk-summary-list__key">
+            Total WTE completed (to Next post)
+          </dt>
           <dd className="nhsuk-summary-list__value">
             {formatMonths(accrual.totalWteMonthsCompleted)}
           </dd>

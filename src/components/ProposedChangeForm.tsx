@@ -33,6 +33,17 @@ export const ProposedChangeForm: FC<ProposedChangeFormProps> = ({
   );
   const [error, setError] = useState<string | null>(null);
 
+  const hasNewEntryData =
+    initial === null &&
+    (kind !== "FULL_TIME" || startDate !== "" || wte !== "");
+
+  const resetForAdd = () => {
+    setKind("FULL_TIME");
+    setStartDate("");
+    setWte("");
+    setError(null);
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const wteValue = kind === "LTFT" ? Number.parseInt(wte, 10) : null;
@@ -145,11 +156,26 @@ export const ProposedChangeForm: FC<ProposedChangeFormProps> = ({
         </p>
       )}
 
-      <button type="submit" className="nhsuk-button" disabled={submitDisabled}>
-        {initial
-          ? "Update Completion date calculation"
-          : "Calculate projected completion date"}
-      </button>
+      <div className="nhsuk-button-group">
+        <button
+          type="submit"
+          className="nhsuk-button nhsuk-u-margin-right-3"
+          disabled={submitDisabled}
+        >
+          {initial
+            ? "Update Completion date calculation"
+            : "Calculate projected completion date"}
+        </button>
+        {hasNewEntryData && (
+          <button
+            type="button"
+            className="nhsuk-button nhsuk-button--secondary"
+            onClick={resetForAdd}
+          >
+            Reset
+          </button>
+        )}
+      </div>
     </form>
   );
 };

@@ -159,19 +159,6 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
           </div>
 
           <div className="nhsuk-form-group">
-            <label className="nhsuk-label" htmlFor="programme-start">
-              Programme start date
-            </label>
-            <input
-              className="nhsuk-input nhsuk-input--width-10"
-              id="programme-start"
-              type="date"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-            />
-          </div>
-
-          <div className="nhsuk-form-group">
             <label className="nhsuk-label" htmlFor="programme-length">
               Programme length (months)
             </label>
@@ -276,6 +263,19 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
             )}
           </div>
 
+          <div className="nhsuk-form-group">
+            <label className="nhsuk-label" htmlFor="programme-start">
+              Programme start date
+            </label>
+            <input
+              className="nhsuk-input nhsuk-input--width-10"
+              id="programme-start"
+              type="date"
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+            />
+          </div>
+
           {error && (
             <div className="nhsuk-error-summary" role="alert">
               <p className="nhsuk-error-summary__body">{error}</p>
@@ -316,12 +316,6 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                 </dd>
               </div>
               <div className="nhsuk-summary-list__row">
-                <dt className="nhsuk-summary-list__key">Start date</dt>
-                <dd className="nhsuk-summary-list__value">
-                  {formatDate(programme.startDate)}
-                </dd>
-              </div>
-              <div className="nhsuk-summary-list__row">
                 <dt className="nhsuk-summary-list__key">Length</dt>
                 <dd className="nhsuk-summary-list__value">
                   {formatMonths(programme.lengthMonths)}
@@ -351,6 +345,12 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   </dd>
                 </div>
               )}
+              <div className="nhsuk-summary-list__row">
+                <dt className="nhsuk-summary-list__key">Start date</dt>
+                <dd className="nhsuk-summary-list__value">
+                  {formatDate(programme.startDate)}
+                </dd>
+              </div>
               <div className="nhsuk-summary-list__row">
                 <dt className="nhsuk-summary-list__key">Original CCT date</dt>
                 <dd className="nhsuk-summary-list__value">

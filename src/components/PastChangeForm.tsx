@@ -45,6 +45,14 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
 
+  const hasNewEntryData =
+    !isEditing &&
+    (type !== "" ||
+      startDate !== "" ||
+      endDate !== "" ||
+      wte !== "" ||
+      notes.trim() !== "");
+
   const resetForAdd = () => {
     setType("");
     setStartDate("");
@@ -209,6 +217,15 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
             onClick={onCancelEdit}
           >
             Cancel
+          </button>
+        )}
+        {hasNewEntryData && (
+          <button
+            type="button"
+            className="nhsuk-button nhsuk-button--secondary"
+            onClick={resetForAdd}
+          >
+            Reset
           </button>
         )}
       </div>
