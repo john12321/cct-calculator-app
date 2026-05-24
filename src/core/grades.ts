@@ -16,6 +16,7 @@ export type GradeYear = {
   yearNumber: number;
   grade: string;
   endDate: string | null;
+  extendedToEighteenMonths: boolean;
   extendedToTwentyFourMonths: boolean;
 };
 
@@ -141,17 +142,30 @@ export const computeGradeProgression = (
   const adjustedLengthMonths = programmeAdjustedLengthMonths(programme);
 
   const rows: GradeYear[] = [];
+  let previousEighteenMonthExtension = 0;
   let carriedExtension = 0;
   const maxYears = 50;
 
   for (let yearNumber = 1; yearNumber <= maxYears; yearNumber += 1) {
-    const gate = (yearNumber - 1) * 12 + 1 + carriedExtension;
-    if (gate > programme.lengthMonths) break;
+    const gate =
+      (yearNumber - 1) * 12 +
+      1 +
+      previousEighteenMonthExtension +
+      carriedExtension;
+    if (gate > programme.lengthMonths) {
+      // Excel's P (+6) column is not carried; a later formula row can reappear.
+      previousEighteenMonthExtension = 0;
+      continue;
+    }
 
     const grade = parsed
       ? `${parsed.prefix}${parsed.year + yearNumber - 1}`
       : programme.startGrade;
 
+    const isEighteenMonthFinalYear =
+      programme.eighteenMonthFinalGrade !== "" &&
+      grade === programme.eighteenMonthFinalGrade;
+    const finalYearExtension = isEighteenMonthFinalYear ? 6 : 0;
     const isTwentyFourMonth =
       twentyFourMonthGrade !== null && grade === twentyFourMonthGrade;
     const thisYearExtension = isTwentyFourMonth ? 12 : 0;
@@ -160,6 +174,7 @@ export const computeGradeProgression = (
       yearNumber * 12 +
         carriedExtension +
         thisYearExtension +
+        finalYearExtension +
         programme.additionalMonths -
         programme.acceleratedMonths,
       adjustedLengthMonths
@@ -170,9 +185,11 @@ export const computeGradeProgression = (
       yearNumber,
       grade,
       endDate,
+      extendedToEighteenMonths: isEighteenMonthFinalYear,
       extendedToTwentyFourMonths: isTwentyFourMonth
     });
 
+    previousEighteenMonthExtension = finalYearExtension;
     carriedExtension += thisYearExtension;
   }
 

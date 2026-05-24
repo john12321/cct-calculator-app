@@ -28,6 +28,7 @@ export const GradeTable: FC<GradeTableProps> = ({
 
   const specialty = findSpecialty(programme.specialty);
   const twentyFourMonthGrade = specialty?.twentyFourMonthGrade ?? null;
+  const hasEighteenMonthFinalYear = rows.some(r => r.extendedToEighteenMonths);
   const hasTwentyFourMonthYear = rows.some(r => r.extendedToTwentyFourMonths);
   const finalGrade = rows.at(-1)?.grade;
 
@@ -48,6 +49,18 @@ export const GradeTable: FC<GradeTableProps> = ({
                 <Table.Cell>Year {row.yearNumber}</Table.Cell>
                 <Table.Cell>
                   {row.grade}
+                  {row.extendedToEighteenMonths && (
+                    <span
+                      className="nhsuk-u-margin-left-2"
+                      style={{
+                        fontSize: "0.85em",
+                        color: "#005eb8",
+                        fontWeight: 600
+                      }}
+                    >
+                      (18-month final year)
+                    </span>
+                  )}
                   {row.extendedToTwentyFourMonths && (
                     <span
                       className="nhsuk-u-margin-left-2"
@@ -69,6 +82,24 @@ export const GradeTable: FC<GradeTableProps> = ({
           </Table.Body>
         </Table>
       </div>
+
+      {hasEighteenMonthFinalYear && (
+        <div
+          className="nhsuk-inset-text nhsuk-u-margin-top-3"
+          style={{ borderLeftColor: "#005eb8" }}
+        >
+          <p className="nhsuk-u-margin-0">
+            <strong>
+              Why does {programme.eighteenMonthFinalGrade} last 18 months?
+            </strong>{" "}
+            This programme has an 18-month final year recorded for{" "}
+            <strong>{programme.eighteenMonthFinalGrade}</strong>. It uses six
+            months already included in the standard programme length, so it
+            changes the grade progression without itself extending the CCT
+            date.
+          </p>
+        </div>
+      )}
 
       {hasTwentyFourMonthYear && twentyFourMonthGrade && specialty && (
         <div

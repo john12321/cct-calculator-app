@@ -29,6 +29,8 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     programme !== null && programme.additionalMonths > 0;
   const initialHasAcceleratedTraining =
     programme !== null && programme.acceleratedMonths > 0;
+  const initialHasEighteenMonthFinalYear =
+    programme !== null && programme.eighteenMonthFinalGrade !== "";
 
   const [editing, setEditing] = useState(programme === null);
   const [specialty, setSpecialty] = useState(programme?.specialty ?? "");
@@ -56,6 +58,18 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
   const [acceleratedMonthsNotes, setAcceleratedMonthsNotes] = useState(
     initialHasAcceleratedTraining ? programme.acceleratedMonthsNotes : ""
   );
+  const [hasEighteenMonthFinalYear, setHasEighteenMonthFinalYear] = useState(
+    initialHasEighteenMonthFinalYear
+  );
+  const [eighteenMonthFinalGrade, setEighteenMonthFinalGrade] = useState(
+    initialHasEighteenMonthFinalYear ? programme.eighteenMonthFinalGrade : ""
+  );
+  const [eighteenMonthFinalGradeNotes, setEighteenMonthFinalGradeNotes] =
+    useState(
+      initialHasEighteenMonthFinalYear
+        ? programme.eighteenMonthFinalGradeNotes
+        : ""
+    );
   const [error, setError] = useState<string | null>(null);
 
   const selectedSpecialty = findSpecialty(specialty);
@@ -74,6 +88,9 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       setHasAcceleratedTraining(false);
       setAcceleratedMonthsText("");
       setAcceleratedMonthsNotes("");
+      setHasEighteenMonthFinalYear(false);
+      setEighteenMonthFinalGrade("");
+      setEighteenMonthFinalGradeNotes("");
       setError(null);
       return;
     }
@@ -107,6 +124,13 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     setAcceleratedMonthsNotes(
       programme.acceleratedMonths > 0 ? programme.acceleratedMonthsNotes : ""
     );
+    setHasEighteenMonthFinalYear(programme.eighteenMonthFinalGrade !== "");
+    setEighteenMonthFinalGrade(programme.eighteenMonthFinalGrade);
+    setEighteenMonthFinalGradeNotes(
+      programme.eighteenMonthFinalGrade !== ""
+        ? programme.eighteenMonthFinalGradeNotes
+        : ""
+    );
     setError(null);
   }, [programme]);
 
@@ -121,6 +145,9 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       setStartGrade("");
       setStartGradeOverrideNotes("");
     }
+    setHasEighteenMonthFinalYear(false);
+    setEighteenMonthFinalGrade("");
+    setEighteenMonthFinalGradeNotes("");
   };
 
   const handleGradeOverrideToggle = (checked: boolean) => {
@@ -146,6 +173,14 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     if (!checked) {
       setAcceleratedMonthsText("");
       setAcceleratedMonthsNotes("");
+    }
+  };
+
+  const handleEighteenMonthFinalYearToggle = (checked: boolean) => {
+    setHasEighteenMonthFinalYear(checked);
+    if (!checked) {
+      setEighteenMonthFinalGrade("");
+      setEighteenMonthFinalGradeNotes("");
     }
   };
 
@@ -188,6 +223,14 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       setError("Please enter a reason for accelerated training time.");
       return;
     }
+    if (hasEighteenMonthFinalYear && !eighteenMonthFinalGrade) {
+      setError("Please choose the grade with an 18-month final year.");
+      return;
+    }
+    if (hasEighteenMonthFinalYear && !eighteenMonthFinalGradeNotes.trim()) {
+      setError("Please enter a reason for the 18-month final year.");
+      return;
+    }
     const next: ProgrammeDetails = {
       specialty: specialty.trim(),
       startDate,
@@ -199,6 +242,12 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       acceleratedMonths,
       acceleratedMonthsNotes: hasAcceleratedTraining
         ? acceleratedMonthsNotes.trim()
+        : "",
+      eighteenMonthFinalGrade: hasEighteenMonthFinalYear
+        ? eighteenMonthFinalGrade
+        : "",
+      eighteenMonthFinalGradeNotes: hasEighteenMonthFinalYear
+        ? eighteenMonthFinalGradeNotes.trim()
         : "",
       startGrade: startGrade.trim(),
       startGradeOverrideNotes: isGradeOverridden
@@ -237,6 +286,15 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     );
     setAcceleratedMonthsNotes(
       initialHasAcceleratedTraining ? programme.acceleratedMonthsNotes : ""
+    );
+    setHasEighteenMonthFinalYear(initialHasEighteenMonthFinalYear);
+    setEighteenMonthFinalGrade(
+      initialHasEighteenMonthFinalYear ? programme.eighteenMonthFinalGrade : ""
+    );
+    setEighteenMonthFinalGradeNotes(
+      initialHasEighteenMonthFinalYear
+        ? programme.eighteenMonthFinalGradeNotes
+        : ""
     );
     setError(null);
     setEditing(false);
@@ -495,6 +553,77 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
           </div>
 
           <div className="nhsuk-form-group">
+            <div
+              className="nhsuk-checkboxes__item"
+              style={{ paddingLeft: "32px" }}
+            >
+              <input
+                className="nhsuk-checkboxes__input"
+                id="programme-eighteen-month-final-year-toggle"
+                type="checkbox"
+                checked={hasEighteenMonthFinalYear}
+                onChange={e =>
+                  handleEighteenMonthFinalYearToggle(e.target.checked)
+                }
+              />
+              <label
+                className="nhsuk-label nhsuk-checkboxes__label"
+                htmlFor="programme-eighteen-month-final-year-toggle"
+              >
+                Set an 18-month final year
+              </label>
+            </div>
+            {hasEighteenMonthFinalYear && (
+              <div className="nhsuk-u-margin-top-3">
+                <label
+                  className="nhsuk-label"
+                  htmlFor="programme-eighteen-month-final-grade"
+                >
+                  Final grade lasting 18 months
+                </label>
+                <p className="nhsuk-hint">
+                  For specialties with an 18-month final year, for example
+                  intensive care medicine with a dual specialty. This changes
+                  grade progression, not total training time.
+                </p>
+                <select
+                  className="nhsuk-select"
+                  id="programme-eighteen-month-final-grade"
+                  value={eighteenMonthFinalGrade}
+                  onChange={e => setEighteenMonthFinalGrade(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>
+                    Select the final grade
+                  </option>
+                  {TRAINING_GRADES.map(g => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+                <label
+                  className="nhsuk-label nhsuk-u-margin-top-3"
+                  htmlFor="programme-eighteen-month-final-grade-notes"
+                >
+                  Reason for 18-month final year
+                </label>
+                <input
+                  className="nhsuk-input nhsuk-input--width-30"
+                  id="programme-eighteen-month-final-grade-notes"
+                  type="text"
+                  value={eighteenMonthFinalGradeNotes}
+                  onChange={e =>
+                    setEighteenMonthFinalGradeNotes(e.target.value)
+                  }
+                  placeholder="e.g. ICM dual-specialty final year"
+                  required
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="nhsuk-form-group">
             <label className="nhsuk-label" htmlFor="programme-start">
               Programme start date
             </label>
@@ -577,6 +706,21 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                     {programme.acceleratedMonthsNotes && (
                       <div className="nhsuk-hint nhsuk-u-margin-top-1">
                         {programme.acceleratedMonthsNotes}
+                      </div>
+                    )}
+                  </dd>
+                </div>
+              )}
+              {programme.eighteenMonthFinalGrade && (
+                <div className="nhsuk-summary-list__row">
+                  <dt className="nhsuk-summary-list__key">
+                    18-month final year
+                  </dt>
+                  <dd className="nhsuk-summary-list__value">
+                    {programme.eighteenMonthFinalGrade}
+                    {programme.eighteenMonthFinalGradeNotes && (
+                      <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                        {programme.eighteenMonthFinalGradeNotes}
                       </div>
                     )}
                   </dd>

@@ -8,7 +8,7 @@ import {
   programmeAdjustedEndDate,
   programmeAdjustedLengthMonths
 } from "./calculations";
-import { findSpecialty } from "./specialties";
+import { TRAINING_GRADES, findSpecialty } from "./specialties";
 
 export type ValidationResult = { ok: true } | { ok: false; message: string };
 
@@ -181,6 +181,20 @@ export const validateProgrammeDetails = (
   }
   if (programmeAdjustedLengthMonths(programme) <= 0) {
     return err("Adjusted training duration must be greater than zero.");
+  }
+  if (
+    programme.eighteenMonthFinalGrade &&
+    !TRAINING_GRADES.includes(
+      programme.eighteenMonthFinalGrade as (typeof TRAINING_GRADES)[number]
+    )
+  ) {
+    return err("Please choose the grade with an 18-month final year.");
+  }
+  if (
+    programme.eighteenMonthFinalGrade &&
+    !programme.eighteenMonthFinalGradeNotes.trim()
+  ) {
+    return err("Please enter a reason for the 18-month final year.");
   }
   if (!programme.startGrade.trim()) return err("Please choose a start grade.");
   const specialty = findSpecialty(programme.specialty);

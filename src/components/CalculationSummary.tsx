@@ -98,6 +98,19 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
             </dd>
           </div>
         )}
+        {programme.eighteenMonthFinalGrade && (
+          <div className="nhsuk-summary-list__row">
+            <dt className="nhsuk-summary-list__key">18-month final year</dt>
+            <dd className="nhsuk-summary-list__value">
+              {programme.eighteenMonthFinalGrade}
+              {programme.eighteenMonthFinalGradeNotes && (
+                <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                  {programme.eighteenMonthFinalGradeNotes}
+                </div>
+              )}
+            </dd>
+          </div>
+        )}
         <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">Start grade</dt>
           <dd className="nhsuk-summary-list__value">

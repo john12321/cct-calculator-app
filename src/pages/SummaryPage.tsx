@@ -82,6 +82,15 @@ export const SummaryPage: FC<SummaryPageProps> = ({
               : [])
           ]
         : []),
+      ...(programme.eighteenMonthFinalGrade
+        ? [
+            ["18-month final year grade", programme.eighteenMonthFinalGrade],
+            [
+              "18-month final year reason",
+              programme.eighteenMonthFinalGradeNotes
+            ]
+          ]
+        : []),
       ...(programme.additionalMonths > 0 || programme.acceleratedMonths > 0
         ? [
             [
