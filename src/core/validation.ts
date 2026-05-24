@@ -196,6 +196,17 @@ export const validateProgrammeDetails = (
   ) {
     return err("Please enter a reason for the 18-month final year.");
   }
+  if (
+    programme.skippedGrade &&
+    !TRAINING_GRADES.includes(
+      programme.skippedGrade as (typeof TRAINING_GRADES)[number]
+    )
+  ) {
+    return err("Please choose the grade year to skip.");
+  }
+  if (programme.skippedGrade && !programme.skippedGradeNotes.trim()) {
+    return err("Please enter a reason for skipping a grade year.");
+  }
   if (!programme.startGrade.trim()) return err("Please choose a start grade.");
   const specialty = findSpecialty(programme.specialty);
   if (

@@ -36,6 +36,8 @@ export type ProgrammeDetails = {
   acceleratedMonthsNotes: string;
   eighteenMonthFinalGrade: string;
   eighteenMonthFinalGradeNotes: string;
+  skippedGrade: string;
+  skippedGradeNotes: string;
   startGrade: string;
   startGradeOverrideNotes: string;
 };

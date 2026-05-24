@@ -91,6 +91,12 @@ export const SummaryPage: FC<SummaryPageProps> = ({
             ]
           ]
         : []),
+      ...(programme.skippedGrade
+        ? [
+            ["Skipped grade year", programme.skippedGrade],
+            ["Skipped grade year reason", programme.skippedGradeNotes]
+          ]
+        : []),
       ...(programme.additionalMonths > 0 || programme.acceleratedMonths > 0
         ? [
             [

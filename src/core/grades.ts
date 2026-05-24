@@ -16,6 +16,7 @@ export type GradeYear = {
   yearNumber: number;
   grade: string;
   endDate: string | null;
+  skippedGradeBeforeThisRow: string | null;
   extendedToEighteenMonths: boolean;
   extendedToTwentyFourMonths: boolean;
 };
@@ -144,6 +145,7 @@ export const computeGradeProgression = (
   const rows: GradeYear[] = [];
   let previousEighteenMonthExtension = 0;
   let carriedExtension = 0;
+  let skippedGradeOffset = 0;
   const maxYears = 50;
 
   for (let yearNumber = 1; yearNumber <= maxYears; yearNumber += 1) {
@@ -158,8 +160,18 @@ export const computeGradeProgression = (
       continue;
     }
 
-    const grade = parsed
+    const ordinaryGrade = parsed
       ? `${parsed.prefix}${parsed.year + yearNumber - 1}`
+      : programme.startGrade;
+    const beginsAfterSkippedGrade =
+      parsed !== null &&
+      programme.skippedGrade !== "" &&
+      ordinaryGrade === programme.skippedGrade;
+    if (beginsAfterSkippedGrade) {
+      skippedGradeOffset = 1;
+    }
+    const grade = parsed
+      ? `${parsed.prefix}${parsed.year + yearNumber - 1 + skippedGradeOffset}`
       : programme.startGrade;
 
     const isEighteenMonthFinalYear =
@@ -185,6 +197,9 @@ export const computeGradeProgression = (
       yearNumber,
       grade,
       endDate,
+      skippedGradeBeforeThisRow: beginsAfterSkippedGrade
+        ? programme.skippedGrade
+        : null,
       extendedToEighteenMonths: isEighteenMonthFinalYear,
       extendedToTwentyFourMonths: isTwentyFourMonth
     });

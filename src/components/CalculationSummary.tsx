@@ -111,6 +111,19 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
             </dd>
           </div>
         )}
+        {programme.skippedGrade && (
+          <div className="nhsuk-summary-list__row">
+            <dt className="nhsuk-summary-list__key">Skipped grade year</dt>
+            <dd className="nhsuk-summary-list__value">
+              {programme.skippedGrade}
+              {programme.skippedGradeNotes && (
+                <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                  {programme.skippedGradeNotes}
+                </div>
+              )}
+            </dd>
+          </div>
+        )}
         <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">Start grade</dt>
           <dd className="nhsuk-summary-list__value">

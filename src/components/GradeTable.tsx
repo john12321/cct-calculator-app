@@ -30,6 +30,7 @@ export const GradeTable: FC<GradeTableProps> = ({
   const twentyFourMonthGrade = specialty?.twentyFourMonthGrade ?? null;
   const hasEighteenMonthFinalYear = rows.some(r => r.extendedToEighteenMonths);
   const hasTwentyFourMonthYear = rows.some(r => r.extendedToTwentyFourMonths);
+  const hasSkippedGrade = rows.some(r => r.skippedGradeBeforeThisRow !== null);
   const finalGrade = rows.at(-1)?.grade;
 
   return (
@@ -49,6 +50,18 @@ export const GradeTable: FC<GradeTableProps> = ({
                 <Table.Cell>Year {row.yearNumber}</Table.Cell>
                 <Table.Cell>
                   {row.grade}
+                  {row.skippedGradeBeforeThisRow && (
+                    <span
+                      className="nhsuk-u-margin-left-2"
+                      style={{
+                        fontSize: "0.85em",
+                        color: "#005eb8",
+                        fontWeight: 600
+                      }}
+                    >
+                      ({row.skippedGradeBeforeThisRow} skipped)
+                    </span>
+                  )}
                   {row.extendedToEighteenMonths && (
                     <span
                       className="nhsuk-u-margin-left-2"
@@ -113,6 +126,22 @@ export const GradeTable: FC<GradeTableProps> = ({
             shift accordingly, so the programme finishes at{" "}
             <strong>{finalGrade}</strong> rather than one grade higher within
             the standard {programme.lengthMonths}-month programme.
+          </p>
+        </div>
+      )}
+
+      {hasSkippedGrade && (
+        <div
+          className="nhsuk-inset-text nhsuk-u-margin-top-3"
+          style={{ borderLeftColor: "#005eb8" }}
+        >
+          <p className="nhsuk-u-margin-0">
+            <strong>Why is {programme.skippedGrade} not shown?</strong>{" "}
+            This programme records <strong>{programme.skippedGrade}</strong>{" "}
+            as a skipped grade year, so the displayed progression moves to the
+            following grade from that point. This does not itself shorten the
+            CCT date; any reduced duration is recorded separately as
+            accelerated training time.
           </p>
         </div>
       )}

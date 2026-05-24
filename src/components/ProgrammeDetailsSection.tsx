@@ -31,6 +31,8 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     programme !== null && programme.acceleratedMonths > 0;
   const initialHasEighteenMonthFinalYear =
     programme !== null && programme.eighteenMonthFinalGrade !== "";
+  const initialHasSkippedGrade =
+    programme !== null && programme.skippedGrade !== "";
 
   const [editing, setEditing] = useState(programme === null);
   const [specialty, setSpecialty] = useState(programme?.specialty ?? "");
@@ -70,6 +72,13 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
         ? programme.eighteenMonthFinalGradeNotes
         : ""
     );
+  const [hasSkippedGrade, setHasSkippedGrade] = useState(initialHasSkippedGrade);
+  const [skippedGrade, setSkippedGrade] = useState(
+    initialHasSkippedGrade ? programme.skippedGrade : ""
+  );
+  const [skippedGradeNotes, setSkippedGradeNotes] = useState(
+    initialHasSkippedGrade ? programme.skippedGradeNotes : ""
+  );
   const [error, setError] = useState<string | null>(null);
 
   const selectedSpecialty = findSpecialty(specialty);
@@ -91,6 +100,9 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       setHasEighteenMonthFinalYear(false);
       setEighteenMonthFinalGrade("");
       setEighteenMonthFinalGradeNotes("");
+      setHasSkippedGrade(false);
+      setSkippedGrade("");
+      setSkippedGradeNotes("");
       setError(null);
       return;
     }
@@ -131,6 +143,11 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
         ? programme.eighteenMonthFinalGradeNotes
         : ""
     );
+    setHasSkippedGrade(programme.skippedGrade !== "");
+    setSkippedGrade(programme.skippedGrade);
+    setSkippedGradeNotes(
+      programme.skippedGrade !== "" ? programme.skippedGradeNotes : ""
+    );
     setError(null);
   }, [programme]);
 
@@ -148,6 +165,9 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     setHasEighteenMonthFinalYear(false);
     setEighteenMonthFinalGrade("");
     setEighteenMonthFinalGradeNotes("");
+    setHasSkippedGrade(false);
+    setSkippedGrade("");
+    setSkippedGradeNotes("");
   };
 
   const handleGradeOverrideToggle = (checked: boolean) => {
@@ -181,6 +201,14 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     if (!checked) {
       setEighteenMonthFinalGrade("");
       setEighteenMonthFinalGradeNotes("");
+    }
+  };
+
+  const handleSkippedGradeToggle = (checked: boolean) => {
+    setHasSkippedGrade(checked);
+    if (!checked) {
+      setSkippedGrade("");
+      setSkippedGradeNotes("");
     }
   };
 
@@ -231,6 +259,14 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       setError("Please enter a reason for the 18-month final year.");
       return;
     }
+    if (hasSkippedGrade && !skippedGrade) {
+      setError("Please choose the grade year to skip.");
+      return;
+    }
+    if (hasSkippedGrade && !skippedGradeNotes.trim()) {
+      setError("Please enter a reason for skipping a grade year.");
+      return;
+    }
     const next: ProgrammeDetails = {
       specialty: specialty.trim(),
       startDate,
@@ -249,6 +285,8 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       eighteenMonthFinalGradeNotes: hasEighteenMonthFinalYear
         ? eighteenMonthFinalGradeNotes.trim()
         : "",
+      skippedGrade: hasSkippedGrade ? skippedGrade : "",
+      skippedGradeNotes: hasSkippedGrade ? skippedGradeNotes.trim() : "",
       startGrade: startGrade.trim(),
       startGradeOverrideNotes: isGradeOverridden
         ? startGradeOverrideNotes.trim()
@@ -295,6 +333,11 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       initialHasEighteenMonthFinalYear
         ? programme.eighteenMonthFinalGradeNotes
         : ""
+    );
+    setHasSkippedGrade(initialHasSkippedGrade);
+    setSkippedGrade(initialHasSkippedGrade ? programme.skippedGrade : "");
+    setSkippedGradeNotes(
+      initialHasSkippedGrade ? programme.skippedGradeNotes : ""
     );
     setError(null);
     setEditing(false);
@@ -350,6 +393,19 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                 {selectedSpecialty.info}
               </p>
             )}
+          </div>
+
+          <div className="nhsuk-form-group">
+            <label className="nhsuk-label" htmlFor="programme-start">
+              Programme start date
+            </label>
+            <input
+              className="nhsuk-input nhsuk-input--width-10"
+              id="programme-start"
+              type="date"
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+            />
           </div>
 
           <div className="nhsuk-form-group">
@@ -429,7 +485,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
           </div>
 
           <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-5">
-            Other training time adjustments
+            Other training time adjustments (optional)
           </h3>
 
           <div className="nhsuk-form-group">
@@ -624,16 +680,70 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
           </div>
 
           <div className="nhsuk-form-group">
-            <label className="nhsuk-label" htmlFor="programme-start">
-              Programme start date
-            </label>
-            <input
-              className="nhsuk-input nhsuk-input--width-10"
-              id="programme-start"
-              type="date"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-            />
+            <div
+              className="nhsuk-checkboxes__item"
+              style={{ paddingLeft: "32px" }}
+            >
+              <input
+                className="nhsuk-checkboxes__input"
+                id="programme-skipped-grade-toggle"
+                type="checkbox"
+                checked={hasSkippedGrade}
+                onChange={e => handleSkippedGradeToggle(e.target.checked)}
+              />
+              <label
+                className="nhsuk-label nhsuk-checkboxes__label"
+                htmlFor="programme-skipped-grade-toggle"
+              >
+                Skip one grade year
+              </label>
+            </div>
+            {hasSkippedGrade && (
+              <div className="nhsuk-u-margin-top-3">
+                <label
+                  className="nhsuk-label"
+                  htmlFor="programme-skipped-grade"
+                >
+                  Grade year to skip
+                </label>
+                <p className="nhsuk-hint">
+                  This moves later displayed grades on by one year. Record any
+                  shorter programme duration separately as accelerated
+                  training time.
+                </p>
+                <select
+                  className="nhsuk-select"
+                  id="programme-skipped-grade"
+                  value={skippedGrade}
+                  onChange={e => setSkippedGrade(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>
+                    Select the grade to skip
+                  </option>
+                  {TRAINING_GRADES.map(g => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+                <label
+                  className="nhsuk-label nhsuk-u-margin-top-3"
+                  htmlFor="programme-skipped-grade-notes"
+                >
+                  Reason for skipping a grade year
+                </label>
+                <input
+                  className="nhsuk-input nhsuk-input--width-30"
+                  id="programme-skipped-grade-notes"
+                  type="text"
+                  value={skippedGradeNotes}
+                  onChange={e => setSkippedGradeNotes(e.target.value)}
+                  placeholder="e.g. Progression from ST1 to ST3 after core competencies"
+                  required
+                />
+              </div>
+            )}
           </div>
 
           {error && (
@@ -721,6 +831,21 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                     {programme.eighteenMonthFinalGradeNotes && (
                       <div className="nhsuk-hint nhsuk-u-margin-top-1">
                         {programme.eighteenMonthFinalGradeNotes}
+                      </div>
+                    )}
+                  </dd>
+                </div>
+              )}
+              {programme.skippedGrade && (
+                <div className="nhsuk-summary-list__row">
+                  <dt className="nhsuk-summary-list__key">
+                    Skipped grade year
+                  </dt>
+                  <dd className="nhsuk-summary-list__value">
+                    {programme.skippedGrade}
+                    {programme.skippedGradeNotes && (
+                      <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                        {programme.skippedGradeNotes}
                       </div>
                     )}
                   </dd>
