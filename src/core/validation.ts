@@ -8,6 +8,7 @@ import {
   programmeAdjustedEndDate,
   programmeAdjustedLengthMonths
 } from "./calculations";
+import { findSpecialty } from "./specialties";
 
 export type ValidationResult = { ok: true } | { ok: false; message: string };
 
@@ -156,6 +157,12 @@ export const validateProgrammeDetails = (
   if (roundedAdditional !== programme.additionalMonths) {
     return err("Additional training time can have at most 1 decimal place.");
   }
+  if (
+    programme.additionalMonths > 0 &&
+    !programme.additionalMonthsNotes.trim()
+  ) {
+    return err("Please enter a reason for additional training time.");
+  }
   if (!Number.isFinite(programme.acceleratedMonths)) {
     return err("Please enter accelerated training time in months.");
   }
@@ -166,9 +173,23 @@ export const validateProgrammeDetails = (
   if (roundedAccelerated !== programme.acceleratedMonths) {
     return err("Accelerated training time can have at most 1 decimal place.");
   }
+  if (
+    programme.acceleratedMonths > 0 &&
+    !programme.acceleratedMonthsNotes.trim()
+  ) {
+    return err("Please enter a reason for accelerated training time.");
+  }
   if (programmeAdjustedLengthMonths(programme) <= 0) {
     return err("Adjusted training duration must be greater than zero.");
   }
   if (!programme.startGrade.trim()) return err("Please choose a start grade.");
+  const specialty = findSpecialty(programme.specialty);
+  if (
+    specialty !== undefined &&
+    programme.startGrade !== specialty.entryGrade &&
+    !programme.startGradeOverrideNotes.trim()
+  ) {
+    return err("Please enter a reason for overriding the default start grade.");
+  }
   return ok;
 };

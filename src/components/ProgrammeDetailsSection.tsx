@@ -176,6 +176,18 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       setError("Accelerated training time must be greater than zero.");
       return;
     }
+    if (overrideGrade && !startGradeOverrideNotes.trim()) {
+      setError("Please enter a reason for overriding the default start grade.");
+      return;
+    }
+    if (hasAdditionalTraining && !additionalMonthsNotes.trim()) {
+      setError("Please enter a reason for additional training time.");
+      return;
+    }
+    if (hasAcceleratedTraining && !acceleratedMonthsNotes.trim()) {
+      setError("Please enter a reason for accelerated training time.");
+      return;
+    }
     const next: ProgrammeDetails = {
       specialty: specialty.trim(),
       startDate,
@@ -343,7 +355,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   className="nhsuk-label"
                   htmlFor="programme-start-grade-override-notes"
                 >
-                  Notes for start grade override (optional)
+                  Reason for start grade override
                 </label>
                 <input
                   className="nhsuk-input nhsuk-input--width-30"
@@ -352,6 +364,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   value={startGradeOverrideNotes}
                   onChange={e => setStartGradeOverrideNotes(e.target.value)}
                   placeholder="e.g. Entering programme at ST4"
+                  required
                 />
               </div>
             )}
@@ -405,7 +418,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   className="nhsuk-label nhsuk-u-margin-top-3"
                   htmlFor="programme-additional-months-notes"
                 >
-                  Notes (optional)
+                  Reason for additional training time
                 </label>
                 <input
                   className="nhsuk-input nhsuk-input--width-30"
@@ -414,6 +427,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   value={additionalMonthsNotes}
                   onChange={e => setAdditionalMonthsNotes(e.target.value)}
                   placeholder="e.g. Outcome 3 following ARCP"
+                  required
                 />
               </div>
             )}
@@ -465,7 +479,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   className="nhsuk-label nhsuk-u-margin-top-3"
                   htmlFor="programme-accelerated-months-notes"
                 >
-                  Notes (optional)
+                  Reason for accelerated training time
                 </label>
                 <input
                   className="nhsuk-input nhsuk-input--width-30"
@@ -474,6 +488,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   value={acceleratedMonthsNotes}
                   onChange={e => setAcceleratedMonthsNotes(e.target.value)}
                   placeholder="e.g. Recognised prior learning"
+                  required
                 />
               </div>
             )}
