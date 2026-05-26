@@ -1,4 +1,5 @@
 import { useState, type FC } from "react";
+import { CompletionDateWarning } from "../components/CompletionDateWarning";
 import { GradeTable } from "../components/GradeTable";
 import { NextPostSummary } from "../components/NextPostSummary";
 import { PastChangeForm } from "../components/PastChangeForm";
@@ -100,6 +101,8 @@ export const SetupPage: FC<SetupPageProps> = ({
 
   return (
     <>
+      <CompletionDateWarning />
+
       <ProgrammeDetailsSection
         programme={programme}
         onChange={onProgrammeChange}
@@ -132,7 +135,8 @@ export const SetupPage: FC<SetupPageProps> = ({
             Grade progression
           </h2>
           <p className="nhsuk-hint">
-            Updates automatically as you add past changes and your next post.
+            Updates automatically as you add past changes and your proposed next
+            post.
           </p>
           <GradeTable
             programme={programme}
@@ -235,9 +239,9 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
 
       <section className="nhsuk-u-margin-bottom-6">
         <p className="nhsuk-body">
-          You only need to record completed LTFT periods or absences (OOP,
-          parental, sickness, etc.), as any gaps between them will be assumed
-          full-time (100% WTE).
+          You only need to record completed Less than full-time training (LTFT)
+          periods and/or absences (OOP, parental, sickness, etc.), as any gaps
+          between them will be assumed full-time (100% WTE).
         </p>
 
         {hasErrors && (
@@ -296,13 +300,15 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
       {editingId === null && (
         <>
           <hr className="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible" />
-          <h2 className="nhsuk-heading-l nhsuk-u-color-blue">Next post </h2>
+          <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
+            Proposed next post{" "}
+          </h2>
           <section className="nhsuk-u-margin-bottom-2">
             {!showProposedForm && !proposed && (
               <>
                 <p className="nhsuk-body">
-                  If you have any past changes, add them above first. Then
-                  enter your next post to calculate your projected completion
+                  If you have any past changes, add them above first. Then enter
+                  your proposed next post to calculate your projected completion
                   date.
                 </p>
                 <button
@@ -355,8 +361,8 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
             {proposed && !showProposedForm && proposedError !== null && (
               <>
                 <p className="nhsuk-body">
-                  The next post you entered is no longer valid against the
-                  current programme details.
+                  The proposed next post you entered is no longer valid against
+                  the current programme details.
                 </p>
                 <button
                   type="button"

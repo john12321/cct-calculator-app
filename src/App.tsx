@@ -36,9 +36,9 @@ export const App = () => {
           <h1 className="nhsuk-heading-xl nhsuk-u-color-blue">
             NHS CCT Calculator
           </h1>
-          <p className="nhsuk-lede-text">
+          <p className="nhsuk-lede-text nhsuk-u-margin-bottom-1">
             Calculate a projected completion of training date by recording past
-            changes (LTFT and absences) and your proposed next post.
+            changes and your proposed next post.
           </p>
         </header>
 

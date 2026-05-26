@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import dayjs from "dayjs";
 import { CalculationSummary } from "../components/CalculationSummary";
+import { CompletionDateWarning } from "../components/CompletionDateWarning";
 import {
   calendarMonthsFor,
   computeWteAccrual,
@@ -169,13 +170,11 @@ export const SummaryPage: FC<SummaryPageProps> = ({
 
   return (
     <>
+      <CompletionDateWarning />
+
       <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
         CCT Calculation Summary
       </h2>
-      <p className="nhsuk-body">
-        The projected completion date is an estimate as it does not reflect all
-        changes. Your final completion date is confirmed at ARCP.
-      </p>
 
       <CalculationSummary
         programme={programme}

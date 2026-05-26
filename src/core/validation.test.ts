@@ -64,17 +64,12 @@ describe("past change validation", () => {
     });
   });
 
-  it.each([null, 0, 99.5, 100])(
-    "rejects an invalid LTFT WTE of %s",
-    wte => {
-      expect(
-        validatePastChange({ ...priorLtft, wte }, programme, [])
-      ).toEqual({
-        ok: false,
-        message: "LTFT WTE must be a whole number between 1 and 99."
-      });
-    }
-  );
+  it.each([null, 0, 99.5, 100])("rejects an invalid LTFT WTE of %s", wte => {
+    expect(validatePastChange({ ...priorLtft, wte }, programme, [])).toEqual({
+      ok: false,
+      message: "LTFT WTE must be a whole number between 1 and 99."
+    });
+  });
 
   it("allows an absence to omit a WTE value", () => {
     expect(
@@ -97,7 +92,7 @@ describe("next post validation", () => {
     notes: ""
   };
 
-  it("requires the next post to start after the latest past change", () => {
+  it("requires the proposed next post to start after the latest past change", () => {
     const proposed: ProposedChange = {
       kind: "FULL_TIME",
       startDate: laterAbsence.endDate,

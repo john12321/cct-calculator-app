@@ -33,7 +33,7 @@ export const PastChangesList: FC<PastChangesListProps> = ({
     return (
       <p className="nhsuk-body">
         No past changes added yet. Use the form above to record any LTFT posts
-        or absences before you add your Next Post details.
+        or absences before you add your proposed next post details.
       </p>
     );
   }
@@ -58,9 +58,7 @@ export const PastChangesList: FC<PastChangesListProps> = ({
         <Table.Body>
           {sorted.map(change => {
             const error = errorsById[change.id];
-            const rowStyle = error
-              ? { backgroundColor: "#fdf1f1" }
-              : undefined;
+            const rowStyle = error ? { backgroundColor: "#fdf1f1" } : undefined;
             return (
               <Table.Row key={change.id} style={rowStyle}>
                 <Table.Cell>

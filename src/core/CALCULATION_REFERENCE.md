@@ -761,9 +761,7 @@ There are also significant disadvantages:
   extrapolation would make the intended future scenario less explicit for
   users.
 
-Current position: **do not implement mandatory full timeline entry** as it's felt that the extra data-entry and implementation burden is not justified by the limited
-additional formula parity. The separate Next post section should also remain as
-a clearer way to record the proposed future working pattern.
+Current position: **do not implement mandatory full timeline entry** for now until we discuss the pros and cons some more.
 
 The app instead displays a note with `GradeTable` wherever grade progression
 is shown: grade end dates are calculated from the entered information and do

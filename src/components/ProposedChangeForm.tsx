@@ -64,8 +64,8 @@ export const ProposedChangeForm: FC<ProposedChangeFormProps> = ({
   return (
     <form onSubmit={handleSubmit} noValidate>
       <p className="nhsuk-body-m">
-        Add the details of your next post. This will be used to calculate your
-        projected completion date.
+        Add the details of your proposed next post. This will be used to
+        calculate your projected completion date.
       </p>
 
       <div className="nhsuk-form-group">

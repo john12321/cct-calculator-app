@@ -74,7 +74,9 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
         </div>
         {programme.additionalMonths > 0 && (
           <div className="nhsuk-summary-list__row">
-            <dt className="nhsuk-summary-list__key">Additional training time</dt>
+            <dt className="nhsuk-summary-list__key">
+              Additional training time
+            </dt>
             <dd className="nhsuk-summary-list__value">
               {formatMonths(programme.additionalMonths)}
               {programme.additionalMonthsNotes && (
@@ -87,7 +89,9 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
         )}
         {programme.acceleratedMonths > 0 && (
           <div className="nhsuk-summary-list__row">
-            <dt className="nhsuk-summary-list__key">Accelerated training time</dt>
+            <dt className="nhsuk-summary-list__key">
+              Accelerated training time
+            </dt>
             <dd className="nhsuk-summary-list__value">
               {formatMonths(programme.acceleratedMonths)}
               {programme.acceleratedMonthsNotes && (
@@ -168,7 +172,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
         )}
         <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">
-            Total WTE completed (to Next post)
+            Total WTE completed (up to proposed next post)
           </dt>
           <dd className="nhsuk-summary-list__value">
             {formatMonths(accrual.totalWteMonthsCompleted)}
@@ -242,7 +246,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
       )}
 
       <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
-        Next post
+        Proposed next post
       </h3>
       <NextPostSummary
         programme={programme}
