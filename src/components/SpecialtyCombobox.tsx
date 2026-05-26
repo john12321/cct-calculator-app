@@ -13,6 +13,7 @@ import { specialtiesGroupedBySchool, type Specialty } from "../core";
 type SpecialtyComboboxProps = {
   value: string;
   onChange: (name: string) => void;
+  onCommit?: () => void;
   inputId?: string;
 };
 
@@ -185,6 +186,7 @@ const Listbox: FC<ListboxProps> = ({
 export const SpecialtyCombobox: FC<SpecialtyComboboxProps> = ({
   value,
   onChange,
+  onCommit,
   inputId
 }) => {
   const generatedId = useId();
@@ -232,6 +234,7 @@ export const SpecialtyCombobox: FC<SpecialtyComboboxProps> = ({
     onChange(item.name);
     setIsOpen(false);
     setHighlight(-1);
+    onCommit?.();
   };
 
   const revert = () => {

@@ -80,8 +80,16 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     initialHasSkippedGrade ? programme.skippedGradeNotes : ""
   );
   const [error, setError] = useState<string | null>(null);
+  const [pendingFocusStart, setPendingFocusStart] = useState(false);
 
   const selectedSpecialty = findSpecialty(specialty);
+
+  useEffect(() => {
+    if (pendingFocusStart && selectedSpecialty) {
+      document.getElementById("programme-start")?.focus();
+      setPendingFocusStart(false);
+    }
+  }, [pendingFocusStart, selectedSpecialty]);
 
   useEffect(() => {
     if (programme === null) {
@@ -369,6 +377,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
               inputId="programme-specialty"
               value={specialty}
               onChange={handleSpecialtyChange}
+              onCommit={() => setPendingFocusStart(true)}
             />
             {selectedSpecialty?.dual && (
               <p className="nhsuk-hint nhsuk-u-margin-top-1">
