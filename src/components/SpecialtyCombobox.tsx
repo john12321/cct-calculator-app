@@ -296,7 +296,12 @@ export const SpecialtyCombobox: FC<SpecialtyComboboxProps> = ({
           setIsOpen(true);
           setHighlight(-1);
         }}
-        onFocus={() => setIsOpen(true)}
+        onFocus={e => {
+          setIsOpen(true);
+          if (value && query === value) {
+            e.currentTarget.select();
+          }
+        }}
         onBlur={handleBlur}
         onKeyDown={handleKey}
         role="combobox"
