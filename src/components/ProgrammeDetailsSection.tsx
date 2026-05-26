@@ -377,6 +377,8 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
             )}
           </div>
 
+          {selectedSpecialty && (
+            <>
           <div className="nhsuk-form-group">
             <label className="nhsuk-label" htmlFor="programme-length">
               Programme length (months)
@@ -755,6 +757,8 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
               </div>
             )}
           </div>
+            </>
+          )}
 
           {error && (
             <div className="nhsuk-error-summary" role="alert">
