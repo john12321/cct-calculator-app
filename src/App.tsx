@@ -49,10 +49,6 @@ export const App = () => {
           <h1 className="nhsuk-heading-xl nhsuk-u-color-blue">
             NHS Completion of Training Date Calculator
           </h1>
-          <p className="nhsuk-lede-text nhsuk-u-margin-bottom-1">
-            Calculate a projected Completion of Training Date by recording
-            past changes and your proposed next post.
-          </p>
         </header>
 
         {mode === null && <ModePicker onSelect={setMode} />}
