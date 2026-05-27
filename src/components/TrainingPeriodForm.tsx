@@ -1,0 +1,376 @@
+import { useState, type FC, type FormEvent } from "react";
+import dayjs from "dayjs";
+import {
+  TRAINING_GRADES,
+  getGradePeriodTagLabel,
+  getTrainingPeriodTypeLabel,
+  validateTrainingPeriod,
+  type GradePeriodTag,
+  type ProgrammeDetails,
+  type TrainingPeriod,
+  type TrainingPeriodType
+} from "../core";
+import { formatDate } from "../utils/format";
+
+type TrainingPeriodFormProps = {
+  programme: ProgrammeDetails;
+  priorPeriods: TrainingPeriod[];
+  editing: TrainingPeriod | null;
+  onAdd: (period: TrainingPeriod) => void;
+  onUpdate: (period: TrainingPeriod) => void;
+  onCancelEdit: () => void;
+};
+
+const TYPE_GROUPS: { label: string; options: TrainingPeriodType[] }[] = [
+  { label: "Training", options: ["GRADE"] },
+  {
+    label: "Out of programme",
+    options: ["OOPC", "OOPE", "OOPP", "OOPR", "OOPT"]
+  },
+  { label: "Leave", options: ["PARENTAL", "SICK", "ACCRUED_LEAVE"] }
+];
+
+const TAG_OPTIONS: GradePeriodTag[] = [
+  "REGULAR",
+  "ACF",
+  "ACL",
+  "ADDITIONAL_TRAINING_TIME"
+];
+
+const newId = () =>
+  `period-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+const defaultStart = (
+  programme: ProgrammeDetails,
+  priorPeriods: TrainingPeriod[]
+): string => {
+  const lastEnd = priorPeriods.at(-1)?.endDate;
+  if (lastEnd === undefined || lastEnd === null) return programme.startDate;
+  return dayjs(lastEnd).add(1, "day").format("YYYY-MM-DD");
+};
+
+export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
+  programme,
+  priorPeriods,
+  editing,
+  onAdd,
+  onUpdate,
+  onCancelEdit
+}) => {
+  const isEditing = editing !== null;
+  const lockedStart = defaultStart(programme, priorPeriods);
+
+  const [type, setType] = useState<TrainingPeriodType>(
+    editing?.type ?? "GRADE"
+  );
+  const [grade, setGrade] = useState(editing?.grade ?? programme.startGrade);
+  const [gradeTag, setGradeTag] = useState<GradePeriodTag>(
+    editing?.gradeTag ?? "REGULAR"
+  );
+  const [wte, setWte] = useState(
+    editing ? String(editing.wte ?? "") : "100"
+  );
+  const [endMode, setEndMode] = useState<"SET" | "PROJECT">(
+    editing && editing.endDate === null ? "PROJECT" : "SET"
+  );
+  const [endDate, setEndDate] = useState(editing?.endDate ?? "");
+  const [countedAsTraining, setCountedAsTraining] = useState(
+    editing?.countedAsTraining ?? true
+  );
+  const [notes, setNotes] = useState(editing?.notes ?? "");
+  const [error, setError] = useState<string | null>(null);
+
+  const resetForAdd = () => {
+    setType("GRADE");
+    setGrade(programme.startGrade);
+    setGradeTag("REGULAR");
+    setWte("100");
+    setEndMode("SET");
+    setEndDate("");
+    setCountedAsTraining(true);
+    setNotes("");
+    setError(null);
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const wteValue = type === "GRADE" ? Number.parseInt(wte, 10) : null;
+    const candidate: TrainingPeriod = {
+      id: editing?.id ?? newId(),
+      type,
+      grade: type === "GRADE" ? grade : "",
+      gradeTag: type === "GRADE" ? gradeTag : "REGULAR",
+      wte: type === "GRADE" && !Number.isNaN(wteValue) ? wteValue : null,
+      startDate: isEditing ? (editing?.startDate ?? lockedStart) : lockedStart,
+      endDate: endMode === "PROJECT" ? null : endDate,
+      countedAsTraining,
+      notes: notes.trim()
+    };
+    const result = validateTrainingPeriod(candidate, programme, priorPeriods);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    if (isEditing) {
+      onUpdate(candidate);
+    } else {
+      onAdd(candidate);
+      resetForAdd();
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      className="nhsuk-u-margin-bottom-4"
+    >
+      {isEditing && <h3 className="nhsuk-heading-s">Editing period</h3>}
+
+      <div className="nhsuk-grid-row">
+        <div className="nhsuk-grid-column-one-half">
+          <div className="nhsuk-form-group">
+            <label className="nhsuk-label" htmlFor="period-type">
+              Grade / period type
+            </label>
+            <select
+              className="nhsuk-select"
+              id="period-type"
+              value={type}
+              onChange={e => setType(e.target.value as TrainingPeriodType)}
+            >
+              {TYPE_GROUPS.map(group => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map(opt => (
+                    <option key={opt} value={opt}>
+                      {getTrainingPeriodTypeLabel(opt, "full")}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {type === "GRADE" && (
+        <>
+          <div className="nhsuk-grid-row">
+            <div className="nhsuk-grid-column-one-quarter">
+              <div className="nhsuk-form-group">
+                <label className="nhsuk-label" htmlFor="period-grade">
+                  Grade
+                </label>
+                <select
+                  className="nhsuk-select"
+                  id="period-grade"
+                  value={grade}
+                  onChange={e => setGrade(e.target.value)}
+                >
+                  <option value="" disabled>
+                    Select
+                  </option>
+                  {TRAINING_GRADES.map(g => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="nhsuk-grid-column-one-quarter">
+              <div className="nhsuk-form-group">
+                <label className="nhsuk-label" htmlFor="period-wte">
+                  WTE % (1–100)
+                </label>
+                <input
+                  className="nhsuk-input nhsuk-input--width-5"
+                  id="period-wte"
+                  type="number"
+                  min="1"
+                  max="100"
+                  step="1"
+                  value={wte}
+                  onChange={e => setWte(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="nhsuk-form-group">
+            <fieldset className="nhsuk-fieldset">
+              <legend className="nhsuk-fieldset__legend">Grade tag</legend>
+              <div className="nhsuk-radios nhsuk-radios--inline">
+                {TAG_OPTIONS.map(tag => (
+                  <div className="nhsuk-radios__item" key={tag}>
+                    <input
+                      className="nhsuk-radios__input"
+                      id={`period-tag-${tag}`}
+                      type="radio"
+                      name="period-tag"
+                      value={tag}
+                      checked={gradeTag === tag}
+                      onChange={() => setGradeTag(tag)}
+                    />
+                    <label
+                      className="nhsuk-label nhsuk-radios__label"
+                      htmlFor={`period-tag-${tag}`}
+                    >
+                      {getGradePeriodTagLabel(tag)}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </fieldset>
+          </div>
+        </>
+      )}
+
+      <div className="nhsuk-grid-row">
+        <div className="nhsuk-grid-column-one-quarter">
+          <div className="nhsuk-form-group">
+            <label className="nhsuk-label" htmlFor="period-start">
+              Start date
+            </label>
+            <input
+              className="nhsuk-input nhsuk-input--width-10"
+              id="period-start"
+              type="date"
+              value={isEditing ? (editing?.startDate ?? "") : lockedStart}
+              readOnly
+              disabled
+            />
+            {!isEditing && (
+              <p className="nhsuk-hint">
+                Follows on from {formatDate(lockedStart)} to keep the record
+                contiguous.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="nhsuk-form-group">
+        <fieldset className="nhsuk-fieldset">
+          <legend className="nhsuk-fieldset__legend">End date</legend>
+          <div className="nhsuk-radios">
+            <div className="nhsuk-radios__item">
+              <input
+                className="nhsuk-radios__input"
+                id="period-end-set"
+                type="radio"
+                name="period-end-mode"
+                value="SET"
+                checked={endMode === "SET"}
+                onChange={() => setEndMode("SET")}
+              />
+              <label
+                className="nhsuk-label nhsuk-radios__label"
+                htmlFor="period-end-set"
+              >
+                Set an end date
+              </label>
+            </div>
+            {endMode === "SET" && (
+              <div className="nhsuk-u-margin-left-5 nhsuk-u-margin-bottom-3">
+                <input
+                  className="nhsuk-input nhsuk-input--width-10"
+                  id="period-end"
+                  type="date"
+                  value={endDate}
+                  onChange={e => setEndDate(e.target.value)}
+                  aria-label="End date"
+                />
+              </div>
+            )}
+            <div className="nhsuk-radios__item">
+              <input
+                className="nhsuk-radios__input"
+                id="period-end-project"
+                type="radio"
+                name="period-end-mode"
+                value="PROJECT"
+                checked={endMode === "PROJECT"}
+                onChange={() => setEndMode("PROJECT")}
+              />
+              <label
+                className="nhsuk-label nhsuk-radios__label"
+                htmlFor="period-end-project"
+              >
+                Project forward to find the completion date
+              </label>
+            </div>
+          </div>
+          <p className="nhsuk-hint">
+            Choose <em>Project forward</em> when this is your planned next
+            post and you want the calculator to work out when training
+            finishes. The period must be the last on the timeline.
+          </p>
+        </fieldset>
+      </div>
+
+      <div className="nhsuk-form-group">
+        <div className="nhsuk-checkboxes">
+          <div className="nhsuk-checkboxes__item">
+            <input
+              className="nhsuk-checkboxes__input"
+              id="period-counted"
+              type="checkbox"
+              checked={countedAsTraining}
+              onChange={e => setCountedAsTraining(e.target.checked)}
+            />
+            <label
+              className="nhsuk-label nhsuk-checkboxes__label"
+              htmlFor="period-counted"
+            >
+              Counted as training
+            </label>
+          </div>
+        </div>
+        <p className="nhsuk-hint">
+          When unchecked, the period still consumes calendar time but does not
+          accrue WTE months (e.g. sick leave above 2 weeks).
+        </p>
+      </div>
+
+      <div className="nhsuk-grid-row">
+        <div className="nhsuk-grid-column-one-half">
+          <div className="nhsuk-form-group">
+            <label className="nhsuk-label" htmlFor="period-notes">
+              Notes (optional)
+            </label>
+            <input
+              className="nhsuk-input"
+              id="period-notes"
+              type="text"
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="e.g. Cardiology, St Mary's"
+            />
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="nhsuk-error-summary" role="alert">
+          <p className="nhsuk-error-summary__body">{error}</p>
+        </div>
+      )}
+
+      <div className="nhsuk-button-group">
+        <button type="submit" className="nhsuk-button nhsuk-u-margin-right-3">
+          {isEditing ? "Save changes" : "Add period"}
+        </button>
+        {isEditing && (
+          <button
+            type="button"
+            className="nhsuk-button nhsuk-button--secondary"
+            onClick={onCancelEdit}
+          >
+            Cancel
+          </button>
+        )}
+      </div>
+    </form>
+  );
+};

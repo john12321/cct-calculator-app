@@ -2,7 +2,8 @@ import dayjs from "dayjs";
 import type {
   PastChange,
   ProgrammeDetails,
-  ProposedChange
+  ProposedChange,
+  TrainingPeriod
 } from "./calculationTypes";
 import {
   programmeAdjustedEndDate,
@@ -222,5 +223,75 @@ export const validateProgrammeDetails = (
   ) {
     return err("Please enter a reason for overriding the default start grade.");
   }
+  return ok;
+};
+
+const validateGradeFields = (
+  candidate: TrainingPeriod
+): ValidationResult => {
+  if (!candidate.grade.trim()) {
+    return err("Please choose a grade.");
+  }
+  if (
+    !TRAINING_GRADES.includes(
+      candidate.grade as (typeof TRAINING_GRADES)[number]
+    )
+  ) {
+    return err("Please choose a valid grade.");
+  }
+  return ok;
+};
+
+const validateWte = (wte: number | null): ValidationResult => {
+  if (
+    wte == null ||
+    !Number.isInteger(wte) ||
+    wte < 1 ||
+    wte > 100
+  ) {
+    return err("WTE must be a whole number between 1 and 100.");
+  }
+  return ok;
+};
+
+export const validateTrainingPeriod = (
+  candidate: TrainingPeriod,
+  programme: ProgrammeDetails,
+  priorPeriods: TrainingPeriod[]
+): ValidationResult => {
+  if (!candidate.startDate) {
+    return err("Please enter a start date.");
+  }
+  const priorEndDate = priorPeriods.at(-1)?.endDate ?? null;
+  if (priorPeriods.length > 0 && priorEndDate === null) {
+    return err(
+      "The previous period projects forward to find the completion date. Edit it to set an end date before adding more."
+    );
+  }
+  if (
+    candidate.endDate !== null &&
+    dayjs(candidate.endDate).isBefore(dayjs(candidate.startDate))
+  ) {
+    return err("End date cannot be before start date.");
+  }
+
+  const expectedStart =
+    priorPeriods.length === 0
+      ? programme.startDate
+      : dayjs(priorEndDate).add(1, "day").format("YYYY-MM-DD");
+
+  if (!dayjs(candidate.startDate).isSame(dayjs(expectedStart), "day")) {
+    return err(
+      `Start date must be ${formatDate(expectedStart)} to keep the training record contiguous.`
+    );
+  }
+
+  if (candidate.type === "GRADE") {
+    const gradeResult = validateGradeFields(candidate);
+    if (!gradeResult.ok) return gradeResult;
+    const wteResult = validateWte(candidate.wte);
+    if (!wteResult.ok) return wteResult;
+  }
+
   return ok;
 };

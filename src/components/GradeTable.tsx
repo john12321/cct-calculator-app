@@ -1,27 +1,18 @@
 import type { FC } from "react";
 import { Table } from "nhsuk-react-components";
 import {
-  computeGradeProgression,
   findSpecialty,
-  type PastChange,
-  type ProgrammeDetails,
-  type ProposedChange
+  type GradeYear,
+  type ProgrammeDetails
 } from "../core";
 import { formatDate } from "../utils/format";
 
 type GradeTableProps = {
   programme: ProgrammeDetails;
-  pastChanges: PastChange[];
-  proposed: ProposedChange | null;
+  rows: GradeYear[];
 };
 
-export const GradeTable: FC<GradeTableProps> = ({
-  programme,
-  pastChanges,
-  proposed
-}) => {
-  const rows = computeGradeProgression(programme, pastChanges, proposed);
-
+export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
   if (rows.length === 0) {
     return null;
   }

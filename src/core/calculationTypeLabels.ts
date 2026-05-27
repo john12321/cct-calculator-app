@@ -1,4 +1,8 @@
-import type { CalculationType } from "./calculationTypes";
+import type {
+  CalculationType,
+  GradePeriodTag,
+  TrainingPeriodType
+} from "./calculationTypes";
 
 export type CalculationTypeLabelVariant = "full" | "short";
 
@@ -53,3 +57,51 @@ export const getCalculationTypeLabel = (
   type: CalculationType,
   variant: CalculationTypeLabelVariant = "full"
 ): string => calculationTypeLabels[type][variant];
+
+export const trainingPeriodTypeLabels: Record<
+  TrainingPeriodType,
+  CalculationTypeLabelSet
+> = {
+  GRADE: { full: "Grade", short: "Grade" },
+  OOPC: {
+    full: "Out of Programme Career Break (OOPC)",
+    short: "OOPC"
+  },
+  OOPE: {
+    full: "Out of Programme Experience (OOPE)",
+    short: "OOPE"
+  },
+  OOPP: {
+    full: "Out of Programme Pause (OOPP)",
+    short: "OOPP"
+  },
+  OOPR: {
+    full: "Out of Programme Research (OOPR)",
+    short: "OOPR"
+  },
+  OOPT: {
+    full: "Out of Programme Training (OOPT)",
+    short: "OOPT"
+  },
+  PARENTAL: { full: "Parental Leave", short: "Parental Leave" },
+  SICK: { full: "Sick leave", short: "Sick leave" },
+  ACCRUED_LEAVE: {
+    full: "Accrued annual leave",
+    short: "Accrued AL"
+  }
+};
+
+export const getTrainingPeriodTypeLabel = (
+  type: TrainingPeriodType,
+  variant: CalculationTypeLabelVariant = "full"
+): string => trainingPeriodTypeLabels[type][variant];
+
+export const gradePeriodTagLabels: Record<GradePeriodTag, string> = {
+  REGULAR: "Standard",
+  ACF: "ACF (Academic Clinical Fellow)",
+  ACL: "ACL (Academic Clinical Lecturer)",
+  ADDITIONAL_TRAINING_TIME: "Additional training time"
+};
+
+export const getGradePeriodTagLabel = (tag: GradePeriodTag): string =>
+  gradePeriodTagLabels[tag];

@@ -1,57 +1,52 @@
 import type { FC } from "react";
-import dayjs from "dayjs";
 import { Table } from "nhsuk-react-components";
 import { GradeTable } from "./GradeTable";
-import { NextPostSummary } from "./NextPostSummary";
+import { TimelineProjection } from "./TimelineProjection";
 import {
-  calendarMonthsFor,
-  computeGradeProgression,
-  computeWteAccrual,
+  calendarMonthsForPeriod,
+  computeGradeProgressionForTimeline,
+  computeTimelineAccrual,
   findSpecialty,
-  getCalculationTypeLabel,
+  getGradePeriodTagLabel,
+  getTrainingPeriodTypeLabel,
   programmeAdjustedEndDate,
+  programmeAdjustedLengthMonths,
   programmeOriginalEndDate,
-  projectedCompletionDate,
-  wteMonthsFor,
-  type PastChange,
+  projectedCompletionDateForTimeline,
+  wteMonthsForPeriod,
   type ProgrammeDetails,
-  type ProposedChange
+  type TrainingPeriod
 } from "../core";
 import { formatDate, formatMonths, formatPercent } from "../utils/format";
 
-type CalculationSummaryProps = {
+type FullModeCalculationSummaryProps = {
   programme: ProgrammeDetails;
-  pastChanges: PastChange[];
-  proposed: ProposedChange;
+  timeline: TrainingPeriod[];
   variant?: "inline" | "page";
 };
 
-const sortByStart = (changes: PastChange[]): PastChange[] =>
-  [...changes].sort(
-    (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf()
-  );
+const describePeriod = (period: TrainingPeriod): string => {
+  if (period.type !== "GRADE") {
+    return getTrainingPeriodTypeLabel(period.type, "short");
+  }
+  if (period.gradeTag === "REGULAR") return period.grade;
+  return `${period.grade} (${getGradePeriodTagLabel(period.gradeTag)})`;
+};
 
-export const CalculationSummary: FC<CalculationSummaryProps> = ({
+export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = ({
   programme,
-  pastChanges,
-  proposed,
+  timeline,
   variant = "inline"
 }) => {
-  const sorted = sortByStart(pastChanges);
-  const accrual = computeWteAccrual(programme, sorted, proposed.startDate);
-  const newCct = projectedCompletionDate(proposed, accrual.monthsRemaining);
+  const accrual = computeTimelineAccrual(programme, timeline);
+  const cct = projectedCompletionDateForTimeline(programme, timeline);
   const originalEnd = programmeOriginalEndDate(programme);
   const adjustedEnd = programmeAdjustedEndDate(programme);
+  const adjustedLength = programmeAdjustedLengthMonths(programme);
   const specialtyMeta = findSpecialty(programme.specialty);
   const startGradeIsOverridden =
     specialtyMeta !== undefined &&
     programme.startGrade !== specialtyMeta.entryGrade;
-
-  const totalPastCalendar = sorted.reduce(
-    (sum, c) => sum + calendarMonthsFor(c),
-    0
-  );
-  const totalPastWte = sorted.reduce((sum, c) => sum + wteMonthsFor(c), 0);
 
   return (
     <section className={variant === "page" ? "nhsuk-u-margin-top-3" : ""}>
@@ -153,9 +148,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
         </div>
         <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">Original CCT date</dt>
-          <dd className="nhsuk-summary-list__value">
-            {formatDate(originalEnd)}
-          </dd>
+          <dd className="nhsuk-summary-list__value">{formatDate(originalEnd)}</dd>
         </div>
         {(programme.additionalMonths > 0 ||
           programme.acceleratedMonths > 0) && (
@@ -172,15 +165,19 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
           </div>
         )}
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">
-            Total WTE completed (up to proposed next post)
-          </dt>
+          <dt className="nhsuk-summary-list__key">Required training</dt>
+          <dd className="nhsuk-summary-list__value">
+            {formatMonths(adjustedLength)}
+          </dd>
+        </div>
+        <div className="nhsuk-summary-list__row">
+          <dt className="nhsuk-summary-list__key">WTE months recorded</dt>
           <dd className="nhsuk-summary-list__value">
             {formatMonths(accrual.totalWteMonthsCompleted)}
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">Training remaining</dt>
+          <dt className="nhsuk-summary-list__key">Months remaining</dt>
           <dd className="nhsuk-summary-list__value">
             {formatMonths(Math.max(0, accrual.monthsRemaining))}
           </dd>
@@ -188,58 +185,75 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
         <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">Projected completion date</dt>
           <dd className="nhsuk-summary-list__value">
-            <strong>{formatDate(newCct)}</strong>
+            <strong>{formatDate(cct)}</strong>
           </dd>
         </div>
       </dl>
 
-      <h3 className="nhsuk-heading-m nhsuk-u-color-blue">Past changes</h3>
-      {sorted.length === 0 ? (
-        <p className="nhsuk-body-s">No past changes recorded.</p>
+      <h3 className="nhsuk-heading-m nhsuk-u-color-blue">Training timeline</h3>
+      {timeline.length === 0 ? (
+        <p className="nhsuk-body-s">No periods recorded.</p>
       ) : (
         <div className="table-wrapper">
           <Table>
             <Table.Head>
               <Table.Row>
-                <Table.Cell>Type</Table.Cell>
+                <Table.Cell>Grade / period</Table.Cell>
                 <Table.Cell>Start</Table.Cell>
                 <Table.Cell>End</Table.Cell>
-                <Table.Cell>Calendar months</Table.Cell>
                 <Table.Cell>WTE %</Table.Cell>
+                <Table.Cell>Counted as training?</Table.Cell>
+                <Table.Cell>Calendar months</Table.Cell>
                 <Table.Cell>WTE months</Table.Cell>
+                <Table.Cell>Notes</Table.Cell>
               </Table.Row>
             </Table.Head>
             <Table.Body>
-              {sorted.map(change => (
-                <Table.Row key={change.id}>
-                  <Table.Cell>
-                    {getCalculationTypeLabel(change.type, "short")}
-                    {change.notes ? ` — ${change.notes}` : ""}
-                  </Table.Cell>
-                  <Table.Cell>{formatDate(change.startDate)}</Table.Cell>
-                  <Table.Cell>{formatDate(change.endDate)}</Table.Cell>
-                  <Table.Cell>
-                    {calendarMonthsFor(change).toFixed(1)}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {change.type === "LTFT" ? formatPercent(change.wte) : "0%"}
-                  </Table.Cell>
-                  <Table.Cell>{wteMonthsFor(change).toFixed(1)}</Table.Cell>
-                </Table.Row>
-              ))}
+              {timeline.map(period => {
+                const cal = calendarMonthsForPeriod(period);
+                const wteM = wteMonthsForPeriod(period);
+                return (
+                  <Table.Row key={period.id}>
+                    <Table.Cell>{describePeriod(period)}</Table.Cell>
+                    <Table.Cell>{formatDate(period.startDate)}</Table.Cell>
+                    <Table.Cell>
+                      {period.endDate === null
+                        ? "Project forward"
+                        : formatDate(period.endDate)}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {period.type === "GRADE" && period.wte !== null
+                        ? formatPercent(period.wte)
+                        : "—"}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {period.countedAsTraining ? "Yes" : "No"}
+                    </Table.Cell>
+                    <Table.Cell>{cal === null ? "—" : cal.toFixed(1)}</Table.Cell>
+                    <Table.Cell>
+                      {wteM === null ? "—" : wteM.toFixed(1)}
+                    </Table.Cell>
+                    <Table.Cell>{period.notes || "—"}</Table.Cell>
+                  </Table.Row>
+                );
+              })}
               <Table.Row>
                 <Table.Cell>
                   <strong>Totals</strong>
                 </Table.Cell>
                 <Table.Cell />
                 <Table.Cell />
-                <Table.Cell>
-                  <strong>{totalPastCalendar.toFixed(1)}</strong>
-                </Table.Cell>
+                <Table.Cell />
                 <Table.Cell />
                 <Table.Cell>
-                  <strong>{totalPastWte.toFixed(1)}</strong>
+                  <strong>
+                    {accrual.totalCalendarMonthsCompleted.toFixed(1)}
+                  </strong>
                 </Table.Cell>
+                <Table.Cell>
+                  <strong>{accrual.totalWteMonthsCompleted.toFixed(1)}</strong>
+                </Table.Cell>
+                <Table.Cell />
               </Table.Row>
             </Table.Body>
           </Table>
@@ -247,19 +261,16 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
       )}
 
       <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
-        Proposed next post
+        Projected completion
       </h3>
-      <NextPostSummary
-        programme={programme}
-        pastChanges={pastChanges}
-        proposed={proposed}
-      />
+      <TimelineProjection programme={programme} timeline={timeline} />
+
       <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
         Grade progression
       </h3>
       <GradeTable
         programme={programme}
-        rows={computeGradeProgression(programme, pastChanges, proposed)}
+        rows={computeGradeProgressionForTimeline(programme, timeline)}
       />
     </section>
   );

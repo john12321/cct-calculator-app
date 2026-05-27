@@ -1,18 +1,29 @@
 import { useState } from "react";
+import { ModePicker } from "./components/ModePicker";
 import { StepIndicator } from "./components/StepIndicator";
 import { BackLink } from "./components/BackLink";
 import { SetupPage } from "./pages/SetupPage";
+import { SetupFullPage } from "./pages/SetupFullPage";
 import { SummaryPage } from "./pages/SummaryPage";
-import type { PastChange, ProgrammeDetails, ProposedChange } from "./core";
+import { FullModeSummaryPage } from "./pages/FullModeSummaryPage";
+import type {
+  CalculationMode,
+  PastChange,
+  ProgrammeDetails,
+  ProposedChange,
+  TrainingPeriod
+} from "./core";
 
 const STEPS = [{ title: "Setup" }, { title: "Summary" }];
 
 export const App = () => {
+  const [mode, setMode] = useState<CalculationMode | null>(null);
   const [step, setStep] = useState(0);
   const [maxReachedStep, setMaxReachedStep] = useState(0);
   const [programme, setProgramme] = useState<ProgrammeDetails | null>(null);
   const [pastChanges, setPastChanges] = useState<PastChange[]>([]);
   const [proposed, setProposed] = useState<ProposedChange | null>(null);
+  const [timeline, setTimeline] = useState<TrainingPeriod[]>([]);
 
   const goTo = (next: number) => {
     setStep(next);
@@ -22,9 +33,11 @@ export const App = () => {
   const handleStartOver = () => {
     if (!globalThis.confirm("Start over? This will clear all entered data."))
       return;
+    setMode(null);
     setProgramme(null);
     setPastChanges([]);
     setProposed(null);
+    setTimeline([]);
     setStep(0);
     setMaxReachedStep(0);
   };
@@ -42,61 +55,82 @@ export const App = () => {
           </p>
         </header>
 
-        <div className="nhsuk-grid-row">
-          <div className="nhsuk-grid-column-one-quarter no-print">
-            <StepIndicator
-              steps={STEPS}
-              currentStep={step}
-              maxReachedStep={maxReachedStep}
-              onStepClick={index => {
-                if (index <= maxReachedStep) setStep(index);
-              }}
-            />
-          </div>
+        {mode === null && <ModePicker onSelect={setMode} />}
 
-          <div className="nhsuk-grid-column-three-quarters">
-            <div className="nhsuk-card">
-              <div className="nhsuk-card__content">
-                {step === 0 && (
-                  <SetupPage
-                    programme={programme}
-                    pastChanges={pastChanges}
-                    proposed={proposed}
-                    onProgrammeChange={setProgramme}
-                    onPastChangesChange={setPastChanges}
-                    onProposedChange={setProposed}
-                    onContinue={() => goTo(1)}
-                  />
-                )}
-
-                {step === 1 && programme && proposed && (
-                  <SummaryPage
-                    programme={programme}
-                    pastChanges={pastChanges}
-                    proposed={proposed}
-                  />
-                )}
-              </div>
+        {mode !== null && (
+          <div className="nhsuk-grid-row">
+            <div className="nhsuk-grid-column-one-quarter no-print">
+              <StepIndicator
+                steps={STEPS}
+                currentStep={step}
+                maxReachedStep={maxReachedStep}
+                onStepClick={index => {
+                  if (index <= maxReachedStep) setStep(index);
+                }}
+              />
             </div>
 
-            {step > 0 && (
-              <div className="nhsuk-u-margin-top-4 no-print">
-                <BackLink onClick={() => setStep(step - 1)}>
-                  Back to {STEPS[step - 1].title}
-                </BackLink>
+            <div className="nhsuk-grid-column-three-quarters">
+              <div className="nhsuk-card">
+                <div className="nhsuk-card__content">
+                  {step === 0 && mode === "QUICK" && (
+                    <SetupPage
+                      programme={programme}
+                      pastChanges={pastChanges}
+                      proposed={proposed}
+                      onProgrammeChange={setProgramme}
+                      onPastChangesChange={setPastChanges}
+                      onProposedChange={setProposed}
+                      onContinue={() => goTo(1)}
+                    />
+                  )}
+
+                  {step === 0 && mode === "FULL" && (
+                    <SetupFullPage
+                      programme={programme}
+                      timeline={timeline}
+                      onProgrammeChange={setProgramme}
+                      onTimelineChange={setTimeline}
+                      onContinue={() => goTo(1)}
+                    />
+                  )}
+
+                  {step === 1 && mode === "QUICK" && programme && proposed && (
+                    <SummaryPage
+                      programme={programme}
+                      pastChanges={pastChanges}
+                      proposed={proposed}
+                    />
+                  )}
+
+                  {step === 1 && mode === "FULL" && programme && (
+                    <FullModeSummaryPage
+                      programme={programme}
+                      timeline={timeline}
+                    />
+                  )}
+                </div>
               </div>
-            )}
-            <div className="nhsuk-u-margin-top-3 no-print">
-              <button
-                type="button"
-                className="nhsuk-button nhsuk-button--secondary"
-                onClick={handleStartOver}
-              >
-                Start over
-              </button>
+
+              {step > 0 && (
+                <div className="nhsuk-u-margin-top-4 no-print">
+                  <BackLink onClick={() => setStep(step - 1)}>
+                    Back to {STEPS[step - 1].title}
+                  </BackLink>
+                </div>
+              )}
+              <div className="nhsuk-u-margin-top-3 no-print">
+                <button
+                  type="button"
+                  className="nhsuk-button nhsuk-button--secondary"
+                  onClick={handleStartOver}
+                >
+                  Start over
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );

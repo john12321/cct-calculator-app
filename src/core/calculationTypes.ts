@@ -26,6 +26,37 @@ export type ProposedChange = {
   wte: number | null;
 };
 
+export type CalculationMode = "QUICK" | "FULL";
+
+export type TrainingPeriodType =
+  | "GRADE"
+  | "OOPC"
+  | "OOPE"
+  | "OOPP"
+  | "OOPR"
+  | "OOPT"
+  | "PARENTAL"
+  | "SICK"
+  | "ACCRUED_LEAVE";
+
+export type GradePeriodTag =
+  | "REGULAR"
+  | "ACF"
+  | "ACL"
+  | "ADDITIONAL_TRAINING_TIME";
+
+export type TrainingPeriod = {
+  id: string;
+  type: TrainingPeriodType;
+  grade: string;
+  gradeTag: GradePeriodTag;
+  wte: number | null;
+  startDate: string;
+  endDate: string | null;
+  countedAsTraining: boolean;
+  notes: string;
+};
+
 export type ProgrammeDetails = {
   specialty: string;
   startDate: string;

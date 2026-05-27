@@ -7,6 +7,7 @@ import { PastChangesList } from "../components/PastChangesList";
 import { ProgrammeDetailsSection } from "../components/ProgrammeDetailsSection";
 import { ProposedChangeForm } from "../components/ProposedChangeForm";
 import {
+  computeGradeProgression,
   getCalculationTypeLabel,
   validatePastChange,
   validateProposedChange,
@@ -140,8 +141,7 @@ export const SetupPage: FC<SetupPageProps> = ({
           </p>
           <GradeTable
             programme={programme}
-            pastChanges={pastChanges}
-            proposed={proposed}
+            rows={computeGradeProgression(programme, pastChanges, proposed)}
           />
           {canShowSummary && (
             <>

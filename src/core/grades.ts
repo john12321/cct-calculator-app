@@ -39,7 +39,7 @@ export const gradeForYearOffset = (
   return `${parsed.prefix}${parsed.year + offset}`;
 };
 
-type Segment = {
+export type Segment = {
   startDate: string;
   endDate: string;
   wteFraction: number;
@@ -107,7 +107,7 @@ const buildSegments = (
   return segments;
 };
 
-const dateAtCumulativeWteMonths = (
+export const dateAtCumulativeWteMonths = (
   segments: Segment[],
   targetMonths: number
 ): string | null => {
@@ -133,15 +133,13 @@ const dateAtCumulativeWteMonths = (
   return null;
 };
 
-export const computeGradeProgression = (
+export const computeGradeProgressionForSegments = (
   programme: ProgrammeDetails,
-  pastChanges: PastChange[],
-  proposed: ProposedChange | null
+  segments: Segment[]
 ): GradeYear[] => {
   if (programme.lengthMonths <= 0) return [];
 
   const parsed = parseGrade(programme.startGrade);
-  const segments = buildSegments(programme, pastChanges, proposed);
   const twentyFourMonthGrade =
     findSpecialty(programme.specialty)?.twentyFourMonthGrade ?? null;
   const adjustedLengthMonths = programmeAdjustedLengthMonths(programme);
@@ -214,3 +212,13 @@ export const computeGradeProgression = (
 
   return rows;
 };
+
+export const computeGradeProgression = (
+  programme: ProgrammeDetails,
+  pastChanges: PastChange[],
+  proposed: ProposedChange | null
+): GradeYear[] =>
+  computeGradeProgressionForSegments(
+    programme,
+    buildSegments(programme, pastChanges, proposed)
+  );
