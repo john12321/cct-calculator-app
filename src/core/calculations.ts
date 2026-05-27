@@ -11,11 +11,18 @@ export const COMPLETED_PERIOD_DAYS_PER_MONTH = 365 / 12;
 export const inclusiveDays = (start: string, end: string): number =>
   dayjs(end).diff(dayjs(start), "day") + 1;
 
+export const wtePercentForPastChange = (
+  change: PastChange
+): number | null => {
+  if (change.type === "LTFT" && change.countedAsTraining) return change.wte;
+  if (change.type === "OOPT" && change.countedAsTraining) return 100;
+  if (change.type === "OOPR" && change.countedAsTraining) return change.wte;
+  return null;
+};
+
 export const wteFractionFor = (change: PastChange): number => {
-  if (change.type === "LTFT" && change.wte != null) {
-    return change.wte / 100;
-  }
-  return 0;
+  const wte = wtePercentForPastChange(change);
+  return wte === null ? 0 : wte / 100;
 };
 
 export const calendarMonthsFor = (change: PastChange): number =>

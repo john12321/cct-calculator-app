@@ -1,11 +1,30 @@
-# CCT Calculator: Calculation Reference
+# Completion of Training Date Calculator: Calculation Reference
 
 A reference for how this calculator works internally, and where each piece of
 logic maps back to the original Excel sheet it's based on.
 
-> Sibling document: [`READ_ME.md`](READ_ME.md) holds the original
-> high-level product spec for the build. This file is the deeper
+> Related document: the root [`README.md`](../../README.md) describes the
+> public app workflow. This file records the current implementation and policy
+> decisions; where greater calculation detail is required, use this
 > implementation/Excel-mapping reference.
+
+The app now ships with two calculation modes selected by the user up-front on
+a mode picker:
+
+- **Quick mode** — the original exception-based workflow. The user records
+  only completed LTFT periods, completed absences and a single proposed next
+  post; any unrecorded calendar gaps are inferred as full-time. Designed for
+  resident doctors who want a projected Completion of Training Date with
+  minimal data entry.
+- **Full mode** — a contiguous-timeline workflow that mirrors the Excel
+  workbook's `A24:E46` input grid. The user records every training, OOP and
+  leave period as a connected sequence. Designed for admin staff building an
+  authoritative training record.
+
+Sections 1–9 describe the source data and calculation rules, with
+mode-specific notes where the workflows differ. Section 10 records the
+implemented parity position, OOP policy sources and remaining follow-up work;
+section 11 maps the implementation files for both modes.
 
 ---
 
@@ -40,14 +59,16 @@ hand.
 
 ## 2. Data model overview
 
-Four central types power the whole calculator. They live in
+The central calculation types live in
 [`calculationTypes.ts`](calculationTypes.ts):
 
 | Type               | What it represents                                                                                                                                 |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CalculationMode`  | The selected workflow: `QUICK` or `FULL`.                                                                                                          |
 | `ProgrammeDetails` | The user's programme: specialty, start date, baseline length, start grade, and optional training-time adjustments with required reasons when used. |
-| `PastChange`       | A historical LTFT period or absence (OOPC, parental, sickness, etc.).                                                                              |
-| `ProposedChange`   | The "next post" the user wants the project completion date for. Either a full-time post or an LTFT post.                                           |
+| `PastChange`       | A completed Quick-mode LTFT or absence period, including any OOPT/OOPR training-credit decision.                                                   |
+| `ProposedChange`   | The Quick-mode next post used for projection: either a full-time post or an LTFT post.                                                             |
+| `TrainingPeriod`   | A Full-mode contiguous timeline row: grade, OOP or leave, with training-credit and WTE fields where supported.                                     |
 | `Specialty`        | Reference data from the Excel `Lists` sheet (in [`specialties.ts`](specialties.ts), distinct from `calculationTypes.ts`).                          |
 
 ---
@@ -84,7 +105,7 @@ auto-fills. The field is read-only, with a hint
 
 This remains the baseline programme length. Changes to the required training
 duration are recorded explicitly under **Other training time adjustments**,
-so summaries and exports can state why the CCT date differs from the
+so summaries and exports can state why the Completion of Training Date differs from the
 specialty default.
 
 ### 3.4 Start grade
@@ -132,14 +153,16 @@ entry grade. So:
 - _Cardiology, Acute internal medicine, Geriatrics_ and most mainstream
   specialties start at **ST3** or **ST4** (post-core).
 
-Again, as far as I know, a Foundation doctor does **not** always begin at CT1 — they begin at FY1.
-Where they go next depends on the next programme they choose.
+As far as I understand, a doctor in **Foundation** training is in **FY1** or **FY2**. That is a separate early stage from **Core** training, which starts at **CT1**. Different specialties then start at different points:
+
+- some specialties begin after foundation, so they start in **CT1** (core training);
+- some run-through specialties start directly in **ST1** after foundation, without a separate core stage;
+- some specialties start later, in **ST3** or **ST4**, after core training has already been completed.
 
 ### 3.5 Other training time adjustments
 
 The **Other training time adjustments** subsection separates programme-level
-adjustments from the core programme inputs and provides space for later Excel
-features.
+adjustments from the core programme inputs.
 
 The optional **"Add additional training time"** checked checkbox reveals a months input
 for programme-level extensions, for example extra training required following
@@ -168,9 +191,9 @@ omitted from the displayed progression. The user selects the skipped grade
 and enters a required reason; these are stored as `skippedGrade` and
 `skippedGradeNotes`.
 
-The original programme length and original CCT date remain visible as the
+The original programme length and original Completion of Training Date remain visible as the
 baseline. When additional or accelerated training time is recorded, the
-summary also shows an **Adjusted full-time CCT date** with an explanation that
+summary also shows an **Adjusted full-time Completion of Training Date** with an explanation that
 it reflects those duration adjustments.
 
 Both adjustment inputs must contain a positive number and a reason when their
@@ -187,42 +210,48 @@ page, and CSV export so the justification for an adjusted date remains
 visible.
 
 The 18-month final year is different: it changes the grade progression table
-but not the programme duration or adjusted CCT date. The extra 6 months are
+but not the programme duration or adjusted Completion of Training Date. The extra 6 months are
 already contained within the specialty's baseline length, as in the workbook.
 Skipping a grade year also changes only the displayed progression; any
 shorter programme duration must be entered separately as accelerated time.
 
 ---
 
-## 4. Past changes
+## 4. Quick-mode past changes
 
-Past changes are completed LTFT periods or absences the user has already had.
+Quick-mode past changes are completed LTFT periods or absences the user has
+already had.
 They live in [`PastChangeForm.tsx`](../components/PastChangeForm.tsx) and
 [`PastChangesList.tsx`](../components/PastChangesList.tsx); types are in
 [`calculationTypes.ts`](calculationTypes.ts).
 
 ### 4.1 Types
 
-| Type        | Label                         | WTE for accrual             |
-| ----------- | ----------------------------- | --------------------------- |
-| `LTFT`      | Less Than Full-time           | User-specified WTE % (1–99) |
-| `OOPC`      | Out of Programme Career Break | 0%                          |
-| `OOPP`      | Out of Programme Pause        | 0%                          |
-| `OOPE`      | Out of Programme Experience   | 0%                          |
-| `PARENTAL`  | Parental Leave                | 0%                          |
-| `SICKNESS`  | Sickness                      | 0%                          |
-| `UNPAID`    | Unpaid Leave                  | 0%                          |
-| `SHIELDING` | COVID-19 Shielding            | 0%                          |
-| `PHASED`    | Phased Return                 | 0%                          |
+| Type            | Label                         | WTE for accrual                                                                          |
+| --------------- | ----------------------------- | ---------------------------------------------------------------------------------------- |
+| `LTFT`          | Less Than Full-time           | User-specified WTE % (1–99)                                                              |
+| `OOPT`          | Out of Programme Training     | 100% if marked counted as training, up to 12 months                                      |
+| `OOPR`          | Out of Programme Research     | Prospectively approved Certificate of Completion of Training (CCT) credit % when counted |
+| `OOPC`          | Out of Programme Career Break | 0%                                                                                       |
+| `OOPP`          | Out of Programme Pause        | 0%                                                                                       |
+| `OOPE`          | Out of Programme Experience   | 0%                                                                                       |
+| `PARENTAL`      | Parental Leave                | 0%                                                                                       |
+| `SICKNESS`      | Sickness                      | 0%                                                                                       |
+| `ACCRUED_LEAVE` | Accrued annual leave          | 0%                                                                                       |
+| `SHIELDING`     | COVID-19 Shielding            | 0%                                                                                       |
+| `PHASED`        | Phased Return                 | 0%                                                                                       |
 
-Only LTFT contributes a non-zero WTE fraction; every absence counts as 0%.
+LTFT, counted OOPT and approved counted OOPR may contribute non-zero WTE
+months. All other recorded Quick-mode change types consume calendar time but
+contribute 0% WTE.
 
 ### 4.2 The WTE accrual model
 
-Per the original spec (READ_ME.md):
+The accrual model is:
 
 ```
 Total WTE time completed = Σ(Calendar time × WTE)
+
 Training time remaining  = (Programme length + additional training time − accelerated training time) − Total WTE time completed
 ```
 
@@ -257,15 +286,20 @@ Rules:
   start + (length + additional training time − accelerated training time) ×
   30.4 days).
 - LTFT WTE must be a whole number between 1 and 99.
+- OOPT may be marked counted as training at fixed 100% for no more than 12
+  months.
+- OOPR may be marked counted as training only where it contributes to CCT and
+  then requires a whole-number approved CCT credit percentage from 1 to 100.
+- All other Quick-mode change types cannot be marked counted as training.
 - No overlap with any other past change.
 
 Regression tests cover adjacent and overlapping periods, LTFT WTE boundaries,
-and absence entries that correctly contribute 0% WTE without needing a WTE
-value.
+approved OOPT/OOPR accrual and absence entries that correctly contribute 0%
+WTE without needing a WTE value.
 
 ---
 
-## 5. Proposed change (Next post)
+## 5. Quick-mode proposed change (Next post)
 
 Lives in [`ProposedChangeForm.tsx`](../components/ProposedChangeForm.tsx).
 
@@ -291,15 +325,15 @@ keeps the projection formula well-defined (you can't divide by a 0% WTE).
 
 ---
 
-## 6. Projected completion date
+## 6. Projected Completion of Training Date
 
 The headline output of the calculator: when will this training programme
 finish, given everything that has happened and the planned next post?
 
-From the spec ([`READ_ME.md`](READ_ME.md)):
+The Quick-mode projection formula is:
 
 ```
-New completion date = Proposed start + Months remaining × (1 / Proposed WTE) × 30.4
+New Completion of Training Date = Proposed start + Months remaining × (1 / Proposed WTE) × 30.4
 ```
 
 Where `Months remaining = (Programme length + additional training time −
@@ -308,6 +342,15 @@ accelerated training time) − Total WTE time completed`.
 Implemented in [`calculations.ts`](calculations.ts) as
 `projectedCompletionDate(proposed, monthsRemaining)`, with the WTE accrual
 computed by `computeWteAccrual(programme, pastChanges, proposed.startDate)`.
+
+This formula describes **Quick mode**, where the explicit proposed next post
+supplies the forward WTE. In **Full mode**,
+[`projectedCompletionDateForTimeline`](fullModeCalculations.ts) operates on
+the contiguous `TrainingPeriod` timeline: a completed timeline that already
+covers required WTE ends on its last recorded date; an under-covered completed
+timeline projects forward from the following day at the latest recorded grade
+WTE; and an open-ended project-forward grade period supplies its own forward
+WTE.
 
 The workbook uses two closely related month-to-day conventions:
 
@@ -320,7 +363,7 @@ In [`calculations.ts`](calculations.ts), `COMPLETED_PERIOD_DAYS_PER_MONTH` is
 `365 / 12` for completed historical accrual and `DAYS_PER_MONTH` remains
 `30.4` for programme-end and future projection formulas. Comparison tests
 demonstrate why both are needed: a five-year period at 50% LTFT changes the
-projected full-time completion date by one day compared with the former
+projected full-time Completion of Training Date by one day compared with the former
 all-`30.4` implementation, and a three-year absence followed by a 50% LTFT
 next post also changes the projected date by one day.
 
@@ -332,8 +375,12 @@ The original Excel sheet computes, for each year of training, the grade the
 doctor is in and the calendar date that grade-year ends. Rows 9–17 of the
 Calculator sheet hold this: column K is the grade, column L is the end date.
 
-This app produces the same in [`grades.ts`](grades.ts), rendered by
-[`GradeTable.tsx`](../components/GradeTable.tsx).
+The shared grade-row logic lives in [`grades.ts`](grades.ts) and is rendered
+by [`GradeTable.tsx`](../components/GradeTable.tsx). Quick mode calls
+`computeGradeProgression`; Full mode calls
+`computeGradeProgressionForTimeline` in
+[`fullModeCalculations.ts`](fullModeCalculations.ts) so recorded grade rows
+can supply Excel-style end dates.
 
 ### 7.1 Year-by-year grade (Excel K9–K17)
 
@@ -378,15 +425,14 @@ The Excel formula is long but the idea is:
 > N × 12, shifted by any training-time adjustments and any 24-month-grade
 > extension.
 
-In this app it becomes (see `dateAtCumulativeWteMonths` in
+For calculated dates, this becomes (see `dateAtCumulativeWteMonths` in
 [`grades.ts`](grades.ts)):
 
-1. Build a timeline of WTE-rated **segments** from programme start onwards:
-   past changes at their actual WTE, gaps between them at 100%, then the
-   proposed change extending forward at its WTE (or 100% if no proposed yet).
-   Completed segments use `365 / 12`; projected segments use `30.4`, in line
-   with the workbook's split between historical accrual and future
-   extrapolation.
+1. Build WTE-rated **segments** from programme start onwards. Quick mode uses
+   recorded past changes, inferred 100% gaps and the proposed next post. Full
+   mode uses its entered contiguous training timeline and, where needed, a
+   forward projection at the latest grade WTE. Completed segments use
+   `365 / 12`; projected segments use `30.4`.
 2. For each year N, walk the segments accumulating WTE-months until the
    running total reaches that year's adjusted threshold.
 3. Interpolate the calendar date at which the threshold is hit. For a
@@ -410,7 +456,7 @@ and the following row's appearance gate includes that preceding `+ 6`. This
 uses part of the existing programme duration for the selected final grade and
 suppresses the otherwise-following grade row.
 
-#### Deliberate workflow difference from Excel
+#### Mode-specific date source
 
 Excel stores calculated grade dates as fractional date serials and displays
 the whole-date portion. The app matches this presentation by using
@@ -419,12 +465,18 @@ blanket one-day adjustment is not correct: for a `2026-01-01` start, the
 displayed 12- and 24-month dates already fall on `2026-12-31` and
 `2027-12-31`, while the 36-month date is `2028-12-30`.
 
-One workflow difference remains: Excel extrapolates from the most recent
-non-empty WTE in its free-form training table, whereas this app uses the
-proposed change's WTE if set, otherwise 100%. The proposed change in this app
-fulfils the same practical role for its simpler exception-based workflow.
-Tests cover both the projected whole-date truncation sequence and a mixed
-absence/LTFT history followed by a proposed full-time post.
+Quick mode does not capture named grade-period rows. It therefore calculates
+grade end dates from its WTE segments and uses the proposed next post as its
+forward rate.
+
+Full mode captures named grade periods. Once completed WTE reaches a grade
+row's Excel threshold, `computeGradeProgressionForTimeline` uses the final
+recorded period end date for the matching grade, reproducing the workbook's
+`L9:L17` lookup branch. Dates not yet supported by recorded grade rows remain
+calculated from the WTE-rated timeline.
+
+Tests cover projected whole-date truncation, mixed Quick-mode history and the
+Full-mode per-grade recorded-date switch.
 
 ---
 
@@ -581,7 +633,7 @@ competencies.
 
 Implemented as `additionalMonths` with required `additionalMonthsNotes` when
 used on `ProgrammeDetails`, entered behind a checkbox in the programme details form. It
-increases the required training total for the projected completion date,
+increases the required training total for the projected Completion of Training Date,
 extends the valid date range for recorded changes, and is added directly to
 each grade threshold in `grades.ts` without creating an extra grade row.
 
@@ -597,7 +649,7 @@ recognised prior learning that shortens training.
 
 Implemented as `acceleratedMonths` with required `acceleratedMonthsNotes` when
 used on `ProgrammeDetails`, entered behind a checkbox in the programme details form. It
-reduces the required training total for the projected completion date,
+reduces the required training total for the projected Completion of Training Date,
 shortens the valid date range for recorded changes, and is subtracted directly
 from each grade threshold in `grades.ts` without suppressing a grade row.
 
@@ -617,13 +669,13 @@ the +6 from a dropdown (Excel cell K20).
 
 Verified directly against `Training End Date Calculator v2.17 - unprotected.xlsx`:
 
-| Cell / range | Formula / behaviour                         | Purpose                                                               |
-| ------------ | ------------------------------------------- | --------------------------------------------------------------------- |
-| `K20`        | User-entered final grade                    | Identifies the grade which lasts 18 months.                           |
-| `P9:P17`     | Shared formula `=IF(K[row]=$K$20,6,0)`      | Applies +6 only on the selected final-grade row.                      |
-| `K10:K17`    | Gate includes the preceding row's `P` value | Suppresses the following grade when the final grade has consumed +6.  |
-| `L9:L17`     | Threshold includes that row's `P` value     | Moves the selected final grade's end-date threshold six months later. |
-| `I13`        | `=I7+I9-I11`                                | Confirms +6 is not added to total training duration or the CCT date.  |
+| Cell / range | Formula / behaviour                         | Purpose                                                                                 |
+| ------------ | ------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `K20`        | User-entered final grade                    | Identifies the grade which lasts 18 months.                                             |
+| `P9:P17`     | Shared formula `=IF(K[row]=$K$20,6,0)`      | Applies +6 only on the selected final-grade row.                                        |
+| `K10:K17`    | Gate includes the preceding row's `P` value | Suppresses the following grade when the final grade has consumed +6.                    |
+| `L9:L17`     | Threshold includes that row's `P` value     | Moves the selected final grade's end-date threshold six months later.                   |
+| `I13`        | `=I7+I9-I11`                                | Confirms +6 is not added to total training duration or the Completion of Training Date. |
 
 Implemented as `eighteenMonthFinalGrade` with required
 `eighteenMonthFinalGradeNotes` when selected on `ProgrammeDetails`, entered
@@ -632,7 +684,7 @@ row receives a 6-month threshold extension and its immediately following row
 uses the preceding +6 in its visibility gate, matching the workbook. The
 grade table marks and explains the 18-month final year; summaries and CSV
 export surface the selected grade and reason without presenting it as an
-adjusted CCT duration.
+adjusted training duration used for the Completion of Training Date.
 
 ### 9.4 K50 and O9:O17 — skipping one grade year — implemented
 
@@ -657,7 +709,7 @@ Verified Excel behaviour:
 | `O10:O17`    | `=IF(N[row]=K50,1,O[previous row])`   | Carries the `+1` grade offset forward once the selected grade is reached.                     |
 | `K9:K17`     | Grade number includes `+ O[row]`      | Displays the next grade in place of the skipped grade and all later grades one number higher. |
 
-This does **not** automatically shorten CCT duration: as the workbook
+This does **not** automatically shorten the training duration used for the Completion of Training Date: as the workbook
 instruction says, any shorter programme duration is entered separately
 through accelerated training time (`I11`). This is implemented in the app as `skippedGrade` with
 required `skippedGradeNotes`, entered behind a checkbox in programme details.
@@ -679,15 +731,21 @@ App coverage for this control:
   alone does not change end dates or adjusted length, enforce the required
   reason, and cover interaction with an 18-month displayed grade.
 
-### 9.5 Grade-lookup branch (L formula Branch B) — intentionally not modelled
+### 9.5 Grade-lookup branch (L formula Branch B) — modelled in Full mode
 
-In Excel, if the training table at rows 24–46 contains a row tagged with a
-specific grade name, the L formula uses that row's recorded end date for the
-matching grade-year instead of extrapolating.
+In Excel, once recorded WTE reaches a displayed grade row's baseline
+threshold, the `L` formula looks up that grade in training-table rows `24–46`
+and uses its recorded end date instead of extrapolating. This switch occurs
+independently per grade row; it does not wait for the complete programme to
+have been recorded.
 
-This **doesn't apply to our current model** because past changes are typed by
-absence/LTFT (e.g. `LTFT`, `OOPC`), not by grade name. `GradeTable` always
-computes end dates by walking the WTE-rated segments.
+This **does not apply to Quick mode** because past changes there are typed
+by absence/LTFT (e.g. `LTFT`, `OOPC`), not by grade name. The Quick-mode
+`GradeTable` always computes end dates by walking the WTE-rated segments.
+
+In **Full mode**, the timeline grid records every period including grades and
+their tags, so the lookup branch is implemented in
+[`computeGradeProgressionForTimeline`](fullModeCalculations.ts).
 
 #### Verified workbook dependency scope
 
@@ -695,49 +753,39 @@ The case for reproducing the free-form Excel grid is limited by what its label
 column actually drives. Re-inspection of
 `Training End Date Calculator v2.17 - unprotected.xlsx` found:
 
-| Grid input                                                   | Workbook formula use                                                     | Calculation consequence                                                                                    |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `A24:A46` Grade / Period Type, validated from `Lists!K2:K55` | `L9:L17` use `XLOOKUP("*"&K[row]&"*", A24:A46, D24:D46, "N/A", 2, -1)`.  | For a completed matching grade, the displayed grade end date can come from the last matching recorded row. |
-| `B24:B46` WTE percentage                                     | `G24:G46`, `I47` and the extrapolation branch of `L9:L17`.               | Affects WTE accrual and the future completion projection.                                                  |
-| `C24:D46` period dates                                       | `F24:G46`, `G47`, `I47`, `B13` and `L9:L17`.                             | Affects calendar/WTE accrual, remaining training, projected completion and recorded grade-date lookup.     |
-| `E24:E46` Counted as training?                               | `G24:G46` sets WTE months to zero unless the row is counted as training. | Affects completed WTE and projected completion.                                                            |
+| Grid input                                                   | Workbook formula use                                                     | Calculation consequence                                                                                                                                       |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `A24:A46` Grade / Period Type, validated from `Lists!K2:K55` | `L9:L17` use `XLOOKUP("*"&K[row]&"*", A24:A46, D24:D46, "N/A", 2, -1)`.  | For a completed matching grade, the displayed grade end date can come from the last matching recorded row.                                                    |
+| `B24:B46` WTE percentage                                     | `G24:G46`, `I47` and the extrapolation branch of `L9:L17`.               | The raw sheet accepts it for every row; Full mode exposes editable WTE for grade periods and approved OOPR credit.                                            |
+| `C24:D46` period dates                                       | `F24:G46`, `G47`, `I47`, `B13` and `L9:L17`.                             | Affects calendar/WTE accrual, remaining training, projected Completion of Training Date and recorded grade-date lookup.                                       |
+| `E24:E46` Counted as training?                               | `G24:G46` sets WTE months to zero unless the row is counted as training. | The raw sheet is permissive; Full mode supports `GRADE`, fixed-100% credited `OOPT`, and prospectively approved `OOPR` at its approved CCT credit percentage. |
 
 `A24:A46` therefore does **not** feed total WTE completed, training remaining,
-or projected CCT date. Its formula value is confined to retrieving a recorded
+or projected Completion of Training Date. Its formula value is confined to retrieving a recorded
 end date for a matching displayed grade. The grade/period list is broad
 enough to include named grades, variants such as `ST3 ACF`, `ST3 ACL` and
 `ST3 additional training time`, as well as leave types.
 
-#### What an expanded workflow would mean
+#### Implemented Quick and Full workflows
 
 The Excel training grid is a free-form timeline: a user can enter each
 full-time, LTFT or non-training period and may associate a row with a named
-grade. Where a grade-tagged row exists, Excel can treat its entered end date
-as the grade end date rather than relying on extrapolation alone.
+grade. Where a grade-tagged row exists, Excel can use its entered end date
+for the corresponding displayed grade.
 
-The web app deliberately asks for less data. A user records completed LTFT or
-absence exceptions, any gaps are inferred as full-time training, and one next
-post is used for the future projection. The app therefore says "tell me the
-exceptions and I will calculate the timeline"; it does not currently let a
-user supply an authoritative date for a particular grade.
+Quick mode deliberately asks for less data. A user records completed LTFT or
+absence exceptions, gaps are inferred as full-time training, and a next post
+sets the future projection rate. It therefore does not collect recorded
+grade-period end dates.
 
-An expanded workflow could introduce either or both of:
+Full mode provides the fuller Excel-style workflow. A user records a
+contiguous sequence of grade, OOP and leave periods; grade-labelled rows can
+feed the named-grade end-date lookup. The app does not provide a separate
+manual grade-date override outside this timeline.
 
-- **Manual grade end-date overrides**, where a user selects a grade such as
-  `ST4`, records its confirmed end date and reason, and the displayed grade
-  progression uses that entered date in place of the computed date.
-- **Full timeline entry**, where a user records ordinary full-time posts as
-  well as LTFT and absence periods, potentially with grade names, more closely
-  reproducing Excel rows `24:46`.
+#### Trade-offs
 
-Either option needs some more discussion: what should happen when a
-manual date conflicts with the calculated WTE timeline, how overrides affect
-subsequent grade dates and CCT projection, what evidence/reason is required,
-and how the data should appear in summaries and exports.
-
-#### Decision and trade-offs
-
-There are advantages to full timeline entry:
+Advantages of Full mode:
 
 - It can act as a fuller administrative history, recording ordinary
   full-time periods as well as exceptions.
@@ -747,27 +795,30 @@ There are advantages to full timeline entry:
   grade-specific additional training rows.
 - It avoids inferring that all unentered gaps were full-time training.
 
-There are also significant disadvantages:
+Costs of Full mode:
 
-- It asks users to enter ordinary periods that currently require no input,
+- It asks users to enter ordinary periods that Quick mode does not require,
   increasing time and opportunity for missing, overlapping or inconsistent
   records.
-- It requires new data modelling, entry/edit screens, validation, conflict
-  resolution and summary/export decisions.
-- Grade labels add no accuracy to the primary CCT projection formula: dates,
+- It uses a separate timeline data model, validation path, summary and CSV
+  export from Quick mode.
+- Grade labels add no accuracy to the primary Completion of Training Date projection formula: dates,
   WTE and whether time counts as training are the inputs that drive that
   calculation.
 - Replacing the separate Next post input with Excel-style last-WTE
   extrapolation would make the intended future scenario less explicit for
   users.
 
-Current position: **do not implement mandatory full timeline entry** for now until we discuss the pros and cons some more.
+Current position: **Quick mode keeps the exception-based workflow**, and a
+note with the Quick-mode `GradeTable` reminds users that grade end dates are
+calculated rather than confirmed.
 
-The app instead displays a note with `GradeTable` wherever grade progression
-is shown: grade end dates are calculated from the entered information and do
-not replace confirmed grade-period dates held in an authoritative training
-record. A future optional confirmed-grade-end-date override could be
-considered only if that administrative requirement emerges (e.g. this app is to be used by TIS Admins etc. as the authoritative training record).
+For users who need the fuller administrative workflow — recording every
+ordinary full-time post as well as exceptions, with grade-tagged rows that
+feed the named-grade lookup — **Full mode is now available** as an opt-in
+parallel flow. Both modes share `ProgrammeDetails` and the grade-segment
+calculation utilities; their recorded-history models and projection entry
+workflows differ.
 
 ### 9.6 D16:D17 — additional training time awarded during core training
 
@@ -787,7 +838,7 @@ Re-verified directly against
 | Related calculated totals    | Total and remaining training formulas use `I7+I9-I11` and `(I7+I9-I11)-G47`; grade date formulas reference `D24:D46` for the training grid, not `D16:D17`.        |
 
 Therefore, in this workbook version the field is a recording/reporting input:
-changing it does not alter the calculated CCT date, remaining training time,
+changing it does not alter the calculated Completion of Training Date, remaining training time,
 or grade progression.
 
 This is not present in the web app. It is a low-priority enhancement unless
@@ -800,43 +851,100 @@ summaries.
 
 ### 10.1 Confirmed in the web app
 
-The following workbook behaviours have a corresponding implementation:
+The following workbook behaviours have a corresponding implementation. Where
+behaviour differs between modes, both are noted:
 
-| Workbook capability                                                                                            | Web app status                                                                                                                             |
-| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Specialty lookup, school grouping, dual/triple marker, length, entry grade, additional info and 24-month grade | Implemented from all 173 `Lists` rows in `specialties.ts`; the workbook's `St4` entry is normalised to `ST4`.                              |
-| Start-grade default and user override                                                                          | Implemented, with an added mandatory reason for auditability.                                                                              |
-| Completed LTFT/absence recording and future completion projection                                              | Implemented through past changes and next post, using the web app's exception-based workflow and Excel's historical `365 / 12` conversion. |
-| `I9` additional training time                                                                                  | Implemented, with mandatory reason and Excel-aligned `0..24` month validation.                                                             |
-| `I11` accelerated training time                                                                                | Implemented, with mandatory reason and `0..12` month validation following Excel's on-screen prompt.                                        |
-| `I17` / `Q9:Q17` 24-month grade rule                                                                           | Implemented for the three DRE-EM specialties.                                                                                              |
-| `K20` / `P9:P17` 18-month final year rule                                                                      | Implemented, with mandatory reason and clear summary display.                                                                              |
-| `K50` / `O9:O17` skip one grade year rule                                                                      | Implemented, with mandatory reason, carried display offset and clear summary display.                                                      |
+| Workbook capability                                                                                            | Web app status                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Specialty lookup, school grouping, dual/triple marker, length, entry grade, additional info and 24-month grade | Implemented from all 173 `Lists` rows in `specialties.ts`; the workbook's `St4` entry is normalised to `ST4`. Shared by both modes.                                                                                                                                                                                                                                                                                                  |
+| Start-grade default and user override                                                                          | Implemented, with an added mandatory reason for auditability. Shared by both modes.                                                                                                                                                                                                                                                                                                                                                  |
+| `I9` additional training time                                                                                  | Implemented, with mandatory reason and Excel-aligned `0..24` month validation. Shared by both modes.                                                                                                                                                                                                                                                                                                                                 |
+| `I11` accelerated training time                                                                                | Implemented, with mandatory reason and `0..12` month validation following Excel's on-screen prompt. Shared by both modes.                                                                                                                                                                                                                                                                                                            |
+| `I17` / `Q9:Q17` 24-month grade rule                                                                           | Implemented for the three DRE-EM specialties. Shared by both modes.                                                                                                                                                                                                                                                                                                                                                                  |
+| `K20` / `P9:P17` 18-month final year rule                                                                      | Implemented, with mandatory reason and clear summary display. Shared by both modes.                                                                                                                                                                                                                                                                                                                                                  |
+| `K50` / `O9:O17` skip one grade year rule                                                                      | Implemented, with mandatory reason, carried display offset and clear summary display. Shared by both modes.                                                                                                                                                                                                                                                                                                                          |
+| Completed LTFT/absence recording                                                                               | Quick mode: typed by LTFT/OOP/leave exceptions, with implicit 100% gaps. Full mode: contiguous timeline of grade/OOP/leave rows (mirrors `A24:E46`).                                                                                                                                                                                                                                                                                 |
+| `B13` / `I47` future completion projection                                                                     | Quick mode: explicit "Next post" form provides start + WTE. Full mode: uses the recorded end date once required training is covered; while under-covered it projects at the latest grade WTE, with a project-forward grade row used to record a planned future rate.                                                                                                                                                                 |
+| `A24:A46` Grade / Period Type label                                                                            | Quick mode: not modelled (Quick uses absence/LTFT typing instead). Full mode: 9 period types (`GRADE`, `OOPC/E/P/R/T`, `PARENTAL`, `SICK`, `ACCRUED_LEAVE`) plus a `gradeTag` of `REGULAR`/`ACF`/`ACL`/`ADDITIONAL_TRAINING_TIME` on GRADE rows.                                                                                                                                                                                     |
+| `E24:E46` Counted as training?                                                                                 | Full mode mirrors the row-level control; Quick mode applies the same policy through its completed-change form. OOPT may be credited at fixed 100% for up to 12 months; OOPR accrues only when approved to contribute towards CCT and records the approved credit percentage. OOPR is normally limited to 3 years, or 4 years exceptionally, with duration normally pro rata for LTFT OOPR. Other OOP/leave periods are non-training. |
+| `L9:L17` branch B grade-name lookup                                                                            | Quick mode: not modelled (no grade-tagged rows). Full mode: each grade row switches to the last matching recorded timeline end date as soon as its own baseline WTE threshold is recorded, ignoring `gradeTag`, matching the per-row Excel formula.                                                                                                                                                                                  |
 
-### 10.2 Deliberate workflow differences
+#### OOP policy sources for both modes
 
-These differences are intentional unless product requirements change:
+The Excel grid provides the calculation mechanics, but it does not determine
+which OOP categories may count towards CCT. The OOP rules in both modes are based
+on:
 
-| Excel workflow                                                                                        | Web app approach                                                                                                                                        | Implication                                                                           |
-| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Rows `24:46` let users type every full-time, LTFT or non-training period and may include grade names. | Users record only completed LTFT/absence exceptions; gaps are treated as full-time, followed by one next-post projection.                               | Faster data entry, but not a cell-for-cell replacement for arbitrary Excel timelines. |
-| Grade end dates can use a matching named-grade row from the training grid.                            | Grade end dates are derived by walking WTE segments, with a user-facing note to check confirmed completed-grade dates against the authoritative record. | A manual grade end-date override would be a new feature.                              |
-| Excel can extrapolate from the most recent WTE row in its free-form grid.                             | The web table extrapolates from the proposed next post, or 100% if none is recorded.                                                                    | Equivalent intent within the simpler workflow, but not arbitrary-row entry parity.    |
+- [NHS England North West: Time Out of Programme](https://www.nwpgmd.nhs.uk/time-out-programme),
+  section **Categories of OOP**. This is the operational source of truth used
+  for OOPT, OOPR, OOPE, OOPC and OOPP eligibility in this app.
+- [Gold Guide v10, August 2024 (PDF)](https://medical.hee.nhs.uk/binaries/content/assets/medical-trainee-recruitment/medical-specialty-training/gold-guide/gold-guide-10th-edition/gold-guide-10th-edition-august-2024.pdf),
+  paragraphs `3.168` to `3.170`. For LTFT OOPR, paragraph `3.168` states:
+  "For postgraduate doctors in training undertaking OOPR on a LTFT basis,
+  this would normally be pro rata."
 
-### 10.3 Prioritised next steps
+In this policy subsection, `CCT` retains its formal meaning of Certificate of
+Completion of Training credit or eligibility; it is distinct from the
+projected **Completion of Training Date** displayed by the calculator.
 
-| Priority                                 | Change                                                                                                                                           | Why it matters                                                                                                                           | Likely implementation area                                           |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| 1 - optional administrative enhancement  | Decide whether to record Excel's `D16:D17` additional training time awarded during core training field.                                          | Verified not to affect v2.17 workbook calculations, but may matter for reporting or record completeness.                                 | Programme details and summary/export only unless requirements change |
-| 2 - optional expanded workflow, deferred | Consider an optional confirmed named-grade/end-date override only if a requirement emerges; do not add mandatory full timeline entry at present. | Workbook investigation confirms grade labels affect displayed grade end dates, not projected CCT; the app now disclaims this difference. | New product/design work only if requirements change                  |
+| OOP category | Guidance reflected in both modes                                                                                                                                | Calculator treatment                                                                                                                               |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OOPT`       | Approved clinical training may count towards CCT, generally for up to 12 months for UK OOPT.                                                                    | May be marked counted as training for up to 12 months. It is recorded as fully credited training and does not expose a separate credit percentage. |
+| `OOPR`       | Time may count only where approved for the relevant curriculum/specialty; normally up to 3 years, or 4 years exceptionally; LTFT duration is normally pro rata. | May be marked counted only where approved and requires the user to enter the prospectively approved CCT credit percentage.                         |
+| `OOPE`       | Clinical experience is not approved for CCT.                                                                                                                    | Cannot be marked counted as training.                                                                                                              |
+| `OOPC`       | A career break does not count towards training.                                                                                                                 | Cannot be marked counted as training.                                                                                                              |
+| `OOPP`       | Competencies may be considered on return, but the period is not prospectively approved as counted training.                                                     | Cannot be marked counted as training.                                                                                                              |
 
-### 10.4 Release position
+The `OOPR` credit input deliberately records the approved CCT contribution,
+not an assumed entitlement arising merely from working LTFT. The forms state
+the usual three-year / exceptional four-year OOPR rule but do not enforce it
+as a calendar-duration ceiling, because an approved LTFT OOPR duration may be
+pro rata. The fixed-100% `OOPT` treatment is the app's recording convention
+because the North West guidance describes eligible OOPT as approved clinical
+training and does not identify a separate OOPT credit-percentage input.
 
-The web app implements the primary CCT projection workflow and the identified
-duration/final-year/skip-grade adjustments added for this release, with the
-identified numeric accrual alignment resolved. The remaining items above are
-optional reporting or workflow expansions rather than identified formula
-parity gaps.
+### 10.2 Full-mode workflow detail
+
+Full mode stores a contiguous array of `TrainingPeriod` rows rather than
+Quick mode's list of exceptions plus a next post:
+
+| Area        | Full-mode implementation                                                                                                                                                                              |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entry       | [`TrainingPeriodForm.tsx`](../components/TrainingPeriodForm.tsx) records grade, OOP and leave rows; [`TimelineGrid.tsx`](../components/TimelineGrid.tsx) displays the resulting sequence.             |
+| Continuity  | `validateTrainingPeriod` requires the first row to start at programme start and each later row to begin the day after the preceding completed row ends.                                               |
+| Grade rows  | Record grade, grade tag and WTE. A final counted grade row can be set to project forward at its WTE.                                                                                                  |
+| OOP rows    | Apply the OOPT/OOPR credit policy above; other OOP and leave rows consume calendar time without contributing WTE months.                                                                              |
+| Projection  | `computeTimelineAccrual` and `projectedCompletionDateForTimeline` calculate total recorded WTE, training remaining and the projected Completion of Training Date.                                     |
+| Grade dates | `computeGradeProgressionForTimeline` uses the shared grade calculation, then applies Excel's recorded named-grade lookup when the relevant WTE threshold has been met.                                |
+| Output      | [`FullModeCalculationSummary.tsx`](../components/FullModeCalculationSummary.tsx) and [`FullModeSummaryPage.tsx`](../pages/FullModeSummaryPage.tsx) render and export the timeline and derived values. |
+
+### 10.3 Deliberate workflow differences (Quick mode)
+
+These differences are intentional in **Quick mode**; Full mode is the
+in-app remedy for users who need the Excel-style workflow.
+
+| Excel workflow                                                                                        | Quick-mode approach                                                                                                                                     | Implication                                                                                                           |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Rows `24:46` let users type every full-time, LTFT or non-training period and may include grade names. | Users record only completed LTFT/absence exceptions; gaps are treated as full-time, followed by one next-post projection.                               | Faster data entry, but not a cell-for-cell replacement for arbitrary Excel timelines. Use Full mode if that's needed. |
+| Grade end dates can use a matching named-grade row from the training grid.                            | Grade end dates are derived by walking WTE segments, with a user-facing note to check confirmed completed-grade dates against the authoritative record. | A manual grade end-date override is not offered in Quick mode. Full mode provides the named-grade lookup.             |
+| Excel can extrapolate from the most recent WTE row in its free-form grid.                             | Quick mode uses the proposed next post as the forward rate.                                                                                             | Full mode instead uses the latest recorded grade WTE, or an open-ended project-forward grade period.                  |
+
+### 10.4 Prioritised next steps
+
+| Priority                                | Change                                                                                                                                         | Why it matters                                                                                           | Likely implementation area                                                                                             |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 1 - planned Full-mode follow-up         | Implement a Quick-to-Full mode upgrade: a user starts in Quick, then converts; the app auto-builds a contiguous timeline from existing inputs. | Lets users escalate scope without re-entering data.                                                      | New conversion helper in `fullModeCalculations.ts`, validation pass and "Convert to Full mode" action in the Quick UI. |
+| 2 - optional administrative enhancement | Decide whether to record Excel's `D16:D17` additional training time awarded during core training field.                                        | Verified not to affect v2.17 workbook calculations, but may matter for reporting or record completeness. | Programme details and summary/export only unless requirements change.                                                  |
+| 3 - optional cross-mode polish          | Mid-row edits / cascade adjustments in Full-mode timeline (currently only the last row can be edited or removed).                              | Avoids "delete back to the row" workflows for admins correcting older entries.                           | Validation expansion + cascade-date handling in `TimelineGrid` / `validateTrainingPeriod`.                             |
+
+### 10.5 Release position
+
+The web app implements the primary Completion of Training Date projection workflow, the
+duration/final-year/skip-grade adjustments, and (via Full mode) Excel's
+contiguous training-record workflow including the named-grade lookup branch.
+The remaining items above are workflow follow-ups (Quick → Full upgrade,
+mid-row edits) or optional reporting enhancements rather than identified
+formula parity gaps.
 
 ---
 
@@ -844,21 +952,29 @@ parity gaps.
 
 | Path                                                   | What it holds                                                                                                                                 |
 | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`calculationTypes.ts`](calculationTypes.ts)           | Core types: `ProgrammeDetails`, `PastChange`, `ProposedChange`, change-type union                                                             |
-| [`calculations.ts`](calculations.ts)                   | Historical `COMPLETED_PERIOD_DAYS_PER_MONTH`, projected `DAYS_PER_MONTH`, WTE helpers, completion-date and duration helpers                   |
-| [`grades.ts`](grades.ts)                               | `parseGrade`, `gradeForYearOffset`, segment-builder, `dateAtCumulativeWteMonths`, `computeGradeProgression`                                   |
+| [`calculationTypes.ts`](calculationTypes.ts)           | Core types: `CalculationMode`, `ProgrammeDetails`, Quick-mode `PastChange` / `ProposedChange`, and Full-mode `TrainingPeriod`                 |
+| [`calculations.ts`](calculations.ts)                   | Quick-mode historical accrual, credited past-change WTE, Completion of Training Date and duration helpers                                     |
+| [`fullModeCalculations.ts`](fullModeCalculations.ts)   | Full-mode timeline accrual, completion projection and recorded-grade end-date lookup                                                          |
+| [`grades.ts`](grades.ts)                               | Shared grade parsing, WTE segment traversal and grade-progression construction                                                                |
 | [`specialties.ts`](specialties.ts)                     | `Specialty` type, 173-entry `SPECIALTIES` array, `findSpecialty`, `specialtiesGroupedBySchool`, `TrainingGrade` / `TRAINING_GRADES`           |
 | [`calculationTypeLabels.ts`](calculationTypeLabels.ts) | Display labels for each change type                                                                                                           |
-| [`validation.ts`](validation.ts)                       | `validateProgrammeDetails`, `validatePastChange`, `validateProposedChange`                                                                    |
+| [`validation.ts`](validation.ts)                       | Programme, Quick-mode change/next-post and Full-mode timeline validation                                                                      |
 | `../components/ProgrammeDetailsSection.tsx`            | Programme details form (specialty, dates, baseline length, start grade, training-time, final-year and skipped-grade adjustments with reasons) |
 | `../components/SpecialtyCombobox.tsx`                  | Custom W3C ARIA combobox for picking specialty                                                                                                |
-| `../components/PastChangeForm.tsx`                     | Add/edit a past change                                                                                                                        |
-| `../components/PastChangesList.tsx`                    | Table of past changes with Edit/Remove                                                                                                        |
-| `../components/ProposedChangeForm.tsx`                 | Next-post form                                                                                                                                |
-| `../components/NextPostSummary.tsx`                    | Read-only next-post table (Type / Start / WTE / Projected completion)                                                                         |
+| `../components/ModePicker.tsx`                         | Selects Quick or Full calculation mode                                                                                                        |
+| `../components/PastChangeForm.tsx`                     | Quick-mode add/edit completed change form, including OOPT/OOPR credit controls                                                                |
+| `../components/PastChangesList.tsx`                    | Quick-mode table of past changes with Edit/Remove                                                                                             |
+| `../components/ProposedChangeForm.tsx`                 | Quick-mode next-post form                                                                                                                     |
+| `../components/NextPostSummary.tsx`                    | Quick-mode read-only next-post projection                                                                                                     |
+| `../components/TrainingPeriodForm.tsx`                 | Full-mode add/edit timeline row form, including OOPT/OOPR credit controls                                                                     |
+| `../components/TimelineGrid.tsx`                       | Full-mode contiguous timeline table                                                                                                           |
+| `../components/TimelineProjection.tsx`                 | Full-mode WTE totals and projected Completion of Training Date                                                                                |
 | `../components/GradeTable.tsx`                         | Year-by-year grade progression with end dates and special-duration/skipped-grade explanations                                                 |
-| `../components/CalculationSummary.tsx`                 | The full summary block, including adjustments and explanatory notes, used on the summary page                                                 |
+| `../components/CalculationSummary.tsx`                 | Quick-mode summary block                                                                                                                      |
+| `../components/FullModeCalculationSummary.tsx`         | Full-mode summary block                                                                                                                       |
 | `../components/StepIndicator.tsx`, `BackLink.tsx`      | Wizard chrome                                                                                                                                 |
-| `../pages/SetupPage.tsx`                               | The single setup page (programme details, grade progression, past changes, next post)                                                         |
-| `../pages/SummaryPage.tsx`                             | The final summary page with CSV / print export, including recorded adjustments and override notes                                             |
-| `../App.tsx`                                           | 2-step wizard (Setup → Summary)                                                                                                               |
+| `../pages/SetupPage.tsx`                               | Quick-mode setup page (programme details, grade progression, past changes, next post)                                                         |
+| `../pages/SummaryPage.tsx`                             | Quick-mode final summary page with CSV / print export                                                                                         |
+| `../pages/SetupFullPage.tsx`                           | Full-mode setup page (programme details and contiguous timeline)                                                                              |
+| `../pages/FullModeSummaryPage.tsx`                     | Full-mode final summary page with CSV / print export                                                                                          |
+| `../App.tsx`                                           | Mode picker and setup-to-summary flow for Quick and Full modes                                                                                |

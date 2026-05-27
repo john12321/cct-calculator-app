@@ -4,6 +4,7 @@ import { Table } from "nhsuk-react-components";
 import {
   calendarMonthsFor,
   getCalculationTypeLabel,
+  wtePercentForPastChange,
   wteMonthsFor,
   type PastChange
 } from "../core";
@@ -50,6 +51,7 @@ export const PastChangesList: FC<PastChangesListProps> = ({
             <Table.Cell>Start</Table.Cell>
             <Table.Cell>End</Table.Cell>
             <Table.Cell>WTE %</Table.Cell>
+            <Table.Cell>Counted as training?</Table.Cell>
             <Table.Cell>Calendar months</Table.Cell>
             <Table.Cell>WTE months</Table.Cell>
             <Table.Cell aria-label="Actions" />
@@ -76,7 +78,10 @@ export const PastChangesList: FC<PastChangesListProps> = ({
                 <Table.Cell>{formatDate(change.startDate)}</Table.Cell>
                 <Table.Cell>{formatDate(change.endDate)}</Table.Cell>
                 <Table.Cell>
-                  {change.type === "LTFT" ? formatPercent(change.wte) : "0%"}
+                  {formatPercent(wtePercentForPastChange(change) ?? 0)}
+                </Table.Cell>
+                <Table.Cell>
+                  {change.countedAsTraining ? "Yes" : "No"}
                 </Table.Cell>
                 <Table.Cell>{calendarMonthsFor(change).toFixed(1)}</Table.Cell>
                 <Table.Cell>{wteMonthsFor(change).toFixed(1)}</Table.Cell>

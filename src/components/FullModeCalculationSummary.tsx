@@ -13,6 +13,7 @@ import {
   programmeAdjustedLengthMonths,
   programmeOriginalEndDate,
   projectedCompletionDateForTimeline,
+  wtePercentForPeriod,
   wteMonthsForPeriod,
   type ProgrammeDetails,
   type TrainingPeriod
@@ -147,14 +148,16 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">Original CCT date</dt>
+          <dt className="nhsuk-summary-list__key">
+            Original Completion of Training Date
+          </dt>
           <dd className="nhsuk-summary-list__value">{formatDate(originalEnd)}</dd>
         </div>
         {(programme.additionalMonths > 0 ||
           programme.acceleratedMonths > 0) && (
           <div className="nhsuk-summary-list__row">
             <dt className="nhsuk-summary-list__key">
-              Adjusted full-time CCT date
+              Adjusted full-time Completion of Training Date
             </dt>
             <dd className="nhsuk-summary-list__value">
               {formatDate(adjustedEnd)}
@@ -183,7 +186,9 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">Projected completion date</dt>
+          <dt className="nhsuk-summary-list__key">
+            Projected Completion of Training Date
+          </dt>
           <dd className="nhsuk-summary-list__value">
             <strong>{formatDate(cct)}</strong>
           </dd>
@@ -222,8 +227,8 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
                         : formatDate(period.endDate)}
                     </Table.Cell>
                     <Table.Cell>
-                      {period.type === "GRADE" && period.wte !== null
-                        ? formatPercent(period.wte)
+                      {wtePercentForPeriod(period) !== null
+                        ? formatPercent(wtePercentForPeriod(period) ?? 0)
                         : "—"}
                     </Table.Cell>
                     <Table.Cell>
@@ -261,7 +266,7 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
       )}
 
       <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
-        Projected completion
+        Projected Completion of Training Date
       </h3>
       <TimelineProjection programme={programme} timeline={timeline} />
 

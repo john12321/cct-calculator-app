@@ -105,7 +105,7 @@ describe("training period validation", () => {
     ).toBe(false);
   });
 
-  it("rejects WTE outside 1-100", () => {
+  it("rejects grade WTE outside 1-100", () => {
     expect(
       validateTrainingPeriod(grade({ wte: 0 }), programme, []).ok
     ).toBe(false);
@@ -138,7 +138,7 @@ describe("training period validation", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("ignores grade/wte validation for non-GRADE periods", () => {
+  it("records ordinary absences with no WTE and not counted as training", () => {
     const candidate: TrainingPeriod = {
       id: "p1",
       type: "SICK",
@@ -152,6 +152,93 @@ describe("training period validation", () => {
     };
     expect(validateTrainingPeriod(candidate, programme, [])).toEqual({
       ok: true
+    });
+    expect(
+      validateTrainingPeriod({ ...candidate, countedAsTraining: true }, programme, [])
+    ).toEqual({
+      ok: false,
+      message:
+        "Only a grade period, OOPT or approved OOPR can be counted as training."
+    });
+  });
+
+  it("credits OOPT without an editable WTE and limits counted time to 12 months", () => {
+    const oopt: TrainingPeriod = {
+      ...grade({
+        type: "OOPT",
+        grade: "",
+        wte: null,
+        endDate: "2020-12-31",
+        countedAsTraining: true
+      })
+    };
+
+    expect(validateTrainingPeriod(oopt, programme, [])).toEqual({ ok: true });
+    expect(
+      validateTrainingPeriod({ ...oopt, endDate: "2021-01-01" }, programme, [])
+    ).toEqual({
+      ok: false,
+      message: "OOPT counted as training cannot be more than 12 months."
+    });
+  });
+
+  it("requires a completed date range for OOPT counted as training", () => {
+    const oopt = grade({
+      type: "OOPT",
+      grade: "",
+      wte: null,
+      endDate: null,
+      countedAsTraining: true
+    });
+
+    expect(validateTrainingPeriod(oopt, programme, [])).toEqual({
+      ok: false,
+      message:
+        "OOPT counted as training must have an end date so the 12-month limit can be checked."
+    });
+  });
+
+  it("requires a CCT credit percentage for approved counted OOPR", () => {
+    const oopr = grade({
+      type: "OOPR",
+      grade: "",
+      wte: 80,
+      countedAsTraining: true
+    });
+
+    expect(validateTrainingPeriod(oopr, programme, [])).toEqual({ ok: true });
+    expect(
+      validateTrainingPeriod({ ...oopr, wte: null }, programme, []).ok
+    ).toBe(false);
+  });
+
+  it("allows an approved LTFT OOPR period beyond four calendar years", () => {
+    const oopr = grade({
+      type: "OOPR",
+      grade: "",
+      wte: 60,
+      endDate: "2025-12-31",
+      countedAsTraining: true
+    });
+
+    expect(validateTrainingPeriod(oopr, programme, [])).toEqual({ ok: true });
+  });
+
+  it("requires an end date for approved counted OOPR", () => {
+    const oopr = grade({
+      type: "OOPR",
+      grade: "",
+      wte: 60,
+      endDate: null,
+      countedAsTraining: true
+    });
+
+    expect(
+      validateTrainingPeriod(oopr, programme, [])
+    ).toEqual({
+      ok: false,
+      message:
+        "OOPR counted as training must have an end date so approved credit can be calculated."
     });
   });
 });

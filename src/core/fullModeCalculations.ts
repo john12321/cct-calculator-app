@@ -18,15 +18,23 @@ import {
 
 const FORWARD_EXTENSION_YEARS = 50;
 
+export const wtePercentForPeriod = (
+  period: TrainingPeriod
+): number | null => {
+  if (period.type === "GRADE") return period.wte;
+  if (period.type === "OOPT" && period.countedAsTraining) {
+    return 100;
+  }
+  if (period.type === "OOPR" && period.countedAsTraining) return period.wte;
+  return null;
+};
+
 const wteFractionFor = (period: TrainingPeriod): number => {
-  if (
-    period.type !== "GRADE" ||
-    !period.countedAsTraining ||
-    period.wte === null
-  ) {
+  const wte = wtePercentForPeriod(period);
+  if (!period.countedAsTraining || wte === null) {
     return 0;
   }
-  return period.wte / 100;
+  return wte / 100;
 };
 
 export const calendarMonthsForPeriod = (period: TrainingPeriod): number | null => {
@@ -146,26 +154,27 @@ export const projectedCompletionDateForTimeline = (
   if (!last) return null;
 
   const accrual = computeTimelineAccrual(programme, timeline);
-  const required = programmeAdjustedLengthMonths(programme);
   const isOpenEnded = last.endDate === null;
 
-  if (!isOpenEnded && accrual.totalWteMonthsCompleted >= required - 0.009) {
-    return last.endDate;
+  if (!isOpenEnded) {
+    const monthsRemaining = Number(accrual.monthsRemaining.toFixed(2));
+    if (monthsRemaining <= 0.009) {
+      return last.endDate;
+    }
+
+    const projectionStart = dayjs(last.endDate).add(1, "day");
+    return projectionStart
+      .add(
+        Math.floor((monthsRemaining / lastGradeWteFraction(timeline)) * DAYS_PER_MONTH),
+        "day"
+      )
+      .format("YYYY-MM-DD");
   }
 
   const segments = buildSegmentsFromTimeline(programme, timeline);
-  return dateAtCumulativeWteMonths(segments, required);
-};
-
-const isClosedAndOverPlanned = (
-  programme: ProgrammeDetails,
-  timeline: TrainingPeriod[]
-): boolean => {
-  if ((timeline.at(-1)?.endDate ?? null) === null) return false;
-  const accrual = computeTimelineAccrual(programme, timeline);
-  return (
-    accrual.totalWteMonthsCompleted >=
-    programmeAdjustedLengthMonths(programme) - 0.009
+  return dateAtCumulativeWteMonths(
+    segments,
+    programmeAdjustedLengthMonths(programme)
   );
 };
 
@@ -194,13 +203,18 @@ export const computeGradeProgressionForTimeline = (
     programme,
     buildSegmentsFromTimeline(programme, timeline)
   );
-
-  if (!isClosedAndOverPlanned(programme, timeline)) {
-    return baseRows;
-  }
+  const completedWteMonths = Number(
+    computeTimelineAccrual(programme, timeline).totalWteMonthsCompleted.toFixed(2)
+  );
 
   return baseRows.map(row => ({
     ...row,
-    endDate: findLastEndDateForGrade(timeline, row.grade)
+    endDate:
+      completedWteMonths >=
+      row.yearNumber * 12 +
+        programme.additionalMonths -
+        programme.acceleratedMonths
+        ? findLastEndDateForGrade(timeline, row.grade)
+        : row.endDate
   }));
 };

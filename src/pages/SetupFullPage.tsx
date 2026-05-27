@@ -104,7 +104,7 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
           {timeline.length > 0 && (
             <>
               <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
-                Projected completion
+                Projected Completion of Training Date
               </h3>
               <TimelineProjection programme={programme} timeline={timeline} />
 

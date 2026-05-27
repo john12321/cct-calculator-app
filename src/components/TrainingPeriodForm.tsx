@@ -67,11 +67,9 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
   const [gradeTag, setGradeTag] = useState<GradePeriodTag>(
     editing?.gradeTag ?? "REGULAR"
   );
-  const [wte, setWte] = useState(
-    editing ? String(editing.wte ?? "") : "100"
-  );
+  const [wte, setWte] = useState(editing ? String(editing.wte ?? "") : "100");
   const [endMode, setEndMode] = useState<"SET" | "PROJECT">(
-    editing && editing.endDate === null ? "PROJECT" : "SET"
+    editing?.endDate === null ? "PROJECT" : "SET"
   );
   const [endDate, setEndDate] = useState(editing?.endDate ?? "");
   const [countedAsTraining, setCountedAsTraining] = useState(
@@ -79,6 +77,22 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
   );
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
+
+  const handleTypeChange = (nextType: TrainingPeriodType) => {
+    setType(nextType);
+    setCountedAsTraining(nextType === "GRADE" || nextType === "OOPT");
+    setWte(nextType === "GRADE" ? "100" : "");
+    if (nextType !== "GRADE") {
+      setEndMode("SET");
+    }
+  };
+
+  const handleCountedAsTrainingChange = (checked: boolean) => {
+    setCountedAsTraining(checked);
+    if (!checked) {
+      setEndMode("SET");
+    }
+  };
 
   const resetForAdd = () => {
     setType("GRADE");
@@ -94,16 +108,20 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const wteValue = type === "GRADE" ? Number.parseInt(wte, 10) : null;
+    const acceptsWte =
+      type === "GRADE" || (type === "OOPR" && countedAsTraining);
+    const wteValue = acceptsWte && wte.trim() !== "" ? Number(wte) : null;
     const candidate: TrainingPeriod = {
       id: editing?.id ?? newId(),
       type,
       grade: type === "GRADE" ? grade : "",
       gradeTag: type === "GRADE" ? gradeTag : "REGULAR",
-      wte: type === "GRADE" && !Number.isNaN(wteValue) ? wteValue : null,
+      wte: wteValue !== null && !Number.isNaN(wteValue) ? wteValue : null,
       startDate: isEditing ? (editing?.startDate ?? lockedStart) : lockedStart,
       endDate: endMode === "PROJECT" ? null : endDate,
-      countedAsTraining,
+      countedAsTraining:
+        (type === "GRADE" || type === "OOPT" || type === "OOPR") &&
+        countedAsTraining,
       notes: notes.trim()
     };
     const result = validateTrainingPeriod(candidate, programme, priorPeriods);
@@ -137,7 +155,9 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
               className="nhsuk-select"
               id="period-type"
               value={type}
-              onChange={e => setType(e.target.value as TrainingPeriodType)}
+              onChange={e =>
+                handleTypeChange(e.target.value as TrainingPeriodType)
+              }
             >
               {TYPE_GROUPS.map(group => (
                 <optgroup key={group.label} label={group.label}>
@@ -152,6 +172,76 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
           </div>
         </div>
       </div>
+
+      {type === "GRADE" || type === "OOPT" || type === "OOPR" ? (
+        <div className="nhsuk-form-group">
+          <div className="nhsuk-checkboxes">
+            <div className="nhsuk-checkboxes__item">
+              <input
+                className="nhsuk-checkboxes__input"
+                id="period-counted"
+                type="checkbox"
+                checked={countedAsTraining}
+                onChange={e => handleCountedAsTrainingChange(e.target.checked)}
+              />
+              <label
+                className="nhsuk-label nhsuk-checkboxes__label"
+                htmlFor="period-counted"
+              >
+                Counted as training
+              </label>
+            </div>
+          </div>
+          {type === "OOPT" ? (
+            <p className="nhsuk-hint">
+              OOPT counted as training is credited at 100% and can be recorded
+              for up to 12 months.
+            </p>
+          ) : type === "OOPR" ? (
+            <p className="nhsuk-hint">
+              Only approved OOPR time contributing towards a Certificate of
+              Completion of Training (CCT) should be counted. OOPR is normally
+              up to 3 years, or 4 years in exceptional circumstances; LTFT OOPR
+              duration is normally pro rata.
+            </p>
+          ) : (
+            <p className="nhsuk-hint">
+              When unchecked, the period still consumes calendar time but does
+              not accrue WTE months.
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="nhsuk-hint">
+          This absence consumes calendar time but is not counted as training.
+        </p>
+      )}
+
+      {type === "OOPR" && countedAsTraining && (
+        <div className="nhsuk-grid-row">
+          <div className="nhsuk-grid-column-one-half">
+            <div className="nhsuk-form-group">
+              <label className="nhsuk-label" htmlFor="period-oopr-wte">
+                Approved CCT credit % (1-100)
+              </label>
+              <input
+                className="nhsuk-input nhsuk-input--width-5"
+                id="period-oopr-wte"
+                type="number"
+                min="1"
+                max="100"
+                step="1"
+                value={wte}
+                onChange={e => setWte(e.target.value)}
+              />
+              <p className="nhsuk-hint">
+                Enter the proportion of this OOPR period prospectively approved
+                to count towards CCT. For LTFT OOPR, this may match your WTE.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {type === "GRADE" && (
         <>
@@ -181,7 +271,7 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
             <div className="nhsuk-grid-column-one-quarter">
               <div className="nhsuk-form-group">
                 <label className="nhsuk-label" htmlFor="period-wte">
-                  WTE % (1–100)
+                  WTE % (1-100)
                 </label>
                 <input
                   className="nhsuk-input nhsuk-input--width-5"
@@ -283,54 +373,32 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
                 />
               </div>
             )}
-            <div className="nhsuk-radios__item">
-              <input
-                className="nhsuk-radios__input"
-                id="period-end-project"
-                type="radio"
-                name="period-end-mode"
-                value="PROJECT"
-                checked={endMode === "PROJECT"}
-                onChange={() => setEndMode("PROJECT")}
-              />
-              <label
-                className="nhsuk-label nhsuk-radios__label"
-                htmlFor="period-end-project"
-              >
-                Project forward to find the completion date
-              </label>
-            </div>
+            {type === "GRADE" && countedAsTraining && (
+              <div className="nhsuk-radios__item">
+                <input
+                  className="nhsuk-radios__input"
+                  id="period-end-project"
+                  type="radio"
+                  name="period-end-mode"
+                  value="PROJECT"
+                  checked={endMode === "PROJECT"}
+                  onChange={() => setEndMode("PROJECT")}
+                />
+                <label
+                  className="nhsuk-label nhsuk-radios__label"
+                  htmlFor="period-end-project"
+                >
+                  Project forward to find the Completion of Training Date
+                </label>
+              </div>
+            )}
           </div>
           <p className="nhsuk-hint">
-            Choose <em>Project forward</em> when this is your planned next
-            post and you want the calculator to work out when training
-            finishes. The period must be the last on the timeline.
+            Choose <em>Project forward</em> when this is your planned next post
+            and you want the calculator to work out when training finishes. The
+            period must be the last on the timeline.
           </p>
         </fieldset>
-      </div>
-
-      <div className="nhsuk-form-group">
-        <div className="nhsuk-checkboxes">
-          <div className="nhsuk-checkboxes__item">
-            <input
-              className="nhsuk-checkboxes__input"
-              id="period-counted"
-              type="checkbox"
-              checked={countedAsTraining}
-              onChange={e => setCountedAsTraining(e.target.checked)}
-            />
-            <label
-              className="nhsuk-label nhsuk-checkboxes__label"
-              htmlFor="period-counted"
-            >
-              Counted as training
-            </label>
-          </div>
-        </div>
-        <p className="nhsuk-hint">
-          When unchecked, the period still consumes calendar time but does not
-          accrue WTE months (e.g. sick leave above 2 weeks).
-        </p>
       </div>
 
       <div className="nhsuk-grid-row">

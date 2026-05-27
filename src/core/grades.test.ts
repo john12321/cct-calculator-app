@@ -49,6 +49,7 @@ describe("grade end date display parity", () => {
           startDate: "2026-07-01",
           endDate: "2026-12-31",
           wte: null,
+          countedAsTraining: false,
           notes: ""
         },
         {
@@ -57,6 +58,7 @@ describe("grade end date display parity", () => {
           startDate: "2027-01-01",
           endDate: "2027-12-31",
           wte: 50,
+          countedAsTraining: true,
           notes: ""
         }
       ],

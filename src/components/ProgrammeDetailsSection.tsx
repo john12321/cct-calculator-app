@@ -906,7 +906,9 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                 </dd>
               </div>
               <div className="nhsuk-summary-list__row">
-                <dt className="nhsuk-summary-list__key">Original CCT date</dt>
+                <dt className="nhsuk-summary-list__key">
+                  Original Completion of Training Date
+                </dt>
                 <dd className="nhsuk-summary-list__value">
                   {dayjs(programmeOriginalEndDate(programme)).format(
                     "DD/MM/YYYY"
@@ -917,7 +919,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                 programme.acceleratedMonths > 0) && (
                 <div className="nhsuk-summary-list__row">
                   <dt className="nhsuk-summary-list__key">
-                    Adjusted full-time CCT date
+                    Adjusted full-time Completion of Training Date
                   </dt>
                   <dd className="nhsuk-summary-list__value">
                     {formatDate(programmeAdjustedEndDate(programme))}

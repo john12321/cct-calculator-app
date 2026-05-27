@@ -38,7 +38,7 @@ export const NextPostSummary: FC<NextPostSummaryProps> = ({
             <Table.Cell>Type</Table.Cell>
             <Table.Cell>Start date</Table.Cell>
             <Table.Cell>WTE %</Table.Cell>
-            <Table.Cell>Projected completion date</Table.Cell>
+            <Table.Cell>Projected Completion of Training Date</Table.Cell>
           </Table.Row>
         </Table.Head>
         <Table.Body>

@@ -111,7 +111,8 @@ export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
             This programme has an 18-month final year recorded for{" "}
             <strong>{programme.eighteenMonthFinalGrade}</strong>. It uses six
             months already included in the standard programme length, so it
-            changes the grade progression without itself extending the CCT date.
+            changes the grade progression without itself extending the
+            Completion of Training Date.
           </p>
         </div>
       )}
@@ -142,8 +143,8 @@ export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
             programme records <strong>{programme.skippedGrade}</strong> as a
             skipped grade year, so the displayed progression moves to the
             following grade from that point. This does not itself shorten the
-            CCT date; any reduced duration is recorded separately as accelerated
-            training time.
+            Completion of Training Date; any reduced duration is recorded
+            separately as accelerated training time.
           </p>
         </div>
       )}

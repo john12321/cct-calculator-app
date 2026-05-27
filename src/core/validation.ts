@@ -67,6 +67,44 @@ export const validatePastChange = (
     ) {
       return err("LTFT WTE must be a whole number between 1 and 99.");
     }
+    if (!candidate.countedAsTraining) {
+      return err("LTFT periods must be counted as training.");
+    }
+  } else if (candidate.type === "OOPR" && candidate.countedAsTraining) {
+    if (
+      candidate.wte == null ||
+      candidate.wte < 1 ||
+      candidate.wte > 100 ||
+      !Number.isInteger(candidate.wte)
+    ) {
+      return err(
+        "Approved OOPR credit must be a whole number between 1 and 100."
+      );
+    }
+  } else if (candidate.wte !== null) {
+    return err(
+      "WTE can only be entered for LTFT or approved OOPR counted as training."
+    );
+  }
+
+  if (
+    candidate.type !== "LTFT" &&
+    candidate.type !== "OOPT" &&
+    candidate.type !== "OOPR" &&
+    candidate.countedAsTraining
+  ) {
+    return err(
+      "Only LTFT, OOPT or approved OOPR can be counted as training."
+    );
+  }
+
+  if (candidate.type === "OOPT" && candidate.countedAsTraining) {
+    const maximumEndDate = dayjs(candidate.startDate)
+      .add(12, "month")
+      .subtract(1, "day");
+    if (dayjs(candidate.endDate).isAfter(maximumEndDate)) {
+      return err("OOPT counted as training cannot be more than 12 months.");
+    }
   }
 
   for (const other of existing) {
@@ -286,11 +324,53 @@ export const validateTrainingPeriod = (
     );
   }
 
-  if (candidate.type === "GRADE") {
-    const gradeResult = validateGradeFields(candidate);
-    if (!gradeResult.ok) return gradeResult;
+  if (
+    candidate.type === "GRADE" ||
+    (candidate.type === "OOPR" && candidate.countedAsTraining)
+  ) {
+    if (candidate.type === "GRADE") {
+      const gradeResult = validateGradeFields(candidate);
+      if (!gradeResult.ok) return gradeResult;
+    }
     const wteResult = validateWte(candidate.wte);
     if (!wteResult.ok) return wteResult;
+  } else if (candidate.wte !== null) {
+    return err(
+      "WTE can only be entered for a grade period or approved OOPR counted as training."
+    );
+  }
+
+  if (
+    candidate.type !== "GRADE" &&
+    candidate.type !== "OOPT" &&
+    candidate.type !== "OOPR" &&
+    candidate.countedAsTraining
+  ) {
+    return err(
+      "Only a grade period, OOPT or approved OOPR can be counted as training."
+    );
+  }
+
+  if (candidate.type === "OOPT" && candidate.countedAsTraining) {
+    if (candidate.endDate === null) {
+      return err(
+        "OOPT counted as training must have an end date so the 12-month limit can be checked."
+      );
+    }
+    const maximumEndDate = dayjs(candidate.startDate)
+      .add(12, "month")
+      .subtract(1, "day");
+    if (dayjs(candidate.endDate).isAfter(maximumEndDate)) {
+      return err("OOPT counted as training cannot be more than 12 months.");
+    }
+  }
+
+  if (candidate.type === "OOPR" && candidate.countedAsTraining) {
+    if (candidate.endDate === null) {
+      return err(
+        "OOPR counted as training must have an end date so approved credit can be calculated."
+      );
+    }
   }
 
   return ok;

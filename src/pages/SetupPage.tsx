@@ -308,8 +308,8 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
               <>
                 <p className="nhsuk-body">
                   If you have any past changes, add them above first. Then enter
-                  your proposed next post to calculate your projected completion
-                  date.
+                  your proposed next post to calculate your projected
+                  Completion of Training Date.
                 </p>
                 <button
                   type="button"
@@ -328,7 +328,7 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
                 pastChanges={pastChanges}
                 initial={proposed}
                 submitDisabled={pastChangeIssues.length > 0}
-                submitDisabledReason="Fix the past change errors above before calculating your projected completion date."
+                submitDisabledReason="Fix the past change errors above before calculating your projected Completion of Training Date."
                 onSubmit={onProposedSubmit}
               />
             )}

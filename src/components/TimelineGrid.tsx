@@ -3,6 +3,7 @@ import { Table } from "nhsuk-react-components";
 import {
   getGradePeriodTagLabel,
   getTrainingPeriodTypeLabel,
+  wtePercentForPeriod,
   type TrainingPeriod
 } from "../core";
 import { formatDate, formatPercent } from "../utils/format";
@@ -64,8 +65,8 @@ export const TimelineGrid: FC<TimelineGridProps> = ({
                     : formatDate(period.endDate)}
                 </Table.Cell>
                 <Table.Cell>
-                  {period.type === "GRADE" && period.wte !== null
-                    ? formatPercent(period.wte)
+                  {wtePercentForPeriod(period) !== null
+                    ? formatPercent(wtePercentForPeriod(period) ?? 0)
                     : "—"}
                 </Table.Cell>
                 <Table.Cell>

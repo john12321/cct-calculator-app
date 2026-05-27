@@ -9,6 +9,7 @@ import {
   getCalculationTypeLabel,
   programmeAdjustedEndDate,
   projectedCompletionDate,
+  wtePercentForPastChange,
   wteMonthsFor,
   type PastChange,
   type ProgrammeDetails,
@@ -101,7 +102,7 @@ export const SummaryPage: FC<SummaryPageProps> = ({
       ...(programme.additionalMonths > 0 || programme.acceleratedMonths > 0
         ? [
             [
-              "Adjusted full-time CCT date",
+              "Adjusted full-time Completion of Training Date",
               dayjs(programmeAdjustedEndDate(programme)).format("YYYY-MM-DD")
             ]
           ]
@@ -114,7 +115,10 @@ export const SummaryPage: FC<SummaryPageProps> = ({
         "Training remaining (months)",
         Math.max(0, accrual.monthsRemaining).toFixed(2)
       ],
-      ["Projected completion date", dayjs(newCct).format("YYYY-MM-DD")],
+      [
+        "Projected Completion of Training Date",
+        dayjs(newCct).format("YYYY-MM-DD")
+      ],
       []
     ];
 
@@ -126,6 +130,7 @@ export const SummaryPage: FC<SummaryPageProps> = ({
       "End",
       "Calendar months",
       "WTE %",
+      "Counted as training?",
       "WTE months"
     ];
     const pastRows = sorted.map(c => [
@@ -135,7 +140,8 @@ export const SummaryPage: FC<SummaryPageProps> = ({
       dayjs(c.startDate).format("YYYY-MM-DD"),
       dayjs(c.endDate).format("YYYY-MM-DD"),
       calendarMonthsFor(c).toFixed(2),
-      c.type === "LTFT" && c.wte != null ? `${c.wte}` : "0",
+      String(wtePercentForPastChange(c) ?? 0),
+      c.countedAsTraining ? "Yes" : "No",
       wteMonthsFor(c).toFixed(2)
     ]);
 
@@ -147,6 +153,7 @@ export const SummaryPage: FC<SummaryPageProps> = ({
       dayjs(newCct).format("YYYY-MM-DD"),
       "",
       String(proposedWte),
+      "",
       ""
     ];
 
@@ -173,7 +180,7 @@ export const SummaryPage: FC<SummaryPageProps> = ({
       <CompletionDateWarning />
 
       <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
-        CCT Calculation Summary
+        Completion of Training Date Calculation Summary
       </h2>
 
       <CalculationSummary

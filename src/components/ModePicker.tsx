@@ -17,12 +17,13 @@ export const ModePicker: FC<ModePickerProps> = ({ onSelect }) => {
           <div className="nhsuk-card">
             <div className="nhsuk-card__content">
               <h3 className="nhsuk-card__heading">
-                I want a quick completion date calculation
+                I want a quick Completion of Training Date calculation
               </h3>
               <p className="nhsuk-body">
                 Record only completed LTFT periods and absences, then enter your
                 proposed next post. Any gaps are assumed to be full-time
-                training. Fastest route to a projected CCT date.
+                training. Fastest route to a projected Completion of Training
+                Date.
               </p>
               <button
                 type="button"
@@ -39,7 +40,8 @@ export const ModePicker: FC<ModePickerProps> = ({ onSelect }) => {
           <div className="nhsuk-card">
             <div className="nhsuk-card__content">
               <h3 className="nhsuk-card__heading">
-                I'm building a training record plus completion date calculation
+                I'm building a training record plus Completion of Training Date
+                calculation
               </h3>
               <p className="nhsuk-body">
                 Record every period of training and absence as a contiguous

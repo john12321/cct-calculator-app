@@ -32,6 +32,7 @@ const priorLtft: PastChange = {
   startDate: "2021-01-01",
   endDate: "2021-06-30",
   wte: 60,
+  countedAsTraining: true,
   notes: ""
 };
 
@@ -74,11 +75,60 @@ describe("past change validation", () => {
   it("allows an absence to omit a WTE value", () => {
     expect(
       validatePastChange(
-        { ...priorLtft, type: "OOPC", wte: null },
+        { ...priorLtft, type: "OOPC", wte: null, countedAsTraining: false },
         programme,
         []
       )
     ).toEqual({ ok: true });
+  });
+
+  it("credits OOPT only with fixed credit and enforces the 12-month maximum", () => {
+    const oopt: PastChange = {
+      ...priorLtft,
+      type: "OOPT",
+      startDate: "2020-01-01",
+      endDate: "2020-12-31",
+      wte: null,
+      countedAsTraining: true
+    };
+
+    expect(validatePastChange(oopt, programme, [])).toEqual({ ok: true });
+    expect(
+      validatePastChange({ ...oopt, endDate: "2021-01-01" }, programme, [])
+    ).toEqual({
+      ok: false,
+      message: "OOPT counted as training cannot be more than 12 months."
+    });
+  });
+
+  it("requires a percentage for OOPR approved to count towards CCT", () => {
+    const oopr: PastChange = {
+      ...priorLtft,
+      type: "OOPR",
+      wte: 80,
+      countedAsTraining: true
+    };
+
+    expect(validatePastChange(oopr, programme, [])).toEqual({ ok: true });
+    expect(
+      validatePastChange({ ...oopr, wte: null }, programme, [])
+    ).toEqual({
+      ok: false,
+      message: "Approved OOPR credit must be a whole number between 1 and 100."
+    });
+  });
+
+  it("does not allow other absence types to be counted as training", () => {
+    expect(
+      validatePastChange(
+        { ...priorLtft, type: "OOPE", wte: null, countedAsTraining: true },
+        programme,
+        []
+      )
+    ).toEqual({
+      ok: false,
+      message: "Only LTFT, OOPT or approved OOPR can be counted as training."
+    });
   });
 });
 
@@ -89,6 +139,7 @@ describe("next post validation", () => {
     startDate: "2022-01-01",
     endDate: "2022-03-31",
     wte: null,
+    countedAsTraining: false,
     notes: ""
   };
 

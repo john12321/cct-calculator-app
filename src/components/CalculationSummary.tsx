@@ -12,6 +12,7 @@ import {
   programmeAdjustedEndDate,
   programmeOriginalEndDate,
   projectedCompletionDate,
+  wtePercentForPastChange,
   wteMonthsFor,
   type PastChange,
   type ProgrammeDetails,
@@ -152,7 +153,9 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">Original CCT date</dt>
+          <dt className="nhsuk-summary-list__key">
+            Original Completion of Training Date
+          </dt>
           <dd className="nhsuk-summary-list__value">
             {formatDate(originalEnd)}
           </dd>
@@ -161,7 +164,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
           programme.acceleratedMonths > 0) && (
           <div className="nhsuk-summary-list__row">
             <dt className="nhsuk-summary-list__key">
-              Adjusted full-time CCT date
+              Adjusted full-time Completion of Training Date
             </dt>
             <dd className="nhsuk-summary-list__value">
               {formatDate(adjustedEnd)}
@@ -186,7 +189,9 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
-          <dt className="nhsuk-summary-list__key">Projected completion date</dt>
+          <dt className="nhsuk-summary-list__key">
+            Projected Completion of Training Date
+          </dt>
           <dd className="nhsuk-summary-list__value">
             <strong>{formatDate(newCct)}</strong>
           </dd>
@@ -206,6 +211,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                 <Table.Cell>End</Table.Cell>
                 <Table.Cell>Calendar months</Table.Cell>
                 <Table.Cell>WTE %</Table.Cell>
+                <Table.Cell>Counted as training?</Table.Cell>
                 <Table.Cell>WTE months</Table.Cell>
               </Table.Row>
             </Table.Head>
@@ -222,7 +228,10 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                     {calendarMonthsFor(change).toFixed(1)}
                   </Table.Cell>
                   <Table.Cell>
-                    {change.type === "LTFT" ? formatPercent(change.wte) : "0%"}
+                    {formatPercent(wtePercentForPastChange(change) ?? 0)}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {change.countedAsTraining ? "Yes" : "No"}
                   </Table.Cell>
                   <Table.Cell>{wteMonthsFor(change).toFixed(1)}</Table.Cell>
                 </Table.Row>
@@ -236,6 +245,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                 <Table.Cell>
                   <strong>{totalPastCalendar.toFixed(1)}</strong>
                 </Table.Cell>
+                <Table.Cell />
                 <Table.Cell />
                 <Table.Cell>
                   <strong>{totalPastWte.toFixed(1)}</strong>

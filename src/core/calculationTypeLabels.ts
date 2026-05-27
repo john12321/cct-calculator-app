@@ -31,6 +31,14 @@ export const calculationTypeLabels: Record<
     full: "Out of Programme Experience (OOPE)",
     short: "OOPE"
   },
+  OOPR: {
+    full: "Out of Programme Research (OOPR)",
+    short: "OOPR"
+  },
+  OOPT: {
+    full: "Out of Programme Training (OOPT)",
+    short: "OOPT"
+  },
   PARENTAL: {
     full: "Parental Leave",
     short: "Parental Leave"
@@ -47,9 +55,9 @@ export const calculationTypeLabels: Record<
     full: "Sickness (2 weeks minimum)",
     short: "Sickness"
   },
-  UNPAID: {
-    full: "Unpaid Leave",
-    short: "Unpaid Leave"
+  ACCRUED_LEAVE: {
+    full: "Accrued annual leave",
+    short: "Accrued AL"
   }
 };
 

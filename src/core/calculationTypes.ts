@@ -3,11 +3,13 @@ export type CalculationType =
   | "OOPC"
   | "OOPP"
   | "OOPE"
+  | "OOPR"
+  | "OOPT"
   | "PARENTAL"
   | "PHASED"
   | "SHIELDING"
   | "SICKNESS"
-  | "UNPAID";
+  | "ACCRUED_LEAVE";
 
 export type PastChange = {
   id: string;
@@ -15,6 +17,7 @@ export type PastChange = {
   startDate: string;
   endDate: string;
   wte: number | null;
+  countedAsTraining: boolean;
   notes: string;
 };
 

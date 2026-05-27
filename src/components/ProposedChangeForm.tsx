@@ -29,7 +29,7 @@ export const ProposedChangeForm: FC<ProposedChangeFormProps> = ({
   );
   const [startDate, setStartDate] = useState(initial?.startDate ?? "");
   const [wte, setWte] = useState(
-    initial?.wte != null ? String(initial.wte) : ""
+    initial?.wte === null ? "" : String(initial?.wte)
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +50,7 @@ export const ProposedChangeForm: FC<ProposedChangeFormProps> = ({
     const candidate: ProposedChange = {
       kind,
       startDate,
-      wte: Number.isNaN(wteValue as number) ? null : wteValue
+      wte: Number.isNaN(wteValue) ? null : wteValue
     };
     const result = validateProposedChange(candidate, programme, pastChanges);
     if (!result.ok) {
@@ -65,7 +65,7 @@ export const ProposedChangeForm: FC<ProposedChangeFormProps> = ({
     <form onSubmit={handleSubmit} noValidate>
       <p className="nhsuk-body-m">
         Add the details of your proposed next post. This will be used to
-        calculate your projected completion date.
+        calculate your projected Completion of Training Date.
       </p>
 
       <div className="nhsuk-form-group">
@@ -163,8 +163,8 @@ export const ProposedChangeForm: FC<ProposedChangeFormProps> = ({
           disabled={submitDisabled}
         >
           {initial
-            ? "Update Completion date calculation"
-            : "Calculate projected completion date"}
+            ? "Update Completion of Training Date calculation"
+            : "Calculate projected Completion of Training Date"}
         </button>
         {hasNewEntryData && (
           <button

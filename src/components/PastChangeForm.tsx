@@ -19,9 +19,10 @@ type PastChangeFormProps = {
 const TYPE_GROUPS: { label: string; options: CalculationType[] }[] = [
   { label: "Work pattern changes", options: ["LTFT"] },
   {
-    label: "Leave types",
-    options: ["OOPC", "OOPE", "OOPP", "PARENTAL", "SICKNESS", "UNPAID"]
+    label: "Out of programme",
+    options: ["OOPC", "OOPE", "OOPP", "OOPR", "OOPT"]
   },
+  { label: "Leave types", options: ["PARENTAL", "SICKNESS", "ACCRUED_LEAVE"] },
   { label: "Health & return", options: ["SHIELDING", "PHASED"] }
 ];
 
@@ -42,6 +43,9 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
   const [startDate, setStartDate] = useState(editing?.startDate ?? "");
   const [endDate, setEndDate] = useState(editing?.endDate ?? "");
   const [wte, setWte] = useState(String(editing?.wte ?? ""));
+  const [countedAsTraining, setCountedAsTraining] = useState(
+    editing?.countedAsTraining ?? false
+  );
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
 
@@ -58,8 +62,15 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
     setStartDate("");
     setEndDate("");
     setWte("");
+    setCountedAsTraining(false);
     setNotes("");
     setError(null);
+  };
+
+  const handleTypeChange = (nextType: CalculationType) => {
+    setType(nextType);
+    setCountedAsTraining(nextType === "LTFT" || nextType === "OOPT");
+    setWte("");
   };
 
   const handleSubmit = (e: FormEvent) => {
@@ -68,13 +79,18 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
       setError("Please choose a change type.");
       return;
     }
-    const wteValue = type === "LTFT" ? Number.parseInt(wte, 10) : null;
+    const acceptsWte =
+      type === "LTFT" || (type === "OOPR" && countedAsTraining);
+    const wteValue = acceptsWte && wte.trim() !== "" ? Number(wte) : null;
     const candidate: PastChange = {
       id: editing?.id ?? newId(),
       type,
       startDate,
       endDate,
-      wte: Number.isNaN(wteValue as number) ? null : wteValue,
+      wte: wteValue !== null && !Number.isNaN(wteValue) ? wteValue : null,
+      countedAsTraining:
+        (type === "LTFT" || type === "OOPT" || type === "OOPR") &&
+        countedAsTraining,
       notes: notes.trim()
     };
     const result = validatePastChange(candidate, programme, existing);
@@ -96,9 +112,7 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
       noValidate
       className="nhsuk-u-margin-bottom-4"
     >
-      {isEditing && (
-        <h3 className="nhsuk-heading-s">Editing past change</h3>
-      )}
+      {isEditing && <h3 className="nhsuk-heading-s">Editing past change</h3>}
 
       <div className="nhsuk-grid-row">
         <div className="nhsuk-grid-column-one-half">
@@ -110,7 +124,9 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
               className="nhsuk-select"
               id="past-type"
               value={type}
-              onChange={e => setType(e.target.value as CalculationType)}
+              onChange={e =>
+                handleTypeChange(e.target.value as CalculationType)
+              }
             >
               <option value="" disabled>
                 Select a change type
@@ -128,6 +144,67 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
           </div>
         </div>
       </div>
+
+      {(type === "OOPT" || type === "OOPR") && (
+        <div className="nhsuk-form-group">
+          <div className="nhsuk-checkboxes">
+            <div className="nhsuk-checkboxes__item">
+              <input
+                className="nhsuk-checkboxes__input"
+                id="past-counted"
+                type="checkbox"
+                checked={countedAsTraining}
+                onChange={e => setCountedAsTraining(e.target.checked)}
+              />
+              <label
+                className="nhsuk-label nhsuk-checkboxes__label"
+                htmlFor="past-counted"
+              >
+                Counted as training
+              </label>
+            </div>
+          </div>
+          {type === "OOPT" ? (
+            <p className="nhsuk-hint">
+              OOPT counted as training is credited at 100% and can be recorded
+              for up to 12 months.
+            </p>
+          ) : (
+            <p className="nhsuk-hint">
+              Only approved OOPR time contributing towards a Certificate of
+              Completion of Training (CCT) should be counted. OOPR is normally
+              up to 3 years, or 4 years in exceptional circumstances; LTFT OOPR
+              duration is normally pro rata.
+            </p>
+          )}
+        </div>
+      )}
+
+      {type === "OOPR" && countedAsTraining && (
+        <div className="nhsuk-grid-row">
+          <div className="nhsuk-grid-column-one-half">
+            <div className="nhsuk-form-group">
+              <label className="nhsuk-label" htmlFor="past-oopr-wte">
+                Approved CCT credit % (1-100)
+              </label>
+              <input
+                className="nhsuk-input nhsuk-input--width-5"
+                id="past-oopr-wte"
+                type="number"
+                min="1"
+                max="100"
+                step="1"
+                value={wte}
+                onChange={e => setWte(e.target.value)}
+              />
+              <p className="nhsuk-hint">
+                Enter the proportion of this OOPR period prospectively approved
+                to count towards CCT. For LTFT OOPR, this may match your WTE.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="nhsuk-grid-row">
         <div className="nhsuk-grid-column-one-quarter">
@@ -162,7 +239,7 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
           <div className="nhsuk-grid-column-one-quarter">
             <div className="nhsuk-form-group">
               <label className="nhsuk-label" htmlFor="past-wte">
-                WTE % (1–99)
+                WTE % (1-99)
               </label>
               <input
                 className="nhsuk-input nhsuk-input--width-5"
@@ -204,10 +281,7 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
       )}
 
       <div className="nhsuk-button-group">
-        <button
-          type="submit"
-          className="nhsuk-button nhsuk-u-margin-right-3"
-        >
+        <button type="submit" className="nhsuk-button nhsuk-u-margin-right-3">
           {isEditing ? "Save changes" : "Add change"}
         </button>
         {isEditing && (

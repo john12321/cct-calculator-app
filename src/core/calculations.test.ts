@@ -9,7 +9,8 @@ import {
   DAYS_PER_MONTH,
   computeWteAccrual,
   inclusiveDays,
-  projectedCompletionDate
+  projectedCompletionDate,
+  wteMonthsFor
 } from "./calculations";
 import { computeGradeProgression } from "./grades";
 
@@ -69,6 +70,7 @@ describe("Excel historical period convention", () => {
         startDate: "2018-01-01",
         endDate: "2022-12-31",
         wte: 50,
+        countedAsTraining: true,
         notes: ""
       }
     ];
@@ -105,6 +107,7 @@ describe("Excel historical period convention", () => {
         startDate: "2020-01-01",
         endDate: "2022-12-31",
         wte: null,
+        countedAsTraining: false,
         notes: ""
       }
     ];
@@ -128,5 +131,36 @@ describe("Excel historical period convention", () => {
     expect(legacyProjectedCompletionDate(changes, proposed)).toBe(
       "2037-12-24"
     );
+  });
+});
+
+describe("Quick-mode approved OOP credit", () => {
+  it("credits OOPT at fixed 100% when it is counted as training", () => {
+    const oopt: PastChange = {
+      id: "oopt",
+      type: "OOPT",
+      startDate: "2020-01-01",
+      endDate: "2020-06-30",
+      wte: null,
+      countedAsTraining: true,
+      notes: ""
+    };
+
+    expect(wteMonthsFor(oopt)).toBeCloseTo(6, 1);
+    expect(wteMonthsFor({ ...oopt, countedAsTraining: false })).toBe(0);
+  });
+
+  it("credits approved OOPR at the entered approved percentage", () => {
+    const oopr: PastChange = {
+      id: "oopr",
+      type: "OOPR",
+      startDate: "2020-01-01",
+      endDate: "2020-06-30",
+      wte: 80,
+      countedAsTraining: true,
+      notes: ""
+    };
+
+    expect(wteMonthsFor(oopr)).toBeCloseTo(4.8, 1);
   });
 });

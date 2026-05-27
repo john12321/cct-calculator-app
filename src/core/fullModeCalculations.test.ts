@@ -72,20 +72,50 @@ describe("computeTimelineAccrual", () => {
     expect(accrual.totalCalendarMonthsCompleted).toBeCloseTo(6, 1);
   });
 
-  it("treats non-GRADE rows as zero WTE accrual regardless of WTE", () => {
+  it("credits counted OOPT at a fixed 100% WTE", () => {
     const timeline: TrainingPeriod[] = [
       {
         ...grade({}),
-        type: "SICK",
+        type: "OOPT",
         grade: "",
         wte: null,
         startDate: "2025-01-01",
-        endDate: "2025-03-31"
+        endDate: "2025-06-30"
+      }
+    ];
+    const accrual = computeTimelineAccrual(programme, timeline);
+    expect(accrual.totalWteMonthsCompleted).toBeCloseTo(6, 1);
+  });
+
+  it("does not accrue OOPT when it is marked as not counted as training", () => {
+    const timeline: TrainingPeriod[] = [
+      {
+        ...grade({}),
+        type: "OOPT",
+        grade: "",
+        wte: null,
+        startDate: "2025-01-01",
+        endDate: "2025-06-30",
+        countedAsTraining: false
       }
     ];
     const accrual = computeTimelineAccrual(programme, timeline);
     expect(accrual.totalWteMonthsCompleted).toBeCloseTo(0, 5);
-    expect(accrual.totalCalendarMonthsCompleted).toBeGreaterThan(0);
+  });
+
+  it("credits approved OOPR at its entered CCT credit percentage", () => {
+    const timeline: TrainingPeriod[] = [
+      {
+        ...grade({}),
+        type: "OOPR",
+        grade: "",
+        wte: 80,
+        startDate: "2025-01-01",
+        endDate: "2025-06-30"
+      }
+    ];
+    const accrual = computeTimelineAccrual(programme, timeline);
+    expect(accrual.totalWteMonthsCompleted).toBeCloseTo(4.8, 1);
   });
 });
 
@@ -126,8 +156,39 @@ describe("projectedCompletionDateForTimeline", () => {
       })
     ];
     const cct = projectedCompletionDateForTimeline(programme, timeline);
-    expect(cct).not.toBeNull();
-    expect(dayjs(cct ?? "").isAfter("2025-06-30")).toBe(true);
+    const recordedWte = 181 / (365 / 12);
+    const excelRemaining = Number((12 - recordedWte).toFixed(2));
+    const expected = dayjs("2025-07-01")
+      .add(Math.floor(excelRemaining * DAYS_PER_MONTH), "day")
+      .format("YYYY-MM-DD");
+    expect(cct).toBe(expected);
+  });
+
+  it("projects after an absence at the most recent grade WTE", () => {
+    const timeline = [
+      grade({
+        startDate: "2025-01-01",
+        endDate: "2025-06-30",
+        wte: 50
+      }),
+      {
+        ...grade({
+          startDate: "2025-07-01",
+          endDate: "2025-09-30",
+          wte: null,
+          countedAsTraining: false
+        }),
+        type: "SICK" as const,
+        grade: ""
+      }
+    ];
+    const cct = projectedCompletionDateForTimeline(programme, timeline);
+    const atFullTime = projectedCompletionDateForTimeline(programme, [
+      { ...timeline[0], wte: 100 },
+      timeline[1]
+    ]);
+
+    expect(dayjs(cct ?? "").isAfter(atFullTime ?? "")).toBe(true);
   });
 
   it("doubles the projection at 50% WTE on a project-forward last row", () => {
@@ -158,7 +219,7 @@ describe("computeGradeProgressionForTimeline (lookup branch)", () => {
     expect(rows[0].grade).toBe("ST4");
   });
 
-  it("uses interpolation when closed but under-planned", () => {
+  it("uses interpolation for a grade threshold not yet covered by recorded WTE", () => {
     const timeline = [
       grade({
         startDate: "2025-01-01",
@@ -171,7 +232,22 @@ describe("computeGradeProgressionForTimeline (lookup branch)", () => {
     expect(rows[0].endDate).not.toBe("2025-06-30");
   });
 
-  it("uses lookup when closed and over-planned, returning the timeline's end dates per grade", () => {
+  it("uses lookup for an achieved grade even when the overall programme remains under-planned", () => {
+    const timeline = [
+      grade({
+        id: "p1",
+        grade: "ST4",
+        startDate: "2025-01-01",
+        endDate: "2025-12-31",
+        wte: 100
+      })
+    ];
+    const rows = computeGradeProgressionForTimeline(threeYearProg, timeline);
+    expect(rows[0]).toMatchObject({ grade: "ST4", endDate: "2025-12-31" });
+    expect(rows[1]?.endDate).not.toBeNull();
+  });
+
+  it("uses lookup for each achieved grade, returning the timeline's grade end dates", () => {
     const timeline = [
       grade({
         id: "p1",

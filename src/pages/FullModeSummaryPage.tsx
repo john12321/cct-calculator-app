@@ -9,6 +9,7 @@ import {
   getTrainingPeriodTypeLabel,
   programmeAdjustedEndDate,
   projectedCompletionDateForTimeline,
+  wtePercentForPeriod,
   wteMonthsForPeriod,
   type ProgrammeDetails,
   type TrainingPeriod
@@ -96,7 +97,7 @@ export const FullModeSummaryPage: FC<FullModeSummaryPageProps> = ({
       ...(programme.additionalMonths > 0 || programme.acceleratedMonths > 0
         ? [
             [
-              "Adjusted full-time CCT date",
+              "Adjusted full-time Completion of Training Date",
               dayjs(programmeAdjustedEndDate(programme)).format("YYYY-MM-DD")
             ]
           ]
@@ -110,7 +111,7 @@ export const FullModeSummaryPage: FC<FullModeSummaryPageProps> = ({
         Math.max(0, accrual.monthsRemaining).toFixed(2)
       ],
       [
-        "Projected completion date",
+        "Projected Completion of Training Date",
         cct ? dayjs(cct).format("YYYY-MM-DD") : ""
       ],
       []
@@ -137,8 +138,8 @@ export const FullModeSummaryPage: FC<FullModeSummaryPageProps> = ({
         period.endDate === null
           ? "Project forward"
           : dayjs(period.endDate).format("YYYY-MM-DD"),
-        period.type === "GRADE" && period.wte !== null
-          ? String(period.wte)
+        wtePercentForPeriod(period) !== null
+          ? String(wtePercentForPeriod(period))
           : "",
         period.countedAsTraining ? "Yes" : "No",
         cal === null ? "" : cal.toFixed(2),
@@ -169,7 +170,7 @@ export const FullModeSummaryPage: FC<FullModeSummaryPageProps> = ({
       <CompletionDateWarning />
 
       <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
-        Training record and CCT calculation
+        Training record and Completion of Training Date calculation
       </h2>
 
       <FullModeCalculationSummary
