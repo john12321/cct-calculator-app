@@ -244,9 +244,9 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
 
   return (
     <>
-      <h2 className="nhsuk-heading-l nhsuk-u-color-blue">Past changes</h2>
-
       <section id="past-changes-section" className="nhsuk-u-margin-bottom-6">
+        <h2 className="nhsuk-heading-l nhsuk-u-color-blue">Past changes</h2>
+
         <p className="nhsuk-body">
           You only need to record completed Less than full-time training (LTFT)
           periods and/or absences (OOP, parental, sickness, etc.), as any gaps
