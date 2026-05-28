@@ -13,6 +13,7 @@ import {
 import { formatDate } from "../utils/format";
 
 type TrainingPeriodFormProps = {
+  formId?: string;
   programme: ProgrammeDetails;
   priorPeriods: TrainingPeriod[];
   editing: TrainingPeriod | null;
@@ -50,6 +51,7 @@ const defaultStart = (
 };
 
 export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
+  formId,
   programme,
   priorPeriods,
   editing,
@@ -139,6 +141,7 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
 
   return (
     <form
+      id={formId}
       onSubmit={handleSubmit}
       noValidate
       className="nhsuk-u-margin-bottom-4"

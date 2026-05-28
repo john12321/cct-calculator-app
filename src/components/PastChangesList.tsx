@@ -42,7 +42,7 @@ export const PastChangesList: FC<PastChangesListProps> = ({
   const sorted = sortByStart(changes);
 
   return (
-    <div className="table-wrapper">
+    <div id="past-changes-table" className="table-wrapper">
       <Table>
         <Table.Head>
           <Table.Row>

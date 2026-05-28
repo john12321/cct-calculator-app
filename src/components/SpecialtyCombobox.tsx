@@ -198,7 +198,9 @@ export const SpecialtyCombobox: FC<SpecialtyComboboxProps> = ({
   const [highlight, setHighlight] = useState(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const skipNextBlurRevertRef = useRef(false);
 
   useEffect(() => {
     setQuery(value);
@@ -235,6 +237,8 @@ export const SpecialtyCombobox: FC<SpecialtyComboboxProps> = ({
     setIsOpen(false);
     setHighlight(-1);
     onCommit?.();
+    skipNextBlurRevertRef.current = true;
+    requestAnimationFrame(() => inputRef.current?.blur());
   };
 
   const revert = () => {
@@ -276,6 +280,10 @@ export const SpecialtyCombobox: FC<SpecialtyComboboxProps> = ({
   };
 
   const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
+    if (skipNextBlurRevertRef.current) {
+      skipNextBlurRevertRef.current = false;
+      return;
+    }
     const next = e.relatedTarget as Node | null;
     if (next && containerRef.current?.contains(next)) return;
     revert();
@@ -288,6 +296,7 @@ export const SpecialtyCombobox: FC<SpecialtyComboboxProps> = ({
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
       <input
+        ref={inputRef}
         className="nhsuk-input"
         id={fieldId}
         type="text"

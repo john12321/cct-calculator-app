@@ -8,6 +8,7 @@ import {
 } from "../core";
 
 type PastChangeFormProps = {
+  formId?: string;
   programme: ProgrammeDetails;
   existing: PastChange[];
   editing: PastChange | null;
@@ -30,6 +31,7 @@ const newId = () =>
   `past-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
 export const PastChangeForm: FC<PastChangeFormProps> = ({
+  formId,
   programme,
   existing,
   editing,
@@ -108,6 +110,7 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
 
   return (
     <form
+      id={formId}
       onSubmit={handleSubmit}
       noValidate
       className="nhsuk-u-margin-bottom-4"

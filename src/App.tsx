@@ -6,6 +6,7 @@ import { SetupPage } from "./pages/SetupPage";
 import { SetupFullPage } from "./pages/SetupFullPage";
 import { SummaryPage } from "./pages/SummaryPage";
 import { FullModeSummaryPage } from "./pages/FullModeSummaryPage";
+import packageJson from "../package.json";
 import type {
   CalculationMode,
   PastChange,
@@ -46,8 +47,11 @@ export const App = () => {
     <div className="nhsuk-width-container">
       <main className="nhsuk-main-wrapper" id="main-content">
         <header className="nhsuk-u-margin-bottom-4">
-          <h1 className="nhsuk-heading-xl nhsuk-u-color-blue">
+          <h1 className="nhsuk-heading-xl nhsuk-u-color-blue app-heading">
             NHS Completion of Training Date Calculator
+            <span className="app-heading__version">
+              Version {packageJson.version}
+            </span>
           </h1>
         </header>
 

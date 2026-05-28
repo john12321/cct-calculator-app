@@ -10,6 +10,7 @@ import {
   type ProgrammeDetails,
   type TrainingPeriod
 } from "../core";
+import { scrollToElement } from "../utils/scroll";
 
 type SetupFullPageProps = {
   programme: ProgrammeDetails | null;
@@ -30,16 +31,29 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
 
   const handleAdd = (period: TrainingPeriod) => {
     onTimelineChange([...timeline, period]);
+    scrollToElement("timeline-table");
   };
 
   const handleUpdate = (period: TrainingPeriod) => {
     onTimelineChange(timeline.map(p => (p.id === period.id ? period : p)));
     setEditingId(null);
+    scrollToElement("timeline-table");
   };
 
   const handleRemove = (id: string) => {
     onTimelineChange(timeline.filter(p => p.id !== id));
     if (editingId === id) setEditingId(null);
+    scrollToElement("training-period-form");
+  };
+
+  const handleStartEdit = (id: string) => {
+    setEditingId(id);
+    scrollToElement("training-period-form");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    scrollToElement("timeline-table");
   };
 
   const editingPeriod =
@@ -62,10 +76,11 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
       <ProgrammeDetailsSection
         programme={programme}
         onChange={onProgrammeChange}
+        onSaved={() => scrollToElement("training-timeline-section")}
       />
 
       {programme && (
-        <section className="nhsuk-u-margin-top-4">
+        <section id="training-timeline-section" className="nhsuk-u-margin-top-4">
           <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
             Training timeline
           </h2>
@@ -89,15 +104,16 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
               programme={programme}
               priorPeriods={priorPeriods}
               editing={editingPeriod}
+              formId="training-period-form"
               onAdd={handleAdd}
               onUpdate={handleUpdate}
-              onCancelEdit={() => setEditingId(null)}
+              onCancelEdit={handleCancelEdit}
             />
           )}
 
           <TimelineGrid
             periods={timeline}
-            onEdit={id => setEditingId(id)}
+            onEdit={handleStartEdit}
             onRemove={handleRemove}
           />
 

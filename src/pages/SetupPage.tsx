@@ -16,6 +16,7 @@ import {
   type ProposedChange
 } from "../core";
 import { formatDate } from "../utils/format";
+import { scrollToElement } from "../utils/scroll";
 
 type SetupPageProps = {
   programme: ProgrammeDetails | null;
@@ -46,16 +47,19 @@ export const SetupPage: FC<SetupPageProps> = ({
 
   const handleAddPast = (change: PastChange) => {
     onPastChangesChange([...pastChanges, change]);
+    scrollToElement("past-changes-table");
   };
 
   const handleRemovePast = (id: string) => {
     onPastChangesChange(pastChanges.filter(c => c.id !== id));
     clearProposed();
+    scrollToElement("past-change-form");
   };
 
   const handleStartEdit = (id: string) => {
     setEditingId(id);
     clearProposed();
+    scrollToElement("past-change-form");
   };
 
   const handleUpdatePast = (updated: PastChange) => {
@@ -63,9 +67,13 @@ export const SetupPage: FC<SetupPageProps> = ({
       pastChanges.map(c => (c.id === updated.id ? updated : c))
     );
     setEditingId(null);
+    scrollToElement("past-changes-table");
   };
 
-  const handleCancelEdit = () => setEditingId(null);
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    scrollToElement("past-changes-table");
+  };
 
   const editingChange =
     editingId === null
@@ -107,6 +115,7 @@ export const SetupPage: FC<SetupPageProps> = ({
       <ProgrammeDetailsSection
         programme={programme}
         onChange={onProgrammeChange}
+        onSaved={() => scrollToElement("past-changes-section")}
       />
 
       {programme && (
@@ -237,7 +246,7 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
     <>
       <h2 className="nhsuk-heading-l nhsuk-u-color-blue">Past changes</h2>
 
-      <section className="nhsuk-u-margin-bottom-6">
+      <section id="past-changes-section" className="nhsuk-u-margin-bottom-6">
         <p className="nhsuk-body">
           You only need to record completed Less than full-time training (LTFT)
           periods and/or absences (OOP, parental, sickness, etc.), as any gaps
@@ -280,6 +289,7 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
 
         <PastChangeForm
           key={editingId ?? "new"}
+          formId="past-change-form"
           programme={programme}
           existing={pastChanges}
           editing={editingChange}

@@ -1,4 +1,5 @@
 import { useEffect, useState, type FC, type FormEvent } from "react";
+import { flushSync } from "react-dom";
 import dayjs from "dayjs";
 import {
   TRAINING_GRADES,
@@ -14,11 +15,13 @@ import { SpecialtyCombobox } from "./SpecialtyCombobox";
 type ProgrammeDetailsSectionProps = {
   programme: ProgrammeDetails | null;
   onChange: (programme: ProgrammeDetails) => void;
+  onSaved?: () => void;
 };
 
 export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
   programme,
-  onChange
+  onChange,
+  onSaved
 }) => {
   const initialSpecialty = findSpecialty(programme?.specialty ?? "");
   const initialGradeOverride =
@@ -80,16 +83,8 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     initialHasSkippedGrade ? programme.skippedGradeNotes : ""
   );
   const [error, setError] = useState<string | null>(null);
-  const [pendingFocusStart, setPendingFocusStart] = useState(false);
 
   const selectedSpecialty = findSpecialty(specialty);
-
-  useEffect(() => {
-    if (pendingFocusStart && selectedSpecialty) {
-      document.getElementById("programme-start")?.focus();
-      setPendingFocusStart(false);
-    }
-  }, [pendingFocusStart, selectedSpecialty]);
 
   useEffect(() => {
     if (programme === null) {
@@ -314,8 +309,11 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       return;
     }
     setError(null);
-    onChange(next);
-    setEditing(false);
+    flushSync(() => {
+      onChange(next);
+      setEditing(false);
+    });
+    onSaved?.();
   };
 
   const handleCancel = () => {
@@ -377,7 +375,6 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
               inputId="programme-specialty"
               value={specialty}
               onChange={handleSpecialtyChange}
-              onCommit={() => setPendingFocusStart(true)}
             />
             {selectedSpecialty?.dual && (
               <p className="nhsuk-hint nhsuk-u-margin-top-1">

@@ -39,7 +39,7 @@ export const TimelineGrid: FC<TimelineGridProps> = ({
   const lastId = periods.at(-1)?.id;
 
   return (
-    <div className="table-wrapper">
+    <div id="timeline-table" className="table-wrapper">
       <Table>
         <Table.Head>
           <Table.Row>
