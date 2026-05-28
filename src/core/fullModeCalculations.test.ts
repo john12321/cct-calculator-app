@@ -10,6 +10,7 @@ import {
   projectedCompletionDateForTimeline
 } from "./fullModeCalculations";
 import { DAYS_PER_MONTH } from "./calculations";
+import { BEYOND_ST9_GRADE_LABEL } from "./grades";
 
 const programme: ProgrammeDetails = {
   specialty: "Cardiology",
@@ -322,5 +323,73 @@ describe("computeGradeProgressionForTimeline (lookup branch)", () => {
     const rows = computeGradeProgressionForTimeline(threeYearProg, timeline);
     // ST4 should resolve to the LAST ST4-tagged row (2026-03-31), not the ACF one
     expect(rows[0]).toMatchObject({ grade: "ST4", endDate: "2026-03-31" });
+  });
+
+  it("uses explicit ST9 timeline periods but does not invent ST10", () => {
+    const longProg: ProgrammeDetails = {
+      ...programme,
+      specialty: "Intensive care with Respiratory medicine, and GIM",
+      startGrade: "ST3",
+      lengthMonths: 96
+    };
+    const timeline = [
+      grade({
+        id: "p1",
+        grade: "ST3",
+        startDate: "2025-01-01",
+        endDate: "2025-12-31"
+      }),
+      grade({
+        id: "p2",
+        grade: "ST4",
+        startDate: "2026-01-01",
+        endDate: "2026-12-31"
+      }),
+      grade({
+        id: "p3",
+        grade: "ST5",
+        startDate: "2027-01-01",
+        endDate: "2027-12-31"
+      }),
+      grade({
+        id: "p4",
+        grade: "ST6",
+        startDate: "2028-01-01",
+        endDate: "2028-12-31"
+      }),
+      grade({
+        id: "p5",
+        grade: "ST7",
+        startDate: "2029-01-01",
+        endDate: "2029-12-31"
+      }),
+      grade({
+        id: "p6",
+        grade: "ST8",
+        startDate: "2030-01-01",
+        endDate: "2030-12-31"
+      }),
+      grade({
+        id: "p7",
+        grade: "ST9",
+        startDate: "2031-01-01",
+        endDate: "2031-12-31"
+      }),
+      grade({
+        id: "p8",
+        grade: "ST9",
+        startDate: "2032-01-01",
+        endDate: "2032-12-31"
+      })
+    ];
+
+    const rows = computeGradeProgressionForTimeline(longProg, timeline);
+
+    expect(rows[6]).toMatchObject({ grade: "ST9", endDate: "2032-12-31" });
+    expect(rows[7]).toMatchObject({
+      grade: BEYOND_ST9_GRADE_LABEL,
+      endDate: null,
+      exceedsKnownTrainingGrade: true
+    });
   });
 });

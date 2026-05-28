@@ -400,12 +400,13 @@ So if the start grade is "ST3", the year-1 grade is `ST3`, year-2 is `ST4`,
 year-3 is `ST5`, and so on. Each row's `IF (n ≤ I7, ...)` gate means a year
 only appears if the programme is at least `n` months long.
 
-Our implementation:
+Our implementation generates the same ordinary grade sequence, with one
+deliberate guardrail described below:
 
 ```ts
 const parsed = parseGrade(programme.startGrade); // { prefix: "ST", year: 3 }
 // for year N (1-indexed)
-const grade = `${parsed.prefix}${parsed.year + (yearNumber - 1)}`;
+const { grade } = gradeLabelForParsedGrade(parsed, yearNumber - 1);
 ```
 
 `DFT` (Dental Foundation Training) has no numeric suffix, so it's treated as
@@ -417,7 +418,39 @@ ordinary grade, compares it with `skippedGrade`, and applies a carried `+1`
 offset to the displayed grade from the matching row onwards. This mirrors
 Excel's `N` and `O` helper columns without altering dates by itself.
 
-### 7.2 Grade end date (Excel L9–L17)
+### 7.2 Maximum generated specialty grade
+
+The source workbook can mathematically concatenate grades beyond the official
+list, for example `ST10`, when a long or shifted programme starts at `ST3`.
+The web app does **not** automatically invent specialty training grades above
+`ST9`.
+
+Decision:
+
+- `ST9` remains an allowed training grade in `TRAINING_GRADES`.
+- Generated ST progression displays ordinary labels up to and including
+  `ST9`.
+- If the calculated progression would go past `ST9`, the row label becomes
+  **"Additional training after ST9"** and `GradeTable` shows a warning that no
+  grade label has been assigned automatically.
+- Full mode can still record explicit `ST9` grade periods. The recorded-grade
+  lookup can use those periods for the `ST9` row, but rows beyond that are not
+  matched to an invented `ST10`.
+
+Rationale and sources:
+
+- The [GMC ARCP 2024/25 data collection instructions](https://www.gmc-uk.org/-/media/documents/arcp-outcomes---instructions-for-the-collection-of-arcp-data-2025-112338556.pdf)
+  include `ST9` as a valid training level and state that GMC allows one
+  additional training level for dual training programmes.
+- The [GMC approved dual CCT pairings list, August 2024](https://www.gmc-uk.org/-/media/gmc-site/education/downloads/curricula/dual-specialty-pairing-website-master-28-08-24.pdf)
+  includes several 8-year programmes and some intensive-care triple pairings
+  with indicative lengths of 8.5-9.5 years, supporting the need to recognise
+  late dual/triple-training progression.
+- The [NHS Employers medical and dental pay circular](https://www.nhsemployers.org/system/files/2024-09/Pay-and-Conditions-Circular-MD-5-2024-R.pdf)
+  lists pay scale codes to `ST8` / `SpR8`, which is a pay-code ceiling rather
+  than a complete ARCP training-level list.
+
+### 7.3 Grade end date (Excel L9–L17)
 
 The Excel formula is long but the idea is:
 
@@ -863,6 +896,7 @@ behaviour differs between modes, both are noted:
 | `I17` / `Q9:Q17` 24-month grade rule                                                                           | Implemented for the three DRE-EM specialties. Shared by both modes.                                                                                                                                                                                                                                                                                                                                                                  |
 | `K20` / `P9:P17` 18-month final year rule                                                                      | Implemented, with mandatory reason and clear summary display. Shared by both modes.                                                                                                                                                                                                                                                                                                                                                  |
 | `K50` / `O9:O17` skip one grade year rule                                                                      | Implemented, with mandatory reason, carried display offset and clear summary display. Shared by both modes.                                                                                                                                                                                                                                                                                                                          |
+| Generated grade labels beyond `ST9`                                                                            | Deliberately differs from the workbook's raw string-concatenation behaviour: the app allows `ST9` but displays later generated rows as "Additional training after ST9" with a warning, rather than inventing `ST10+` labels.                                                                                                                                                                                                         |
 | Completed LTFT/absence recording                                                                               | Quick mode: typed by LTFT/OOP/leave exceptions, with implicit 100% gaps. Full mode: contiguous timeline of grade/OOP/leave rows (mirrors `A24:E46`).                                                                                                                                                                                                                                                                                 |
 | `B13` / `I47` future completion projection                                                                     | Quick mode: explicit "Next post" form provides start + WTE. Full mode: uses the recorded end date once required training is covered; while under-covered it projects at the latest grade WTE, with a project-forward grade row used to record a planned future rate.                                                                                                                                                                 |
 | `A24:A46` Grade / Period Type label                                                                            | Quick mode: not modelled (Quick uses absence/LTFT typing instead). Full mode: 9 period types (`GRADE`, `OOPC/E/P/R/T`, `PARENTAL`, `SICK`, `ACCRUED_LEAVE`) plus a `gradeTag` of `REGULAR`/`ACF`/`ACL`/`ADDITIONAL_TRAINING_TIME` on GRADE rows.                                                                                                                                                                                     |

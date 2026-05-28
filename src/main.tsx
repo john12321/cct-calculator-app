@@ -4,7 +4,7 @@ import { App } from "./App.tsx";
 import "./styles/main.scss";
 import packageJson from "../package.json";
 
-document.title = `CCT Calculator v${packageJson.version}`;
+document.title = `Completion of Training Date Calculator v${packageJson.version}`;
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

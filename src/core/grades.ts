@@ -20,9 +20,13 @@ export type GradeYear = {
   skippedGradeBeforeThisRow: string | null;
   extendedToEighteenMonths: boolean;
   extendedToTwentyFourMonths: boolean;
+  exceedsKnownTrainingGrade: boolean;
 };
 
 type ParsedGrade = { prefix: string; year: number };
+
+export const MAX_GENERATED_ST_GRADE = 9;
+export const BEYOND_ST9_GRADE_LABEL = "Additional training after ST9";
 
 export const parseGrade = (grade: string): ParsedGrade | null => {
   const match = /^([A-Za-z]+)(\d+)$/.exec(grade.trim());
@@ -36,7 +40,24 @@ export const gradeForYearOffset = (
 ): string => {
   const parsed = parseGrade(startGrade);
   if (!parsed) return startGrade;
-  return `${parsed.prefix}${parsed.year + offset}`;
+  return gradeLabelForParsedGrade(parsed, offset).grade;
+};
+
+const gradeLabelForParsedGrade = (
+  parsed: ParsedGrade,
+  offset: number
+): { grade: string; exceedsKnownTrainingGrade: boolean } => {
+  const year = parsed.year + offset;
+  if (parsed.prefix.toUpperCase() === "ST" && year > MAX_GENERATED_ST_GRADE) {
+    return {
+      grade: BEYOND_ST9_GRADE_LABEL,
+      exceedsKnownTrainingGrade: true
+    };
+  }
+  return {
+    grade: `${parsed.prefix}${year}`,
+    exceedsKnownTrainingGrade: false
+  };
 };
 
 export type Segment = {
@@ -163,7 +184,7 @@ export const computeGradeProgressionForSegments = (
     }
 
     const ordinaryGrade = parsed
-      ? `${parsed.prefix}${parsed.year + yearNumber - 1}`
+      ? gradeLabelForParsedGrade(parsed, yearNumber - 1).grade
       : programme.startGrade;
     const beginsAfterSkippedGrade =
       parsed !== null &&
@@ -172,9 +193,16 @@ export const computeGradeProgressionForSegments = (
     if (beginsAfterSkippedGrade) {
       skippedGradeOffset = 1;
     }
-    const grade = parsed
-      ? `${parsed.prefix}${parsed.year + yearNumber - 1 + skippedGradeOffset}`
-      : programme.startGrade;
+    const gradeResult = parsed
+      ? gradeLabelForParsedGrade(
+          parsed,
+          yearNumber - 1 + skippedGradeOffset
+        )
+      : {
+          grade: programme.startGrade,
+          exceedsKnownTrainingGrade: false
+        };
+    const { grade, exceedsKnownTrainingGrade } = gradeResult;
 
     const isEighteenMonthFinalYear =
       programme.eighteenMonthFinalGrade !== "" &&
@@ -203,7 +231,8 @@ export const computeGradeProgressionForSegments = (
         ? programme.skippedGrade
         : null,
       extendedToEighteenMonths: isEighteenMonthFinalYear,
-      extendedToTwentyFourMonths: isTwentyFourMonth
+      extendedToTwentyFourMonths: isTwentyFourMonth,
+      exceedsKnownTrainingGrade
     });
 
     previousEighteenMonthExtension = finalYearExtension;

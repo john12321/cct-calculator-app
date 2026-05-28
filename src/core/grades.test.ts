@@ -4,7 +4,7 @@ import {
   programmeAdjustedEndDate,
   programmeAdjustedLengthMonths
 } from "./calculations";
-import { computeGradeProgression } from "./grades";
+import { BEYOND_ST9_GRADE_LABEL, computeGradeProgression } from "./grades";
 import { validateProgrammeDetails } from "./validation";
 
 const tripleCctProgramme: ProgrammeDetails = {
@@ -137,7 +137,10 @@ describe("18-month final year", () => {
     };
     const rows = computeGradeProgression(withFinalYear, [], null);
 
-    expect(withoutFinalYear.at(-1)?.grade).toBe("ST10");
+    expect(withoutFinalYear.at(-1)).toMatchObject({
+      grade: BEYOND_ST9_GRADE_LABEL,
+      exceedsKnownTrainingGrade: true
+    });
     expect(rows.map(row => row.grade)).toEqual([
       "ST3",
       "ST4",
@@ -148,6 +151,7 @@ describe("18-month final year", () => {
       "ST9"
     ]);
     expect(rows.at(-1)?.extendedToEighteenMonths).toBe(true);
+    expect(rows.some(row => row.exceedsKnownTrainingGrade)).toBe(false);
     expect(rows.at(-1)?.endDate).toBe(withoutFinalYear.at(-1)?.endDate);
     expect(programmeAdjustedLengthMonths(withFinalYear)).toBe(90);
     expect(programmeAdjustedEndDate(withFinalYear)).toBe(
@@ -205,9 +209,10 @@ describe("skipped grade year", () => {
       "ST7",
       "ST8",
       "ST9",
-      "ST10",
-      "ST11"
+      BEYOND_ST9_GRADE_LABEL,
+      BEYOND_ST9_GRADE_LABEL
     ]);
+    expect(rows.slice(-2).every(row => row.exceedsKnownTrainingGrade)).toBe(true);
     expect(rows[2]?.skippedGradeBeforeThisRow).toBe("ST5");
     expect(rows.map(row => row.endDate)).toEqual(
       withoutSkip.map(row => row.endDate)

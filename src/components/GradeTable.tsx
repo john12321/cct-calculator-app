@@ -22,6 +22,7 @@ export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
   const hasEighteenMonthFinalYear = rows.some(r => r.extendedToEighteenMonths);
   const hasTwentyFourMonthYear = rows.some(r => r.extendedToTwentyFourMonths);
   const hasSkippedGrade = rows.some(r => r.skippedGradeBeforeThisRow !== null);
+  const hasBeyondKnownGrade = rows.some(r => r.exceedsKnownTrainingGrade);
   const finalGrade = rows.at(-1)?.grade;
 
   return (
@@ -77,6 +78,18 @@ export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
                       (24-month year)
                     </span>
                   )}
+                  {row.exceedsKnownTrainingGrade && (
+                    <span
+                      className="nhsuk-u-margin-left-2"
+                      style={{
+                        fontSize: "0.85em",
+                        color: "#005eb8",
+                        fontWeight: 600
+                      }}
+                    >
+                      (grade label not automatically assigned)
+                    </span>
+                  )}
                 </Table.Cell>
                 <Table.Cell>
                   {row.endDate ? formatDate(row.endDate) : "—"}
@@ -86,6 +99,28 @@ export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
           </Table.Body>
         </Table>
       </div>
+
+      {hasBeyondKnownGrade && (
+        <div
+          className="nhsuk-warning-callout nhsuk-u-margin-top-3"
+          role="alert"
+        >
+          <h3 className="nhsuk-warning-callout__label">
+            <span role="text">
+              <span className="nhsuk-u-visually-hidden">Important: </span>
+              Grade progression beyond ST9
+            </span>
+          </h3>
+          <p className="nhsuk-u-margin-0">
+            The calculated training timeline extends beyond the highest
+            specialty training grade the app assigns automatically. Later rows
+            are shown as <strong>Additional training after ST9</strong> rather
+            than inventing labels such as ST10. Check the official training
+            record or, in Full mode, record confirmed ST9 grade periods where
+            applicable.
+          </p>
+        </div>
+      )}
 
       <div
         className="nhsuk-inset-text nhsuk-u-margin-top-3"
