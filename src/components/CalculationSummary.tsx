@@ -9,6 +9,7 @@ import {
   computeWteAccrual,
   findSpecialty,
   getCalculationTypeLabel,
+  isOpenProjectedLtftChange,
   programmeAdjustedEndDate,
   programmeOriginalEndDate,
   projectedCompletionDate,
@@ -176,7 +177,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
         )}
         <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">
-            Total WTE completed (up to proposed next post)
+            Total WTE completed (up to projection start)
           </dt>
           <dd className="nhsuk-summary-list__value">
             {formatMonths(accrual.totalWteMonthsCompleted)}
@@ -198,9 +199,11 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
         </div>
       </dl>
 
-      <h3 className="nhsuk-heading-m nhsuk-u-color-blue">Past changes</h3>
+      <h3 className="nhsuk-heading-m nhsuk-u-color-blue">
+        Completed changes
+      </h3>
       {sorted.length === 0 ? (
-        <p className="nhsuk-body-s">No past changes recorded.</p>
+        <p className="nhsuk-body-s">No completed changes recorded.</p>
       ) : (
         <div className="table-wrapper">
           <Table>
@@ -212,6 +215,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                 <Table.Cell>Calendar months</Table.Cell>
                 <Table.Cell>WTE %</Table.Cell>
                 <Table.Cell>Counted as training?</Table.Cell>
+                <Table.Cell>Projects remaining training?</Table.Cell>
                 <Table.Cell>WTE months</Table.Cell>
               </Table.Row>
             </Table.Head>
@@ -223,9 +227,15 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                     {change.notes ? ` — ${change.notes}` : ""}
                   </Table.Cell>
                   <Table.Cell>{formatDate(change.startDate)}</Table.Cell>
-                  <Table.Cell>{formatDate(change.endDate)}</Table.Cell>
                   <Table.Cell>
-                    {calendarMonthsFor(change).toFixed(1)}
+                    {isOpenProjectedLtftChange(change)
+                      ? "For remainder of training"
+                      : formatDate(change.endDate)}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {isOpenProjectedLtftChange(change)
+                      ? "-"
+                      : calendarMonthsFor(change).toFixed(1)}
                   </Table.Cell>
                   <Table.Cell>
                     {formatPercent(wtePercentForPastChange(change) ?? 0)}
@@ -233,7 +243,14 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                   <Table.Cell>
                     {change.countedAsTraining ? "Yes" : "No"}
                   </Table.Cell>
-                  <Table.Cell>{wteMonthsFor(change).toFixed(1)}</Table.Cell>
+                  <Table.Cell>
+                    {change.projectsRemainingTraining ? "Yes" : "No"}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {isOpenProjectedLtftChange(change)
+                      ? "-"
+                      : wteMonthsFor(change).toFixed(1)}
+                  </Table.Cell>
                 </Table.Row>
               ))}
               <Table.Row>
@@ -247,6 +264,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                 </Table.Cell>
                 <Table.Cell />
                 <Table.Cell />
+                <Table.Cell />
                 <Table.Cell>
                   <strong>{totalPastWte.toFixed(1)}</strong>
                 </Table.Cell>
@@ -257,7 +275,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
       )}
 
       <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
-        Proposed next post
+        Projection
       </h3>
       <NextPostSummary
         programme={programme}

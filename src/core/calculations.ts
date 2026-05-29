@@ -25,12 +25,66 @@ export const wteFractionFor = (change: PastChange): number => {
   return wte === null ? 0 : wte / 100;
 };
 
+export const isOpenProjectedLtftChange = (change: PastChange): boolean =>
+  change.type === "LTFT" &&
+  change.projectsRemainingTraining === true &&
+  change.endDate === "";
+
+export const completedPastChanges = (
+  pastChanges: PastChange[]
+): PastChange[] =>
+  pastChanges.filter(change => !isOpenProjectedLtftChange(change));
+
 export const calendarMonthsFor = (change: PastChange): number =>
-  inclusiveDays(change.startDate, change.endDate) /
-  COMPLETED_PERIOD_DAYS_PER_MONTH;
+  isOpenProjectedLtftChange(change)
+    ? 0
+    : inclusiveDays(change.startDate, change.endDate) /
+      COMPLETED_PERIOD_DAYS_PER_MONTH;
 
 export const wteMonthsFor = (change: PastChange): number =>
   calendarMonthsFor(change) * wteFractionFor(change);
+
+export const projectedLtftChange = (
+  pastChanges: PastChange[]
+): PastChange | null =>
+  pastChanges.find(
+    change => change.type === "LTFT" && change.projectsRemainingTraining
+  ) ?? null;
+
+export const deriveQuickProjection = (
+  programme: ProgrammeDetails,
+  pastChanges: PastChange[]
+): ProposedChange => {
+  const projectedLtft = projectedLtftChange(pastChanges);
+  if (projectedLtft?.wte != null) {
+    return {
+      kind: "LTFT",
+      startDate: projectedLtft.endDate
+        ? dayjs(projectedLtft.endDate).add(1, "day").format("YYYY-MM-DD")
+        : projectedLtft.startDate,
+      wte: projectedLtft.wte
+    };
+  }
+
+  const latestChange = completedPastChanges(
+    pastChanges
+  ).reduce<PastChange | null>(
+    (latest, change) =>
+      latest === null || dayjs(change.endDate).isAfter(dayjs(latest.endDate))
+        ? change
+        : latest,
+    null
+  );
+  const startDate = latestChange
+    ? dayjs(latestChange.endDate).add(1, "day").format("YYYY-MM-DD")
+    : programme.startDate;
+
+  return {
+    kind: "FULL_TIME",
+    startDate,
+    wte: null
+  };
+};
 
 export const programmeOriginalEndDate = (
   programme: ProgrammeDetails
@@ -75,12 +129,14 @@ export const computeWteAccrual = (
   const totalCalendarMonthsBeforeProposed =
     totalDaysBeforeProposed / COMPLETED_PERIOD_DAYS_PER_MONTH;
 
-  const pastChangesCalendarMonths = pastChanges.reduce(
+  const completedChanges = completedPastChanges(pastChanges);
+
+  const pastChangesCalendarMonths = completedChanges.reduce(
     (sum, change) => sum + calendarMonthsFor(change),
     0
   );
 
-  const wteMonthsFromPastChanges = pastChanges.reduce(
+  const wteMonthsFromPastChanges = completedChanges.reduce(
     (sum, change) => sum + wteMonthsFor(change),
     0
   );

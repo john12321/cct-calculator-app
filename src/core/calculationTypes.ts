@@ -19,6 +19,7 @@ export type PastChange = {
   wte: number | null;
   countedAsTraining: boolean;
   notes: string;
+  projectsRemainingTraining?: boolean;
 };
 
 export type ProposedChangeKind = "FULL_TIME" | "LTFT";

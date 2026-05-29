@@ -7,6 +7,7 @@ import {
   computeWteAccrual,
   findSpecialty,
   getCalculationTypeLabel,
+  isOpenProjectedLtftChange,
   programmeAdjustedEndDate,
   projectedCompletionDate,
   wtePercentForPastChange,
@@ -131,28 +132,35 @@ export const SummaryPage: FC<SummaryPageProps> = ({
       "Calendar months",
       "WTE %",
       "Counted as training?",
+      "Projects remaining training?",
       "WTE months"
     ];
     const pastRows = sorted.map(c => [
-      "Past change",
+      "Completed change",
       getCalculationTypeLabel(c.type, "short"),
       c.notes,
       dayjs(c.startDate).format("YYYY-MM-DD"),
-      dayjs(c.endDate).format("YYYY-MM-DD"),
-      calendarMonthsFor(c).toFixed(2),
+      isOpenProjectedLtftChange(c)
+        ? "For remainder of training"
+        : dayjs(c.endDate).format("YYYY-MM-DD"),
+      isOpenProjectedLtftChange(c) ? "" : calendarMonthsFor(c).toFixed(2),
       String(wtePercentForPastChange(c) ?? 0),
       c.countedAsTraining ? "Yes" : "No",
-      wteMonthsFor(c).toFixed(2)
+      c.projectsRemainingTraining ? "Yes" : "No",
+      isOpenProjectedLtftChange(c) ? "" : wteMonthsFor(c).toFixed(2)
     ]);
 
     const proposedRow = [
-      "Next post",
-      proposed.kind === "FULL_TIME" ? "Full-time post" : "LTFT post",
+      "Projection",
+      proposed.kind === "FULL_TIME"
+        ? "Full-time projection"
+        : "LTFT projection",
       "",
       dayjs(proposed.startDate).format("YYYY-MM-DD"),
       dayjs(newCct).format("YYYY-MM-DD"),
       "",
       String(proposedWte),
+      "",
       "",
       ""
     ];

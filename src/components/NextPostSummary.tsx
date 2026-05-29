@@ -27,8 +27,8 @@ export const NextPostSummary: FC<NextPostSummaryProps> = ({
     proposed.kind === "LTFT" && proposed.wte != null ? proposed.wte : 100;
   const proposedLabel =
     proposed.kind === "FULL_TIME"
-      ? "Full-time post (100%)"
-      : `LTFT post (${proposedWte}%)`;
+      ? "Full-time projection (100%)"
+      : `LTFT projection (${proposedWte}%)`;
 
   return (
     <div className="table-wrapper">
@@ -36,7 +36,7 @@ export const NextPostSummary: FC<NextPostSummaryProps> = ({
         <Table.Head>
           <Table.Row>
             <Table.Cell>Type</Table.Cell>
-            <Table.Cell>Start date</Table.Cell>
+            <Table.Cell>Projection starts</Table.Cell>
             <Table.Cell>WTE %</Table.Cell>
             <Table.Cell>Projected Completion of Training Date</Table.Cell>
           </Table.Row>

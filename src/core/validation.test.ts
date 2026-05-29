@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { describe, expect, it } from "vitest";
 import type {
   PastChange,
@@ -82,6 +83,79 @@ describe("past change validation", () => {
     ).toEqual({ ok: true });
   });
 
+  it("accepts a completed change with future dates for what-if scenarios", () => {
+    const futureProgramme: ProgrammeDetails = {
+      ...programme,
+      lengthMonths: 360
+    };
+    const candidate: PastChange = {
+      ...priorLtft,
+      id: "future-ltft",
+      startDate: dayjs().add(30, "day").format("YYYY-MM-DD"),
+      endDate: dayjs().add(90, "day").format("YYYY-MM-DD")
+    };
+
+    expect(validatePastChange(candidate, futureProgramme, [])).toEqual({
+      ok: true
+    });
+  });
+
+  it("allows later changes up to the current projected completion date", () => {
+    const shorterProgramme: ProgrammeDetails = {
+      ...programme,
+      startDate: "2020-01-01",
+      lengthMonths: 96
+    };
+    const parentalLeave: PastChange = {
+      id: "parental-leave",
+      type: "PARENTAL",
+      startDate: "2026-01-01",
+      endDate: "2026-12-31",
+      wte: null,
+      countedAsTraining: false,
+      notes: ""
+    };
+    const laterChange: PastChange = {
+      id: "later-change",
+      type: "SICKNESS",
+      startDate: "2028-01-01",
+      endDate: "2028-06-30",
+      wte: null,
+      countedAsTraining: false,
+      notes: ""
+    };
+
+    expect(validatePastChange(parentalLeave, shorterProgramme, [])).toEqual({
+      ok: true
+    });
+    expect(
+      validatePastChange(laterChange, shorterProgramme, [parentalLeave])
+    ).toEqual({ ok: true });
+  });
+
+  it("does not let a change extend its own allowable date range", () => {
+    const shorterProgramme: ProgrammeDetails = {
+      ...programme,
+      startDate: "2020-01-01",
+      lengthMonths: 96
+    };
+    const tooLateAbsence: PastChange = {
+      id: "too-late",
+      type: "PARENTAL",
+      startDate: "2028-01-01",
+      endDate: "2028-12-31",
+      wte: null,
+      countedAsTraining: false,
+      notes: ""
+    };
+
+    expect(validatePastChange(tooLateAbsence, shorterProgramme, [])).toEqual({
+      ok: false,
+      message:
+        "Start date cannot be after the current projected Completion of Training Date (28/12/2027)."
+    });
+  });
+
   it("credits OOPT only with fixed credit and enforces the 12-month maximum", () => {
     const oopt: PastChange = {
       ...priorLtft,
@@ -130,9 +204,69 @@ describe("past change validation", () => {
       message: "Only LTFT, OOPT or approved OOPR can be counted as training."
     });
   });
+
+  it("allows only one latest LTFT change to project remaining training", () => {
+    const projectedLtft: PastChange = {
+      ...priorLtft,
+      endDate: "",
+      projectsRemainingTraining: true
+    };
+
+    expect(validatePastChange(projectedLtft, programme, [])).toEqual({
+      ok: true
+    });
+    expect(
+      validatePastChange(
+        {
+          ...projectedLtft,
+          id: "other-ltft",
+          startDate: "2021-07-01",
+          endDate: ""
+        },
+        programme,
+        [projectedLtft]
+      )
+    ).toEqual({
+      ok: false,
+      message: "Only one LTFT change can project the remaining training time."
+    });
+    expect(
+      validatePastChange(projectedLtft, programme, [
+        {
+          ...priorLtft,
+          id: "later-ltft",
+          startDate: "2021-07-01",
+          endDate: "2021-12-31"
+        }
+      ])
+    ).toEqual({
+      ok: false,
+      message: "The projected LTFT change must be the latest change."
+    });
+  });
+
+  it("requires an end date for LTFT only when it is not projecting remaining training", () => {
+    expect(
+      validatePastChange({ ...priorLtft, endDate: "" }, programme, [])
+    ).toEqual({
+      ok: false,
+      message: "Please enter both a start date and an end date."
+    });
+    expect(
+      validatePastChange(
+        {
+          ...priorLtft,
+          endDate: "",
+          projectsRemainingTraining: true
+        },
+        programme,
+        []
+      )
+    ).toEqual({ ok: true });
+  });
 });
 
-describe("next post validation", () => {
+describe("derived projection validation", () => {
   const laterAbsence: PastChange = {
     id: "later-absence",
     type: "OOPC",
@@ -143,7 +277,7 @@ describe("next post validation", () => {
     notes: ""
   };
 
-  it("requires the proposed next post to start after the latest past change", () => {
+  it("requires the projection to start after the latest completed change", () => {
     const proposed: ProposedChange = {
       kind: "FULL_TIME",
       startDate: laterAbsence.endDate,
@@ -155,7 +289,7 @@ describe("next post validation", () => {
     ).toEqual({
       ok: false,
       message:
-        "Proposed start date must be after the latest past change (ends 31/03/2022)."
+        "Proposed start date must be after the latest completed change (ends 31/03/2022)."
     });
   });
 

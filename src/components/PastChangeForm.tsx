@@ -48,8 +48,17 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
   const [countedAsTraining, setCountedAsTraining] = useState(
     editing?.countedAsTraining ?? false
   );
+  const [projectsRemainingTraining, setProjectsRemainingTraining] = useState(
+    editing?.projectsRemainingTraining ?? false
+  );
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
+  const otherProjectedChange = existing.find(
+    change =>
+      change.id !== editing?.id &&
+      change.type === "LTFT" &&
+      change.projectsRemainingTraining
+  );
 
   const hasNewEntryData =
     !isEditing &&
@@ -57,6 +66,7 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
       startDate !== "" ||
       endDate !== "" ||
       wte !== "" ||
+      projectsRemainingTraining ||
       notes.trim() !== "");
 
   const resetForAdd = () => {
@@ -65,6 +75,7 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
     setEndDate("");
     setWte("");
     setCountedAsTraining(false);
+    setProjectsRemainingTraining(false);
     setNotes("");
     setError(null);
   };
@@ -72,6 +83,7 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
   const handleTypeChange = (nextType: CalculationType) => {
     setType(nextType);
     setCountedAsTraining(nextType === "LTFT" || nextType === "OOPT");
+    setProjectsRemainingTraining(false);
     setWte("");
   };
 
@@ -88,12 +100,13 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
       id: editing?.id ?? newId(),
       type,
       startDate,
-      endDate,
+      endDate: type === "LTFT" && projectsRemainingTraining ? "" : endDate,
       wte: wteValue !== null && !Number.isNaN(wteValue) ? wteValue : null,
       countedAsTraining:
         (type === "LTFT" || type === "OOPT" || type === "OOPR") &&
         countedAsTraining,
-      notes: notes.trim()
+      notes: notes.trim(),
+      projectsRemainingTraining: type === "LTFT" && projectsRemainingTraining
     };
     const result = validatePastChange(candidate, programme, existing);
     if (!result.ok) {
@@ -115,7 +128,9 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
       noValidate
       className="nhsuk-u-margin-bottom-4"
     >
-      {isEditing && <h3 className="nhsuk-heading-s">Editing past change</h3>}
+      {isEditing && (
+        <h3 className="nhsuk-heading-s">Editing completed change</h3>
+      )}
 
       <div className="nhsuk-grid-row">
         <div className="nhsuk-grid-column-one-half">
@@ -224,20 +239,22 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
             />
           </div>
         </div>
-        <div className="nhsuk-grid-column-one-quarter">
-          <div className="nhsuk-form-group">
-            <label className="nhsuk-label" htmlFor="past-end">
-              End date
-            </label>
-            <input
-              className="nhsuk-input nhsuk-input--width-10"
-              id="past-end"
-              type="date"
-              value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-            />
+        {type !== "LTFT" && (
+          <div className="nhsuk-grid-column-one-quarter">
+            <div className="nhsuk-form-group">
+              <label className="nhsuk-label" htmlFor="past-end">
+                End date
+              </label>
+              <input
+                className="nhsuk-input nhsuk-input--width-10"
+                id="past-end"
+                type="date"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
+        )}
         {type === "LTFT" && (
           <div className="nhsuk-grid-column-one-quarter">
             <div className="nhsuk-form-group">
@@ -258,6 +275,52 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
           </div>
         )}
       </div>
+
+      {type === "LTFT" && (
+        <div className="nhsuk-form-group">
+          <div className="ltft-projection-choice">
+            <div className="ltft-projection-choice__end-date">
+              <label className="nhsuk-label" htmlFor="past-end">
+                End date
+              </label>
+              <input
+                className="nhsuk-input nhsuk-input--width-10"
+                id="past-end"
+                type="date"
+                value={endDate}
+                disabled={projectsRemainingTraining}
+                onChange={e => setEndDate(e.target.value)}
+              />
+            </div>
+            <div className="ltft-projection-choice__or">
+              <span className="nhsuk-body">or</span>
+            </div>
+            <div className="ltft-projection-choice__project">
+              <div className="nhsuk-checkboxes">
+                <div className="nhsuk-checkboxes__item">
+                  <input
+                    className="nhsuk-checkboxes__input"
+                    id="past-projects-remaining"
+                    type="checkbox"
+                    checked={projectsRemainingTraining}
+                    disabled={otherProjectedChange !== undefined}
+                    onChange={e => {
+                      setProjectsRemainingTraining(e.target.checked);
+                      if (e.target.checked) setEndDate("");
+                    }}
+                  />
+                  <label
+                    className="nhsuk-label nhsuk-checkboxes__label"
+                    htmlFor="past-projects-remaining"
+                  >
+                    For the remainder of my training programme
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="nhsuk-grid-row">
         <div className="nhsuk-grid-column-one-half">

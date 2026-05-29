@@ -11,9 +11,9 @@ import type {
   CalculationMode,
   PastChange,
   ProgrammeDetails,
-  ProposedChange,
   TrainingPeriod
 } from "./core";
+import { deriveQuickProjection } from "./core";
 
 const STEPS = [{ title: "Setup" }, { title: "Summary" }];
 
@@ -23,8 +23,9 @@ export const App = () => {
   const [maxReachedStep, setMaxReachedStep] = useState(0);
   const [programme, setProgramme] = useState<ProgrammeDetails | null>(null);
   const [pastChanges, setPastChanges] = useState<PastChange[]>([]);
-  const [proposed, setProposed] = useState<ProposedChange | null>(null);
   const [timeline, setTimeline] = useState<TrainingPeriod[]>([]);
+  const quickProjection =
+    programme === null ? null : deriveQuickProjection(programme, pastChanges);
 
   const goTo = (next: number) => {
     setStep(next);
@@ -37,7 +38,6 @@ export const App = () => {
     setMode(null);
     setProgramme(null);
     setPastChanges([]);
-    setProposed(null);
     setTimeline([]);
     setStep(0);
     setMaxReachedStep(0);
@@ -77,10 +77,8 @@ export const App = () => {
                     <SetupPage
                       programme={programme}
                       pastChanges={pastChanges}
-                      proposed={proposed}
                       onProgrammeChange={setProgramme}
                       onPastChangesChange={setPastChanges}
-                      onProposedChange={setProposed}
                       onContinue={() => goTo(1)}
                     />
                   )}
@@ -95,13 +93,16 @@ export const App = () => {
                     />
                   )}
 
-                  {step === 1 && mode === "QUICK" && programme && proposed && (
-                    <SummaryPage
-                      programme={programme}
-                      pastChanges={pastChanges}
-                      proposed={proposed}
-                    />
-                  )}
+                  {step === 1 &&
+                    mode === "QUICK" &&
+                    programme &&
+                    quickProjection && (
+                      <SummaryPage
+                        programme={programme}
+                        pastChanges={pastChanges}
+                        proposed={quickProjection}
+                      />
+                    )}
 
                   {step === 1 && mode === "FULL" && programme && (
                     <FullModeSummaryPage

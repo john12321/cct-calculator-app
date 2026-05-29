@@ -5,15 +5,14 @@ import { NextPostSummary } from "../components/NextPostSummary";
 import { PastChangeForm } from "../components/PastChangeForm";
 import { PastChangesList } from "../components/PastChangesList";
 import { ProgrammeDetailsSection } from "../components/ProgrammeDetailsSection";
-import { ProposedChangeForm } from "../components/ProposedChangeForm";
 import {
   computeGradeProgression,
+  deriveQuickProjection,
   getCalculationTypeLabel,
+  isOpenProjectedLtftChange,
   validatePastChange,
-  validateProposedChange,
   type PastChange,
-  type ProgrammeDetails,
-  type ProposedChange
+  type ProgrammeDetails
 } from "../core";
 import { formatDate } from "../utils/format";
 import { scrollToElement } from "../utils/scroll";
@@ -21,50 +20,47 @@ import { scrollToElement } from "../utils/scroll";
 type SetupPageProps = {
   programme: ProgrammeDetails | null;
   pastChanges: PastChange[];
-  proposed: ProposedChange | null;
   onProgrammeChange: (programme: ProgrammeDetails) => void;
   onPastChangesChange: (changes: PastChange[]) => void;
-  onProposedChange: (proposed: ProposedChange | null) => void;
   onContinue: () => void;
 };
 
 export const SetupPage: FC<SetupPageProps> = ({
   programme,
   pastChanges,
-  proposed,
   onProgrammeChange,
   onPastChangesChange,
-  onProposedChange,
   onContinue
 }) => {
-  const [showProposedForm, setShowProposedForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const clearProposed = () => {
-    onProposedChange(null);
-    setShowProposedForm(false);
-  };
-
   const handleAddPast = (change: PastChange) => {
-    onPastChangesChange([...pastChanges, change]);
+    const existing = change.projectsRemainingTraining
+      ? pastChanges.map(c => ({ ...c, projectsRemainingTraining: false }))
+      : pastChanges;
+    onPastChangesChange([...existing, change]);
     scrollToElement("past-changes-table");
   };
 
   const handleRemovePast = (id: string) => {
     onPastChangesChange(pastChanges.filter(c => c.id !== id));
-    clearProposed();
     scrollToElement("past-change-form");
   };
 
   const handleStartEdit = (id: string) => {
     setEditingId(id);
-    clearProposed();
     scrollToElement("past-change-form");
   };
 
   const handleUpdatePast = (updated: PastChange) => {
     onPastChangesChange(
-      pastChanges.map(c => (c.id === updated.id ? updated : c))
+      pastChanges.map(c => {
+        if (c.id === updated.id) return updated;
+        if (updated.projectsRemainingTraining) {
+          return { ...c, projectsRemainingTraining: false };
+        }
+        return c;
+      })
     );
     setEditingId(null);
     scrollToElement("past-changes-table");
@@ -80,33 +76,16 @@ export const SetupPage: FC<SetupPageProps> = ({
       ? null
       : (pastChanges.find(c => c.id === editingId) ?? null);
 
-  const handleProposedSubmit = (next: ProposedChange) => {
-    onProposedChange(next);
-  };
-
-  const handleEditProposed = () => {
-    setShowProposedForm(true);
-  };
-
-  const summaryPastChangeIssues = programme
+  const pastChangeIssues = programme
     ? pastChanges.filter(
         change => !validatePastChange(change, programme, pastChanges).ok
       )
     : [];
-  const summaryProposedValidation =
-    programme && proposed
-      ? validateProposedChange(proposed, programme, pastChanges)
-      : null;
-  const summaryProposedError =
-    summaryProposedValidation && !summaryProposedValidation.ok
-      ? summaryProposedValidation.message
-      : null;
+  const projected = programme
+    ? deriveQuickProjection(programme, pastChanges)
+    : null;
   const canShowSummary =
-    programme !== null &&
-    proposed !== null &&
-    editingId === null &&
-    !showProposedForm &&
-    summaryProposedError === null;
+    programme !== null && editingId === null && pastChangeIssues.length === 0;
 
   return (
     <>
@@ -118,59 +97,47 @@ export const SetupPage: FC<SetupPageProps> = ({
         onSaved={() => scrollToElement("past-changes-section")}
       />
 
-      {programme && (
-        <ChangesAndNextPost
+      {programme && projected && (
+        <ChangesSection
           programme={programme}
           pastChanges={pastChanges}
-          proposed={proposed}
+          projected={projected}
           editingId={editingId}
           editingChange={editingChange}
-          showProposedForm={showProposedForm}
           onAddPast={handleAddPast}
           onUpdatePast={handleUpdatePast}
           onCancelEdit={handleCancelEdit}
           onStartEdit={handleStartEdit}
           onRemovePast={handleRemovePast}
-          onShowProposedForm={() => setShowProposedForm(true)}
-          onProposedSubmit={next => {
-            handleProposedSubmit(next);
-            setShowProposedForm(false);
-          }}
-          onEditProposed={handleEditProposed}
         />
       )}
-      {programme && (
+      {programme && projected && (
         <section className="nhsuk-u-margin-top-4">
           <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
             Grade progression
           </h2>
           <p className="nhsuk-hint">
-            Updates automatically as you add past changes and your proposed next
-            post.
+            Updates automatically as you add changes and set the projection.
           </p>
           <GradeTable
             programme={programme}
-            rows={computeGradeProgression(programme, pastChanges, proposed)}
+            rows={computeGradeProgression(programme, pastChanges, projected)}
           />
           {canShowSummary && (
-            <>
-              {summaryPastChangeIssues.length > 0 && (
-                <p className="nhsuk-u-margin-top-3">
-                  <em>
-                    Fix the past change errors above before continuing to
-                    summary.
-                  </em>
-                </p>
-              )}
-              <button
-                type="button"
-                className="nhsuk-button nhsuk-u-margin-top-4"
-                onClick={onContinue}
-                disabled={summaryPastChangeIssues.length > 0}
-              >
-                Show summary
-              </button>
-            </>
+            <button
+              type="button"
+              className="nhsuk-button nhsuk-u-margin-top-4"
+              onClick={onContinue}
+            >
+              Show summary
+            </button>
+          )}
+          {!canShowSummary && pastChangeIssues.length > 0 && (
+            <p className="nhsuk-u-margin-top-3">
+              <em>
+                Fix the change errors above before continuing to summary.
+              </em>
+            </p>
           )}
         </section>
       )}
@@ -178,38 +145,30 @@ export const SetupPage: FC<SetupPageProps> = ({
   );
 };
 
-type ChangesAndNextPostProps = {
+type ChangesSectionProps = {
   programme: ProgrammeDetails;
   pastChanges: PastChange[];
-  proposed: ProposedChange | null;
+  projected: ReturnType<typeof deriveQuickProjection>;
   editingId: string | null;
   editingChange: PastChange | null;
-  showProposedForm: boolean;
   onAddPast: (change: PastChange) => void;
   onUpdatePast: (change: PastChange) => void;
   onCancelEdit: () => void;
   onStartEdit: (id: string) => void;
   onRemovePast: (id: string) => void;
-  onShowProposedForm: () => void;
-  onProposedSubmit: (proposed: ProposedChange) => void;
-  onEditProposed: () => void;
 };
 
-const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
+const ChangesSection: FC<ChangesSectionProps> = ({
   programme,
   pastChanges,
-  proposed,
+  projected,
   editingId,
   editingChange,
-  showProposedForm,
   onAddPast,
   onUpdatePast,
   onCancelEdit,
   onStartEdit,
-  onRemovePast,
-  onShowProposedForm,
-  onProposedSubmit,
-  onEditProposed
+  onRemovePast
 }) => {
   const pastChangeIssues: {
     id: string;
@@ -226,166 +185,91 @@ const ChangesAndNextPost: FC<ChangesAndNextPostProps> = ({
       });
     }
   }
-  const pastErrorsById = Object.fromEntries(
+  const errorsById = Object.fromEntries(
     pastChangeIssues.map(issue => [issue.id, issue.message])
   );
 
-  const proposedValidation = proposed
-    ? validateProposedChange(proposed, programme, pastChanges)
-    : null;
-  const proposedError =
-    proposedValidation && !proposedValidation.ok
-      ? proposedValidation.message
-      : null;
-
-  const hasErrors = pastChangeIssues.length > 0 || proposedError !== null;
-  const describeChange = (change: PastChange) =>
-    `${getCalculationTypeLabel(change.type, "short")} (${formatDate(change.startDate)} – ${formatDate(change.endDate)})`;
+  const hasErrors = pastChangeIssues.length > 0;
+  const describeChange = (change: PastChange) => {
+    const endLabel = isOpenProjectedLtftChange(change)
+      ? "projects forward"
+      : formatDate(change.endDate);
+    return `${getCalculationTypeLabel(change.type, "short")} (${formatDate(change.startDate)} - ${endLabel})`;
+  };
 
   return (
-    <>
-      <section id="past-changes-section" className="nhsuk-u-margin-bottom-6">
-        <h2 className="nhsuk-heading-l nhsuk-u-color-blue">Past changes</h2>
+    <section id="past-changes-section" className="nhsuk-u-margin-bottom-6">
+      <h2 className="nhsuk-heading-l nhsuk-u-color-blue">Changes</h2>
 
-        <p className="nhsuk-body">
-          You only need to record completed Less than full-time training (LTFT)
-          periods and/or absences (OOP, parental, sickness, etc.), as any gaps
-          between them will be assumed full-time (100% WTE).
-        </p>
+      <p className="nhsuk-body">
+        Record completed or hypothetical completed Less than full-time training
+        (LTFT) periods and/or absences (OOP, parental, sickness, etc.). Any
+        gaps between them will be assumed full-time (100% WTE). If no LTFT
+        change is selected for projection, remaining training is projected at
+        full-time from the day after the latest change.
+      </p>
 
-        {hasErrors && (
-          <div
-            className="nhsuk-error-summary"
-            aria-labelledby="changes-error-title"
-            role="alert"
-          >
-            <h3 className="nhsuk-error-summary__title" id="changes-error-title">
-              These entries are no longer valid against the current programme
-              details
-            </h3>
-            <div className="nhsuk-error-summary__body">
-              <ul className="nhsuk-list nhsuk-list--bullet nhsuk-error-summary__list">
-                {pastChangeIssues.map(issue => (
-                  <li key={issue.id}>
-                    <strong>{describeChange(issue.change)}</strong> —{" "}
-                    {issue.message}
-                  </li>
-                ))}
-                {proposedError && proposed && (
-                  <li>
-                    <strong>
-                      Next post (start {formatDate(proposed.startDate)})
-                    </strong>{" "}
-                    — {proposedError}
-                  </li>
-                )}
-              </ul>
-              <p className="nhsuk-u-margin-top-2">
-                Edit or remove the affected entries to continue.
-              </p>
-            </div>
+      {hasErrors && (
+        <div
+          className="nhsuk-error-summary"
+          aria-labelledby="changes-error-title"
+          role="alert"
+        >
+          <h3 className="nhsuk-error-summary__title" id="changes-error-title">
+            These entries are no longer valid against the current programme
+            details
+          </h3>
+          <div className="nhsuk-error-summary__body">
+            <ul className="nhsuk-list nhsuk-list--bullet nhsuk-error-summary__list">
+              {pastChangeIssues.map(issue => (
+                <li key={issue.id}>
+                  <strong>{describeChange(issue.change)}</strong> -{" "}
+                  {issue.message}
+                </li>
+              ))}
+            </ul>
+            <p className="nhsuk-u-margin-top-2">
+              Edit or remove the affected entries to continue.
+            </p>
           </div>
-        )}
-
-        <PastChangeForm
-          key={editingId ?? "new"}
-          formId="past-change-form"
-          programme={programme}
-          existing={pastChanges}
-          editing={editingChange}
-          onAdd={onAddPast}
-          onUpdate={onUpdatePast}
-          onCancelEdit={onCancelEdit}
-        />
-
-        <PastChangesList
-          changes={pastChanges}
-          editingId={editingId}
-          errorsById={pastErrorsById}
-          onRemove={onRemovePast}
-          onEdit={onStartEdit}
-        />
-      </section>
-
-      {editingId === null && (
-        <>
-          <hr className="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible" />
-          <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
-            Proposed next post{" "}
-          </h2>
-          <section className="nhsuk-u-margin-bottom-2">
-            {!showProposedForm && !proposed && (
-              <>
-                <p className="nhsuk-body">
-                  If you have any past changes, add them above first. Then enter
-                  your proposed next post to calculate your projected
-                  Completion of Training Date.
-                </p>
-                <button
-                  type="button"
-                  className="nhsuk-button"
-                  onClick={onShowProposedForm}
-                  disabled={pastChangeIssues.length > 0}
-                >
-                  Add next post
-                </button>
-              </>
-            )}
-
-            {showProposedForm && (
-              <ProposedChangeForm
-                programme={programme}
-                pastChanges={pastChanges}
-                initial={proposed}
-                submitDisabled={pastChangeIssues.length > 0}
-                submitDisabledReason="Fix the past change errors above before calculating your projected Completion of Training Date."
-                onSubmit={onProposedSubmit}
-              />
-            )}
-
-            {proposed && !showProposedForm && proposedError === null && (
-              <>
-                <NextPostSummary
-                  key={`${pastChanges.length}-${pastChanges.map(c => c.id + c.startDate + c.endDate + (c.wte ?? "")).join("|")}`}
-                  programme={programme}
-                  pastChanges={pastChanges}
-                  proposed={proposed}
-                />
-                <p className="nhsuk-hint nhsuk-u-margin-top-1">
-                  This projection updates automatically when you add, edit or
-                  remove past changes.
-                </p>
-
-                <div className="nhsuk-button-group nhsuk-u-margin-top-4">
-                  <button
-                    type="button"
-                    className="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-right-3"
-                    onClick={onEditProposed}
-                  >
-                    Edit next post
-                  </button>
-                </div>
-              </>
-            )}
-
-            {proposed && !showProposedForm && proposedError !== null && (
-              <>
-                <p className="nhsuk-body">
-                  The proposed next post you entered is no longer valid against
-                  the current programme details.
-                </p>
-                <button
-                  type="button"
-                  className="nhsuk-button"
-                  onClick={onEditProposed}
-                >
-                  Edit next post
-                </button>
-              </>
-            )}
-          </section>
-        </>
+        </div>
       )}
-    </>
+
+      <PastChangeForm
+        key={editingId ?? "new"}
+        formId="past-change-form"
+        programme={programme}
+        existing={pastChanges}
+        editing={editingChange}
+        onAdd={onAddPast}
+        onUpdate={onUpdatePast}
+        onCancelEdit={onCancelEdit}
+      />
+
+      <PastChangesList
+        changes={pastChanges}
+        editingId={editingId}
+        errorsById={errorsById}
+        onRemove={onRemovePast}
+        onEdit={onStartEdit}
+      />
+
+      {editingId === null && !hasErrors && (
+        <section className="nhsuk-u-margin-top-5">
+          <h3 className="nhsuk-heading-m nhsuk-u-color-blue">
+            Projected Completion of Training Date
+          </h3>
+          <NextPostSummary
+            programme={programme}
+            pastChanges={pastChanges}
+            proposed={projected}
+          />
+          <p className="nhsuk-hint nhsuk-u-margin-top-1">
+            This projection updates automatically when you add, edit or remove
+            changes.
+          </p>
+        </section>
+      )}
+    </section>
   );
 };

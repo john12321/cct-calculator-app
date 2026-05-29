@@ -6,8 +6,12 @@ import type {
   TrainingPeriod
 } from "./calculationTypes";
 import {
+  completedPastChanges,
+  computeWteAccrual,
+  deriveQuickProjection,
   programmeAdjustedEndDate,
-  programmeAdjustedLengthMonths
+  programmeAdjustedLengthMonths,
+  projectedCompletionDate
 } from "./calculations";
 import { TRAINING_GRADES, findSpecialty } from "./specialties";
 
@@ -18,31 +22,39 @@ const err = (message: string): ValidationResult => ({ ok: false, message });
 
 const formatDate = (date: string) => dayjs(date).format("DD/MM/YYYY");
 
+const currentCompletionDateBeforeChange = (
+  candidate: PastChange,
+  programme: ProgrammeDetails,
+  existing: PastChange[]
+): string => {
+  const priorChanges = completedPastChanges(existing).filter(
+    change =>
+      change.id !== candidate.id &&
+      dayjs(change.endDate).isBefore(dayjs(candidate.startDate))
+  );
+  const projection = deriveQuickProjection(programme, priorChanges);
+  const accrual = computeWteAccrual(
+    programme,
+    priorChanges,
+    projection.startDate
+  );
+  return projectedCompletionDate(projection, accrual.monthsRemaining);
+};
+
 export const validatePastChange = (
   candidate: PastChange,
   programme: ProgrammeDetails,
   existing: PastChange[]
 ): ValidationResult => {
-  const programmeEnd = programmeAdjustedEndDate(programme);
-  const programmeEndLabel =
-    programme.additionalMonths > 0 || programme.acceleratedMonths > 0
-      ? "adjusted programme end"
-      : "original programme end";
-  const today = dayjs().startOf("day");
-
-  if (!candidate.startDate || !candidate.endDate) {
+  const projectsRemainingTraining = candidate.projectsRemainingTraining === true;
+  if (!candidate.startDate || (!projectsRemainingTraining && !candidate.endDate)) {
     return err("Please enter both a start date and an end date.");
   }
 
-  if (dayjs(candidate.startDate).isAfter(today)) {
-    return err("Past change start date cannot be in the future.");
-  }
-
-  if (dayjs(candidate.endDate).isAfter(today)) {
-    return err("Past change end date cannot be in the future.");
-  }
-
-  if (dayjs(candidate.startDate).isAfter(dayjs(candidate.endDate))) {
+  if (
+    candidate.endDate &&
+    dayjs(candidate.startDate).isAfter(dayjs(candidate.endDate))
+  ) {
     return err("Start date cannot be after end date.");
   }
 
@@ -52,9 +64,24 @@ export const validatePastChange = (
     );
   }
 
-  if (dayjs(candidate.endDate).isAfter(dayjs(programmeEnd))) {
+  const currentCompletionDate = currentCompletionDateBeforeChange(
+    candidate,
+    programme,
+    existing
+  );
+
+  if (dayjs(candidate.startDate).isAfter(dayjs(currentCompletionDate))) {
     return err(
-      `End date cannot be after the ${programmeEndLabel} (${formatDate(programmeEnd)}).`
+      `Start date cannot be after the current projected Completion of Training Date (${formatDate(currentCompletionDate)}).`
+    );
+  }
+
+  if (
+    candidate.endDate &&
+    dayjs(candidate.endDate).isAfter(dayjs(currentCompletionDate))
+  ) {
+    return err(
+      `End date cannot be after the current projected Completion of Training Date (${formatDate(currentCompletionDate)}).`
     );
   }
 
@@ -87,6 +114,10 @@ export const validatePastChange = (
     );
   }
 
+  if (projectsRemainingTraining && candidate.type !== "LTFT") {
+    return err("Only LTFT changes can be used to project remaining training.");
+  }
+
   if (
     candidate.type !== "LTFT" &&
     candidate.type !== "OOPT" &&
@@ -109,6 +140,26 @@ export const validatePastChange = (
 
   for (const other of existing) {
     if (other.id === candidate.id) continue;
+    if (
+      projectsRemainingTraining &&
+      other.projectsRemainingTraining
+    ) {
+      return err(
+        "Only one LTFT change can project the remaining training time."
+      );
+    }
+    if (projectsRemainingTraining) {
+      if (!dayjs(candidate.startDate).isAfter(dayjs(other.endDate))) {
+        return err("The projected LTFT change must be the latest change.");
+      }
+      continue;
+    }
+    if (other.projectsRemainingTraining) {
+      if (!dayjs(candidate.endDate).isBefore(dayjs(other.startDate))) {
+        return err("The projected LTFT change must be the latest change.");
+      }
+      continue;
+    }
     const overlaps =
       !dayjs(candidate.endDate).isBefore(dayjs(other.startDate)) &&
       !dayjs(candidate.startDate).isAfter(dayjs(other.endDate));
@@ -128,7 +179,7 @@ export const validateProposedChange = (
   pastChanges: PastChange[]
 ): ValidationResult => {
   if (!proposed.startDate) {
-    return err("Please enter a start date for your next post.");
+    return err("Please enter a projection start date.");
   }
 
   if (dayjs(proposed.startDate).isBefore(dayjs(programme.startDate))) {
@@ -148,14 +199,15 @@ export const validateProposedChange = (
     );
   }
 
-  if (pastChanges.length > 0) {
-    const latest = pastChanges.reduce(
+  const completedChanges = completedPastChanges(pastChanges);
+  if (completedChanges.length > 0) {
+    const latest = completedChanges.reduce(
       (acc, p) => (dayjs(p.endDate).isAfter(dayjs(acc.endDate)) ? p : acc),
-      pastChanges[0]
+      completedChanges[0]
     );
     if (!dayjs(proposed.startDate).isAfter(dayjs(latest.endDate))) {
       return err(
-        `Proposed start date must be after the latest past change (ends ${formatDate(latest.endDate)}).`
+        `Proposed start date must be after the latest completed change (ends ${formatDate(latest.endDate)}).`
       );
     }
   }

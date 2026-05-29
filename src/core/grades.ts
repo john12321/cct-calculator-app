@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import {
   COMPLETED_PERIOD_DAYS_PER_MONTH,
   DAYS_PER_MONTH,
+  completedPastChanges,
   inclusiveDays,
   programmeAdjustedLengthMonths,
   wteFractionFor
@@ -72,7 +73,7 @@ const buildSegments = (
   pastChanges: PastChange[],
   proposed: ProposedChange | null
 ): Segment[] => {
-  const sorted = [...pastChanges].sort((a, b) =>
+  const sorted = completedPastChanges(pastChanges).sort((a, b) =>
     dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf()
   );
 

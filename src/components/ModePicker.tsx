@@ -20,10 +20,9 @@ export const ModePicker: FC<ModePickerProps> = ({ onSelect }) => {
                 I want a quick Completion of Training Date calculation
               </h3>
               <p className="nhsuk-body">
-                Record only completed LTFT periods and absences, then enter your
-                proposed next post. Any gaps are assumed to be full-time
-                training. Fastest route to a projected Completion of Training
-                Date.
+                Record completed or "what if?" LTFT change periods and absences,
+                with gaps assumed to be full-time training. Fastest route to a
+                projected Completion of Training Date.
               </p>
               <button
                 type="button"

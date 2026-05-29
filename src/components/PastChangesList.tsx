@@ -4,6 +4,7 @@ import { Table } from "nhsuk-react-components";
 import {
   calendarMonthsFor,
   getCalculationTypeLabel,
+  isOpenProjectedLtftChange,
   wtePercentForPastChange,
   wteMonthsFor,
   type PastChange
@@ -33,8 +34,9 @@ export const PastChangesList: FC<PastChangesListProps> = ({
   if (changes.length === 0) {
     return (
       <p className="nhsuk-body">
-        No past changes added yet. Use the form above to record any LTFT posts
-        or absences before you add your proposed next post details.
+        No completed changes added yet. Use the form above to record any LTFT
+        posts or absences. The calculator will project from the programme start
+        at 100% WTE until you add changes.
       </p>
     );
   }
@@ -52,6 +54,7 @@ export const PastChangesList: FC<PastChangesListProps> = ({
             <Table.Cell>End</Table.Cell>
             <Table.Cell>WTE %</Table.Cell>
             <Table.Cell>Counted as training?</Table.Cell>
+            <Table.Cell>Projects remaining training?</Table.Cell>
             <Table.Cell>Calendar months</Table.Cell>
             <Table.Cell>WTE months</Table.Cell>
             <Table.Cell aria-label="Actions" />
@@ -76,15 +79,30 @@ export const PastChangesList: FC<PastChangesListProps> = ({
                 </Table.Cell>
                 <Table.Cell>{change.notes || "—"}</Table.Cell>
                 <Table.Cell>{formatDate(change.startDate)}</Table.Cell>
-                <Table.Cell>{formatDate(change.endDate)}</Table.Cell>
+                <Table.Cell>
+                  {isOpenProjectedLtftChange(change)
+                    ? "For remainder of training"
+                    : formatDate(change.endDate)}
+                </Table.Cell>
                 <Table.Cell>
                   {formatPercent(wtePercentForPastChange(change) ?? 0)}
                 </Table.Cell>
                 <Table.Cell>
                   {change.countedAsTraining ? "Yes" : "No"}
                 </Table.Cell>
-                <Table.Cell>{calendarMonthsFor(change).toFixed(1)}</Table.Cell>
-                <Table.Cell>{wteMonthsFor(change).toFixed(1)}</Table.Cell>
+                <Table.Cell>
+                  {change.projectsRemainingTraining ? "Yes" : "No"}
+                </Table.Cell>
+                <Table.Cell>
+                  {isOpenProjectedLtftChange(change)
+                    ? "-"
+                    : calendarMonthsFor(change).toFixed(1)}
+                </Table.Cell>
+                <Table.Cell>
+                  {isOpenProjectedLtftChange(change)
+                    ? "-"
+                    : wteMonthsFor(change).toFixed(1)}
+                </Table.Cell>
                 <Table.Cell>
                   <button
                     type="button"

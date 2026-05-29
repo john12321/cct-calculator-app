@@ -39,7 +39,7 @@ describe("grade end date display parity", () => {
     ]);
   });
 
-  it("walks completed absence and LTFT segments before projecting the next post", () => {
+  it("walks completed absence and LTFT segments before projecting remaining training", () => {
     const rows = computeGradeProgression(
       tripleCctProgramme,
       [

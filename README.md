@@ -20,7 +20,7 @@ A client-side calculator for working out a **Completion of Training Date** for a
 
 | Mode      | Entry model                                                                                                                                            | Suitable for                                                                                        |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| **Quick** | Record completed LTFT or absence changes, then enter the next proposed full-time or LTFT post. Unrecorded gaps are assumed to be training at 100% WTE. | A faster projected Completion of Training Date calculation.                                         |
+| **Quick** | Record completed or hypothetical completed LTFT or absence changes, with one optional LTFT change used to project remaining training. Unrecorded gaps are assumed to be training at 100% WTE. | A faster projected Completion of Training Date calculation.                                         |
 | **Full**  | Record every training, OOP and leave period as a contiguous timeline, with grade-labelled training rows.                                               | A fuller administrative record and the closest in-app equivalent to the source Excel training grid. |
 
 Both modes use the same programme details, adjustments, underlying grade rules and OOP training-credit rules; Full mode additionally uses its recorded timeline for grade-date lookup and projection.
@@ -28,8 +28,8 @@ Both modes use the same programme details, adjustments, underlying grade rules a
 ### Quick Mode Flow
 
 1. Select **Quick mode** and enter programme and specialty details.
-2. Record completed changes that affect training-time accrual.
-3. Enter the proposed next post as full time or LTFT.
+2. Record completed or hypothetical completed changes that affect training-time accrual.
+3. Optionally mark one LTFT change to project the remaining training time; this can be open-ended and does not need an end date. Otherwise the calculator projects from the latest change at 100% WTE.
 4. Review grade progression, the projected Completion of Training Date and the exportable summary.
 
 Quick mode completed-change choices are:
@@ -128,8 +128,7 @@ src/
 ├── components/
 │   ├── ModePicker.tsx                 # Quick / Full selection
 │   ├── ProgrammeDetailsSection.tsx    # Shared programme inputs and adjustments
-│   ├── PastChangeForm.tsx             # Quick-mode completed-change entry
-│   ├── ProposedChangeForm.tsx         # Quick-mode next-post projection input
+│   ├── PastChangeForm.tsx             # Quick-mode change and projection entry
 │   ├── TrainingPeriodForm.tsx         # Full-mode timeline row entry
 │   ├── TimelineGrid.tsx               # Full-mode timeline display
 │   └── GradeTable.tsx                 # Grade-progression display

@@ -8,6 +8,7 @@ import type {
 import {
   DAYS_PER_MONTH,
   computeWteAccrual,
+  deriveQuickProjection,
   inclusiveDays,
   projectedCompletionDate,
   wteMonthsFor
@@ -162,5 +163,90 @@ describe("Quick-mode approved OOP credit", () => {
     };
 
     expect(wteMonthsFor(oopr)).toBeCloseTo(4.8, 1);
+  });
+});
+
+describe("Quick-mode derived projection", () => {
+  it("projects full-time from programme start when no changes are recorded", () => {
+    expect(deriveQuickProjection(longProgramme, [])).toEqual({
+      kind: "FULL_TIME",
+      startDate: longProgramme.startDate,
+      wte: null
+    });
+  });
+
+  it("projects full-time from the day after the latest change by default", () => {
+    expect(
+      deriveQuickProjection(longProgramme, [
+        {
+          id: "ltft",
+          type: "LTFT",
+          startDate: "2020-01-01",
+          endDate: "2020-06-30",
+          wte: 80,
+          countedAsTraining: true,
+          notes: ""
+        }
+      ])
+    ).toEqual({
+      kind: "FULL_TIME",
+      startDate: "2020-07-01",
+      wte: null
+    });
+  });
+
+  it("uses the selected LTFT WTE for the remaining-time projection", () => {
+    expect(
+      deriveQuickProjection(longProgramme, [
+        {
+          id: "ltft",
+          type: "LTFT",
+          startDate: "2020-01-01",
+          endDate: "2020-06-30",
+          wte: 60,
+          countedAsTraining: true,
+          notes: "",
+          projectsRemainingTraining: true
+        }
+      ])
+    ).toEqual({
+      kind: "LTFT",
+      startDate: "2020-07-01",
+      wte: 60
+    });
+  });
+
+  it("uses an open-ended projected LTFT start date as the projection start", () => {
+    const changes: PastChange[] = [
+      {
+        id: "absence",
+        type: "OOPC",
+        startDate: "2020-01-01",
+        endDate: "2020-06-30",
+        wte: null,
+        countedAsTraining: false,
+        notes: ""
+      },
+      {
+        id: "projected-ltft",
+        type: "LTFT",
+        startDate: "2020-07-01",
+        endDate: "",
+        wte: 60,
+        countedAsTraining: true,
+        notes: "",
+        projectsRemainingTraining: true
+      }
+    ];
+
+    expect(deriveQuickProjection(longProgramme, changes)).toEqual({
+      kind: "LTFT",
+      startDate: "2020-07-01",
+      wte: 60
+    });
+    expect(
+      computeWteAccrual(longProgramme, changes, "2020-07-01")
+        .wteMonthsFromPastChanges
+    ).toBe(0);
   });
 });
