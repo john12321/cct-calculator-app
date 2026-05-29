@@ -241,8 +241,35 @@ describe("past change validation", () => {
       ])
     ).toEqual({
       ok: false,
-      message: "The projected LTFT change must be the latest change."
+      message:
+        "Projected change not added as it must begin after all other completed changes."
     });
+  });
+
+  it("explains when a dated change conflicts with an existing remainder projection", () => {
+    const projectedLtft: PastChange = {
+      ...priorLtft,
+      startDate: "2026-08-25",
+      endDate: "",
+      projectsRemainingTraining: true
+    };
+    const datedChange: PastChange = {
+      id: "dated-change",
+      type: "PARENTAL",
+      startDate: "2027-02-02",
+      endDate: "2027-06-09",
+      wte: null,
+      countedAsTraining: false,
+      notes: ""
+    };
+
+    expect(validatePastChange(datedChange, programme, [projectedLtft])).toEqual(
+      {
+        ok: false,
+        message:
+          "Change not added as you already have a projected change that covers the remainder of your training."
+      }
+    );
   });
 
   it("requires an end date for LTFT only when it is not projecting remaining training", () => {

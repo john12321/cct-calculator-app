@@ -46,8 +46,12 @@ export const validatePastChange = (
   programme: ProgrammeDetails,
   existing: PastChange[]
 ): ValidationResult => {
-  const projectsRemainingTraining = candidate.projectsRemainingTraining === true;
-  if (!candidate.startDate || (!projectsRemainingTraining && !candidate.endDate)) {
+  const projectsRemainingTraining =
+    candidate.projectsRemainingTraining === true;
+  if (
+    !candidate.startDate ||
+    (!projectsRemainingTraining && !candidate.endDate)
+  ) {
     return err("Please enter both a start date and an end date.");
   }
 
@@ -124,9 +128,7 @@ export const validatePastChange = (
     candidate.type !== "OOPR" &&
     candidate.countedAsTraining
   ) {
-    return err(
-      "Only LTFT, OOPT or approved OOPR can be counted as training."
-    );
+    return err("Only LTFT, OOPT or approved OOPR can be counted as training.");
   }
 
   if (candidate.type === "OOPT" && candidate.countedAsTraining) {
@@ -140,23 +142,24 @@ export const validatePastChange = (
 
   for (const other of existing) {
     if (other.id === candidate.id) continue;
-    if (
-      projectsRemainingTraining &&
-      other.projectsRemainingTraining
-    ) {
+    if (projectsRemainingTraining && other.projectsRemainingTraining) {
       return err(
         "Only one LTFT change can project the remaining training time."
       );
     }
     if (projectsRemainingTraining) {
       if (!dayjs(candidate.startDate).isAfter(dayjs(other.endDate))) {
-        return err("The projected LTFT change must be the latest change.");
+        return err(
+          "Projected change not added as it must begin after all other completed changes."
+        );
       }
       continue;
     }
     if (other.projectsRemainingTraining) {
       if (!dayjs(candidate.endDate).isBefore(dayjs(other.startDate))) {
-        return err("The projected LTFT change must be the latest change.");
+        return err(
+          "Change not added as you already have a projected change that covers the remainder of your training."
+        );
       }
       continue;
     }
@@ -316,9 +319,7 @@ export const validateProgrammeDetails = (
   return ok;
 };
 
-const validateGradeFields = (
-  candidate: TrainingPeriod
-): ValidationResult => {
+const validateGradeFields = (candidate: TrainingPeriod): ValidationResult => {
   if (!candidate.grade.trim()) {
     return err("Please choose a grade.");
   }
@@ -333,12 +334,7 @@ const validateGradeFields = (
 };
 
 const validateWte = (wte: number | null): ValidationResult => {
-  if (
-    wte == null ||
-    !Number.isInteger(wte) ||
-    wte < 1 ||
-    wte > 100
-  ) {
+  if (wte == null || !Number.isInteger(wte) || wte < 1 || wte > 100) {
     return err("WTE must be a whole number between 1 and 100.");
   }
   return ok;
