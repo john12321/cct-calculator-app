@@ -247,7 +247,9 @@ const ChangesSection: FC<ChangesSectionProps> = ({
       />
 
       <PastChangesList
+        programme={programme}
         changes={pastChanges}
+        projected={projected}
         editingId={editingId}
         errorsById={errorsById}
         onRemove={onRemovePast}

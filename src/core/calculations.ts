@@ -117,6 +117,61 @@ export type WteAccrualBreakdown = {
   monthsRemaining: number;
 };
 
+export type InferredFullTimePeriod = {
+  id: string;
+  startDate: string;
+  endDate: string;
+};
+
+const maxDayjs = (a: dayjs.Dayjs, b: dayjs.Dayjs): dayjs.Dayjs =>
+  a.isAfter(b) ? a : b;
+
+export const inferredFullTimePeriods = (
+  programme: ProgrammeDetails,
+  pastChanges: PastChange[],
+  projectionStartDate: string
+): InferredFullTimePeriod[] => {
+  const projectionStart = dayjs(projectionStartDate);
+  const sorted = completedPastChanges(pastChanges).sort(
+    (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf()
+  );
+  const periods: InferredFullTimePeriod[] = [];
+  let cursor = dayjs(programme.startDate);
+
+  for (const change of sorted) {
+    if (!cursor.isBefore(projectionStart)) break;
+
+    const changeStart = dayjs(change.startDate);
+    if (changeStart.isAfter(cursor)) {
+      const gapEnd = changeStart
+        .subtract(1, "day")
+        .isBefore(projectionStart)
+        ? changeStart.subtract(1, "day")
+        : projectionStart.subtract(1, "day");
+      if (!gapEnd.isBefore(cursor)) {
+        periods.push({
+          id: `assumed-${cursor.format("YYYY-MM-DD")}-${gapEnd.format("YYYY-MM-DD")}`,
+          startDate: cursor.format("YYYY-MM-DD"),
+          endDate: gapEnd.format("YYYY-MM-DD")
+        });
+      }
+    }
+
+    cursor = maxDayjs(cursor, dayjs(change.endDate).add(1, "day"));
+  }
+
+  const finalGapEnd = projectionStart.subtract(1, "day");
+  if (cursor.isBefore(projectionStart) && !finalGapEnd.isBefore(cursor)) {
+    periods.push({
+      id: `assumed-${cursor.format("YYYY-MM-DD")}-${finalGapEnd.format("YYYY-MM-DD")}`,
+      startDate: cursor.format("YYYY-MM-DD"),
+      endDate: finalGapEnd.format("YYYY-MM-DD")
+    });
+  }
+
+  return periods;
+};
+
 export const computeWteAccrual = (
   programme: ProgrammeDetails,
   pastChanges: PastChange[],

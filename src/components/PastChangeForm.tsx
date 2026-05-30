@@ -132,8 +132,8 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
         <h3 className="nhsuk-heading-s">Editing completed change</h3>
       )}
 
-      <div className="nhsuk-grid-row">
-        <div className="nhsuk-grid-column-one-half">
+      <div className="change-type-row">
+        <div className="change-type-row__type">
           <div className="nhsuk-form-group">
             <label className="nhsuk-label" htmlFor="past-type">
               Change type
@@ -161,7 +161,117 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
             </select>
           </div>
         </div>
+        {type === "LTFT" && (
+          <div className="change-type-row__wte">
+            <div className="nhsuk-form-group">
+              <label className="nhsuk-label" htmlFor="past-wte">
+                WTE % (1-99)
+              </label>
+              <input
+                className="nhsuk-input nhsuk-input--width-5"
+                id="past-wte"
+                type="number"
+                min="1"
+                max="99"
+                step="1"
+                value={wte}
+                onChange={e => setWte(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
       </div>
+
+      {type === "LTFT" && (
+        <div className="nhsuk-form-group">
+          <div className="ltft-date-projection-row">
+            <div className="ltft-date-projection-row__date">
+              <label className="nhsuk-label" htmlFor="past-start">
+                Start date
+              </label>
+              <input
+                className="nhsuk-input nhsuk-input--width-10"
+                id="past-start"
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="ltft-projection-choice__end-date">
+              <label className="nhsuk-label" htmlFor="past-end">
+                End date
+              </label>
+              <input
+                className="nhsuk-input nhsuk-input--width-10"
+                id="past-end"
+                type="date"
+                value={endDate}
+                disabled={projectsRemainingTraining}
+                onChange={e => setEndDate(e.target.value)}
+              />
+            </div>
+            <div className="ltft-projection-choice__or">
+              <span className="nhsuk-body">or</span>
+            </div>
+            <div className="ltft-projection-choice__project">
+              <div className="nhsuk-checkboxes">
+                <div className="nhsuk-checkboxes__item">
+                  <input
+                    className="nhsuk-checkboxes__input"
+                    id="past-projects-remaining"
+                    type="checkbox"
+                    checked={projectsRemainingTraining}
+                    disabled={otherProjectedChange !== undefined}
+                    onChange={e => {
+                      setProjectsRemainingTraining(e.target.checked);
+                      if (e.target.checked) setEndDate("");
+                    }}
+                  />
+                  <label
+                    className="nhsuk-label nhsuk-checkboxes__label"
+                    htmlFor="past-projects-remaining"
+                  >
+                    For the remainder of my training programme
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {type !== "LTFT" && (
+        <div className="nhsuk-grid-row">
+          <div className="nhsuk-grid-column-one-quarter">
+            <div className="nhsuk-form-group">
+              <label className="nhsuk-label" htmlFor="past-start">
+                Start date
+              </label>
+              <input
+                className="nhsuk-input nhsuk-input--width-10"
+                id="past-start"
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="nhsuk-grid-column-one-quarter">
+            <div className="nhsuk-form-group">
+              <label className="nhsuk-label" htmlFor="past-end">
+                End date
+              </label>
+              <input
+                className="nhsuk-input nhsuk-input--width-10"
+                id="past-end"
+                type="date"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {(type === "OOPT" || type === "OOPR") && (
         <div className="nhsuk-form-group">
@@ -219,104 +329,6 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
                 Enter the proportion of this OOPR period prospectively approved
                 to count towards CCT. For LTFT OOPR, this may match your WTE.
               </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="nhsuk-grid-row">
-        <div className="nhsuk-grid-column-one-quarter">
-          <div className="nhsuk-form-group">
-            <label className="nhsuk-label" htmlFor="past-start">
-              Start date
-            </label>
-            <input
-              className="nhsuk-input nhsuk-input--width-10"
-              id="past-start"
-              type="date"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-            />
-          </div>
-        </div>
-        {type !== "LTFT" && (
-          <div className="nhsuk-grid-column-one-quarter">
-            <div className="nhsuk-form-group">
-              <label className="nhsuk-label" htmlFor="past-end">
-                End date
-              </label>
-              <input
-                className="nhsuk-input nhsuk-input--width-10"
-                id="past-end"
-                type="date"
-                value={endDate}
-                onChange={e => setEndDate(e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-        {type === "LTFT" && (
-          <div className="nhsuk-grid-column-one-quarter">
-            <div className="nhsuk-form-group">
-              <label className="nhsuk-label" htmlFor="past-wte">
-                WTE % (1-99)
-              </label>
-              <input
-                className="nhsuk-input nhsuk-input--width-5"
-                id="past-wte"
-                type="number"
-                min="1"
-                max="99"
-                step="1"
-                value={wte}
-                onChange={e => setWte(e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {type === "LTFT" && (
-        <div className="nhsuk-form-group">
-          <div className="ltft-projection-choice">
-            <div className="ltft-projection-choice__end-date">
-              <label className="nhsuk-label" htmlFor="past-end">
-                End date
-              </label>
-              <input
-                className="nhsuk-input nhsuk-input--width-10"
-                id="past-end"
-                type="date"
-                value={endDate}
-                disabled={projectsRemainingTraining}
-                onChange={e => setEndDate(e.target.value)}
-              />
-            </div>
-            <div className="ltft-projection-choice__or">
-              <span className="nhsuk-body">or</span>
-            </div>
-            <div className="ltft-projection-choice__project">
-              <div className="nhsuk-checkboxes">
-                <div className="nhsuk-checkboxes__item">
-                  <input
-                    className="nhsuk-checkboxes__input"
-                    id="past-projects-remaining"
-                    type="checkbox"
-                    checked={projectsRemainingTraining}
-                    disabled={otherProjectedChange !== undefined}
-                    onChange={e => {
-                      setProjectsRemainingTraining(e.target.checked);
-                      if (e.target.checked) setEndDate("");
-                    }}
-                  />
-                  <label
-                    className="nhsuk-label nhsuk-checkboxes__label"
-                    htmlFor="past-projects-remaining"
-                  >
-                    For the remainder of my training programme
-                  </label>
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ A client-side calculator for working out a **Completion of Training Date** for a
 - **Programme and grade calculations** — specialty-driven programme length, grade progression, training-time adjustments and projected Completion of Training Date
 - **Training-credit controls** — records approved counted OOPT and OOPR using the applicable credit rules
 - **Period recording** — supports LTFT, OOP and leave periods, including accrued annual leave
+- **Assumed full-time transparency** — Quick mode can show inferred 100% WTE gaps alongside entered changes and totals
 - **Edit & remove** — amend or remove entered changes or timeline periods
 - **Export CSV** — download a summary table of all calculations
 - **Print / PDF** — print-friendly layout for sharing at ARCP or with colleagues
@@ -20,7 +21,7 @@ A client-side calculator for working out a **Completion of Training Date** for a
 
 | Mode      | Entry model                                                                                                                                            | Suitable for                                                                                        |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| **Quick** | Record completed or hypothetical completed LTFT or absence changes, with one optional LTFT change used to project remaining training. Unrecorded gaps are assumed to be training at 100% WTE. | A faster projected Completion of Training Date calculation.                                         |
+| **Quick** | Record completed or hypothetical completed LTFT or absence changes, with one optional LTFT change used to project remaining training. Unrecorded gaps are assumed to be training at 100% WTE and can be shown in the changes and summary tables. | A faster projected Completion of Training Date calculation.                                         |
 | **Full**  | Record every training, OOP and leave period as a contiguous timeline, with grade-labelled training rows.                                               | A fuller administrative record and the closest in-app equivalent to the source Excel training grid. |
 
 Both modes use the same programme details, adjustments, underlying grade rules and OOP training-credit rules; Full mode additionally uses its recorded timeline for grade-date lookup and projection.
@@ -30,7 +31,8 @@ Both modes use the same programme details, adjustments, underlying grade rules a
 1. Select **Quick mode** and enter programme and specialty details.
 2. Record completed or hypothetical completed changes that affect training-time accrual.
 3. Optionally mark one LTFT change to project the remaining training time; this can be open-ended and does not need an end date. Otherwise the calculator projects from the latest change at 100% WTE.
-4. Review grade progression, the projected Completion of Training Date and the exportable summary.
+4. Use the changes table toggle, when available, to show inferred full-time 100% WTE periods that fill gaps between entered changes. These rows are read-only and flagged as not added by the user.
+5. Review grade progression, the projected Completion of Training Date and the exportable summary. The summary table offers the same assumed full-time toggle and shows totals for entered changes and totals including hidden full-time periods.
 
 Quick mode completed-change choices are:
 
@@ -129,6 +131,7 @@ src/
 │   ├── ModePicker.tsx                 # Quick / Full selection
 │   ├── ProgrammeDetailsSection.tsx    # Shared programme inputs and adjustments
 │   ├── PastChangeForm.tsx             # Quick-mode change and projection entry
+│   ├── PastChangesList.tsx            # Quick-mode changes table with assumed full-time toggle
 │   ├── TrainingPeriodForm.tsx         # Full-mode timeline row entry
 │   ├── TimelineGrid.tsx               # Full-mode timeline display
 │   └── GradeTable.tsx                 # Grade-progression display

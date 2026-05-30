@@ -9,6 +9,7 @@ import {
   DAYS_PER_MONTH,
   computeWteAccrual,
   deriveQuickProjection,
+  inferredFullTimePeriods,
   inclusiveDays,
   projectedCompletionDate,
   wteMonthsFor
@@ -248,5 +249,50 @@ describe("Quick-mode derived projection", () => {
       computeWteAccrual(longProgramme, changes, "2020-07-01")
         .wteMonthsFromPastChanges
     ).toBe(0);
+  });
+});
+
+describe("Quick-mode inferred full-time periods", () => {
+  it("builds assumed 100% gaps before and between completed changes", () => {
+    const changes: PastChange[] = [
+      {
+        id: "absence",
+        type: "OOPC",
+        startDate: "2018-03-01",
+        endDate: "2018-03-31",
+        wte: null,
+        countedAsTraining: false,
+        notes: ""
+      },
+      {
+        id: "ltft",
+        type: "LTFT",
+        startDate: "2018-05-01",
+        endDate: "2018-05-31",
+        wte: 80,
+        countedAsTraining: true,
+        notes: ""
+      }
+    ];
+
+    expect(
+      inferredFullTimePeriods(longProgramme, changes, "2018-07-01")
+    ).toEqual([
+      {
+        id: "assumed-2018-01-01-2018-02-28",
+        startDate: "2018-01-01",
+        endDate: "2018-02-28"
+      },
+      {
+        id: "assumed-2018-04-01-2018-04-30",
+        startDate: "2018-04-01",
+        endDate: "2018-04-30"
+      },
+      {
+        id: "assumed-2018-06-01-2018-06-30",
+        startDate: "2018-06-01",
+        endDate: "2018-06-30"
+      }
+    ]);
   });
 });

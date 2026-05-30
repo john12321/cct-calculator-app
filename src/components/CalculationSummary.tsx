@@ -1,20 +1,24 @@
-import type { FC } from "react";
+import { useState, type FC } from "react";
 import dayjs from "dayjs";
 import { Table } from "nhsuk-react-components";
 import { GradeTable } from "./GradeTable";
 import { NextPostSummary } from "./NextPostSummary";
 import {
   calendarMonthsFor,
+  COMPLETED_PERIOD_DAYS_PER_MONTH,
   computeGradeProgression,
   computeWteAccrual,
   findSpecialty,
   getCalculationTypeLabel,
+  inferredFullTimePeriods,
   isOpenProjectedLtftChange,
   programmeAdjustedEndDate,
   programmeOriginalEndDate,
   projectedCompletionDate,
+  inclusiveDays,
   wtePercentForPastChange,
   wteMonthsFor,
+  type InferredFullTimePeriod,
   type PastChange,
   type ProgrammeDetails,
   type ProposedChange
@@ -33,12 +37,30 @@ const sortByStart = (changes: PastChange[]): PastChange[] =>
     (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf()
   );
 
+type ChangeRow =
+  | { kind: "user"; change: PastChange }
+  | { kind: "assumed"; period: InferredFullTimePeriod };
+
+const sortRows = (rows: ChangeRow[]): ChangeRow[] =>
+  [...rows].sort((a, b) => {
+    const startA =
+      a.kind === "user" ? a.change.startDate : a.period.startDate;
+    const startB =
+      b.kind === "user" ? b.change.startDate : b.period.startDate;
+    return dayjs(startA).valueOf() - dayjs(startB).valueOf();
+  });
+
+const assumedMonthsFor = (period: InferredFullTimePeriod): number =>
+  inclusiveDays(period.startDate, period.endDate) /
+  COMPLETED_PERIOD_DAYS_PER_MONTH;
+
 export const CalculationSummary: FC<CalculationSummaryProps> = ({
   programme,
   pastChanges,
   proposed,
   variant = "inline"
 }) => {
+  const [showAssumedPeriods, setShowAssumedPeriods] = useState(false);
   const sorted = sortByStart(pastChanges);
   const accrual = computeWteAccrual(programme, sorted, proposed.startDate);
   const newCct = projectedCompletionDate(proposed, accrual.monthsRemaining);
@@ -49,11 +71,54 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
     specialtyMeta !== undefined &&
     programme.startGrade !== specialtyMeta.entryGrade;
 
-  const totalPastCalendar = sorted.reduce(
-    (sum, c) => sum + calendarMonthsFor(c),
+  const assumedPeriods = inferredFullTimePeriods(
+    programme,
+    sorted,
+    proposed.startDate
+  );
+  const rows = showAssumedPeriods
+    ? sortRows([
+        ...sorted.map((change): ChangeRow => ({ kind: "user", change })),
+        ...assumedPeriods.map(
+          (period): ChangeRow => ({ kind: "assumed", period })
+        )
+      ])
+    : sorted.map((change): ChangeRow => ({ kind: "user", change }));
+  const totalUserCalendar = sorted.reduce(
+    (sum, change) =>
+      sum + (isOpenProjectedLtftChange(change) ? 0 : calendarMonthsFor(change)),
     0
   );
-  const totalPastWte = sorted.reduce((sum, c) => sum + wteMonthsFor(c), 0);
+  const totalUserWte = sorted.reduce(
+    (sum, change) =>
+      sum + (isOpenProjectedLtftChange(change) ? 0 : wteMonthsFor(change)),
+    0
+  );
+  const totalAssumedCalendar = assumedPeriods.reduce(
+    (sum, period) => sum + assumedMonthsFor(period),
+    0
+  );
+  const renderTotalsRow = (
+    label: string,
+    calendarMonths: number,
+    wteMonths: number
+  ) => (
+    <Table.Row className="changes-total-row">
+      <Table.Cell>
+        <strong>{label}</strong>
+      </Table.Cell>
+      <Table.Cell />
+      <Table.Cell />
+      <Table.Cell>
+        <strong>{calendarMonths.toFixed(1)}</strong>
+      </Table.Cell>
+      <Table.Cell />
+      <Table.Cell />
+      <Table.Cell>
+        <strong>{wteMonths.toFixed(1)}</strong>
+      </Table.Cell>
+    </Table.Row>
+  );
 
   return (
     <section className={variant === "page" ? "nhsuk-u-margin-top-3" : ""}>
@@ -205,73 +270,124 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
       {sorted.length === 0 ? (
         <p className="nhsuk-body-s">No completed changes recorded.</p>
       ) : (
-        <div className="table-wrapper">
-          <Table>
-            <Table.Head>
-              <Table.Row>
-                <Table.Cell>Type</Table.Cell>
-                <Table.Cell>Start</Table.Cell>
-                <Table.Cell>End</Table.Cell>
-                <Table.Cell>Calendar months</Table.Cell>
-                <Table.Cell>WTE %</Table.Cell>
-                <Table.Cell>Counted as training?</Table.Cell>
-                <Table.Cell>Projects remaining training?</Table.Cell>
-                <Table.Cell>WTE months</Table.Cell>
-              </Table.Row>
-            </Table.Head>
-            <Table.Body>
-              {sorted.map(change => (
-                <Table.Row key={change.id}>
-                  <Table.Cell>
-                    {getCalculationTypeLabel(change.type, "short")}
-                    {change.notes ? ` — ${change.notes}` : ""}
-                  </Table.Cell>
-                  <Table.Cell>{formatDate(change.startDate)}</Table.Cell>
-                  <Table.Cell>
-                    {isOpenProjectedLtftChange(change)
-                      ? "For remainder of training"
-                      : formatDate(change.endDate)}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {isOpenProjectedLtftChange(change)
-                      ? "-"
-                      : calendarMonthsFor(change).toFixed(1)}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {formatPercent(wtePercentForPastChange(change) ?? 0)}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {change.countedAsTraining ? "Yes" : "No"}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {change.projectsRemainingTraining ? "Yes" : "No"}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {isOpenProjectedLtftChange(change)
-                      ? "-"
-                      : wteMonthsFor(change).toFixed(1)}
-                  </Table.Cell>
+        <>
+          {assumedPeriods.length > 0 && (
+            <div className="nhsuk-checkboxes nhsuk-u-margin-bottom-3">
+              <div className="nhsuk-checkboxes__item">
+                <input
+                  className="nhsuk-checkboxes__input"
+                  id="summary-show-assumed-full-time-periods"
+                  type="checkbox"
+                  checked={showAssumedPeriods}
+                  onChange={e => setShowAssumedPeriods(e.target.checked)}
+                />
+                <label
+                  className="nhsuk-label nhsuk-checkboxes__label"
+                  htmlFor="summary-show-assumed-full-time-periods"
+                >
+                  Show assumed full-time periods
+                </label>
+              </div>
+            </div>
+          )}
+
+          <div className="table-wrapper">
+            <Table>
+              <Table.Head>
+                <Table.Row>
+                  <Table.Cell>Type</Table.Cell>
+                  <Table.Cell>Start</Table.Cell>
+                  <Table.Cell>End</Table.Cell>
+                  <Table.Cell>Calendar months</Table.Cell>
+                  <Table.Cell>WTE %</Table.Cell>
+                  <Table.Cell>Counted as training?</Table.Cell>
+                  <Table.Cell>WTE months</Table.Cell>
                 </Table.Row>
-              ))}
-              <Table.Row>
-                <Table.Cell>
-                  <strong>Totals</strong>
-                </Table.Cell>
-                <Table.Cell />
-                <Table.Cell />
-                <Table.Cell>
-                  <strong>{totalPastCalendar.toFixed(1)}</strong>
-                </Table.Cell>
-                <Table.Cell />
-                <Table.Cell />
-                <Table.Cell />
-                <Table.Cell>
-                  <strong>{totalPastWte.toFixed(1)}</strong>
-                </Table.Cell>
-              </Table.Row>
-            </Table.Body>
-          </Table>
-        </div>
+              </Table.Head>
+              <Table.Body>
+                {rows.map(row => {
+                  if (row.kind === "assumed") {
+                    const calendarMonths = assumedMonthsFor(row.period);
+                    return (
+                      <Table.Row
+                        key={row.period.id}
+                        className="assumed-full-time-row"
+                      >
+                        <Table.Cell>
+                          <strong>Assumed full-time</strong>
+                          <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                            Not added by user
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {formatDate(row.period.startDate)}
+                        </Table.Cell>
+                        <Table.Cell>{formatDate(row.period.endDate)}</Table.Cell>
+                        <Table.Cell>{calendarMonths.toFixed(1)}</Table.Cell>
+                        <Table.Cell>100%</Table.Cell>
+                        <Table.Cell>Yes</Table.Cell>
+                        <Table.Cell>{calendarMonths.toFixed(1)}</Table.Cell>
+                      </Table.Row>
+                    );
+                  }
+
+                  const change = row.change;
+                  return (
+                    <Table.Row key={change.id}>
+                      <Table.Cell>
+                        {getCalculationTypeLabel(change.type, "short")}
+                        {change.notes ? ` — ${change.notes}` : ""}
+                      </Table.Cell>
+                      <Table.Cell>{formatDate(change.startDate)}</Table.Cell>
+                      <Table.Cell>
+                        {isOpenProjectedLtftChange(change)
+                          ? "For remainder of training"
+                          : formatDate(change.endDate)}
+                      </Table.Cell>
+                      <Table.Cell>
+                        {isOpenProjectedLtftChange(change)
+                          ? "-"
+                          : calendarMonthsFor(change).toFixed(1)}
+                      </Table.Cell>
+                      <Table.Cell>
+                        {formatPercent(wtePercentForPastChange(change) ?? 0)}
+                      </Table.Cell>
+                      <Table.Cell>
+                        {change.countedAsTraining ? "Yes" : "No"}
+                      </Table.Cell>
+                      <Table.Cell>
+                        {isOpenProjectedLtftChange(change)
+                          ? "-"
+                          : wteMonthsFor(change).toFixed(1)}
+                      </Table.Cell>
+                    </Table.Row>
+                  );
+                })}
+                {showAssumedPeriods
+                  ? renderTotalsRow(
+                      "Total",
+                      totalUserCalendar + totalAssumedCalendar,
+                      totalUserWte + totalAssumedCalendar
+                    )
+                  : (
+                      <>
+                        {renderTotalsRow(
+                          "Entered changes total",
+                          totalUserCalendar,
+                          totalUserWte
+                        )}
+                        {assumedPeriods.length > 0 &&
+                          renderTotalsRow(
+                            "Including assumed full-time total (hidden)",
+                            totalUserCalendar + totalAssumedCalendar,
+                            totalUserWte + totalAssumedCalendar
+                          )}
+                      </>
+                    )}
+              </Table.Body>
+            </Table>
+          </div>
+        </>
       )}
 
       <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
