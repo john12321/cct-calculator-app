@@ -227,24 +227,26 @@ export const PastChangesList: FC<PastChangesListProps> = ({
                       : wteMonthsFor(change).toFixed(1)}
                   </Table.Cell>
                   <Table.Cell>
-                    <button
-                      type="button"
-                      className="nhsuk-button nhsuk-button--secondary"
-                      style={{ margin: "0 12px 8px 0" }}
-                      onClick={() => onEdit(change.id)}
-                      disabled={editingId !== null && editingId !== change.id}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="nhsuk-button nhsuk-button--secondary"
-                      style={{ margin: "0 0 8px 0" }}
-                      onClick={() => onRemove(change.id)}
-                      disabled={editingId !== null}
-                    >
-                      Remove
-                    </button>
+                    <div className="table-actions">
+                      <button
+                        type="button"
+                        className="nhsuk-button nhsuk-button--secondary nhsuk-button--small"
+                        onClick={() => onEdit(change.id)}
+                        disabled={
+                          editingId !== null && editingId !== change.id
+                        }
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="nhsuk-button nhsuk-button--secondary nhsuk-button--small"
+                        onClick={() => onRemove(change.id)}
+                        disabled={editingId !== null}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </Table.Cell>
                 </Table.Row>
               );

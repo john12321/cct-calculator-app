@@ -1,7 +1,7 @@
-$nhsuk-font-family: frutiger, Arial, sans-serif;
-$nhsuk-page-width: 1800px;
-@import "../../node_modules/nhsuk-frontend/packages/core/all";
-@import "../../node_modules/nhsuk-frontend/packages/nhsuk";
+@use "../../node_modules/nhsuk-frontend/dist/nhsuk" with (
+  $nhsuk-font-family: ("Frutiger W01", Arial, sans-serif),
+  $nhsuk-page-width: 1800px
+);
 @import "../../node_modules/accessible-autocomplete/dist/accessible-autocomplete.min.css";
 
 @media print {
@@ -93,6 +93,18 @@ $nhsuk-page-width: 1800px;
 .specialty-autocomplete__menu {
   border-color: #212b32;
   max-height: 20rem;
+}
+
+.table-actions {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+
+  .nhsuk-button {
+    margin: 0;
+    white-space: nowrap;
+  }
 }
 
 .assumed-full-time-row {

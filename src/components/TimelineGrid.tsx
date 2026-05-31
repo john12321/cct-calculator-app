@@ -74,34 +74,34 @@ export const TimelineGrid: FC<TimelineGridProps> = ({
                 </Table.Cell>
                 <Table.Cell>{period.notes || "—"}</Table.Cell>
                 <Table.Cell>
-                  <button
-                    type="button"
-                    className="nhsuk-button nhsuk-button--secondary"
-                    style={{ margin: "0 12px 8px 0" }}
-                    onClick={() => onEdit(period.id)}
-                    disabled={!isLast}
-                    title={
-                      isLast
-                        ? undefined
-                        : "Only the most recent period can be edited. Remove later periods first."
-                    }
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="nhsuk-button nhsuk-button--secondary"
-                    style={{ margin: "0 0 8px 0" }}
-                    onClick={() => onRemove(period.id)}
-                    disabled={!isLast}
-                    title={
-                      isLast
-                        ? undefined
-                        : "Only the most recent period can be removed."
-                    }
-                  >
-                    Remove
-                  </button>
+                  <div className="table-actions">
+                    <button
+                      type="button"
+                      className="nhsuk-button nhsuk-button--secondary nhsuk-button--small"
+                      onClick={() => onEdit(period.id)}
+                      disabled={!isLast}
+                      title={
+                        isLast
+                          ? undefined
+                          : "Only the most recent period can be edited. Remove later periods first."
+                      }
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="nhsuk-button nhsuk-button--secondary nhsuk-button--small"
+                      onClick={() => onRemove(period.id)}
+                      disabled={!isLast}
+                      title={
+                        isLast
+                          ? undefined
+                          : "Only the most recent period can be removed."
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </Table.Cell>
               </Table.Row>
             );
