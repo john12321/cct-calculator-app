@@ -190,6 +190,13 @@ $color-nhsuk-white: #ffffff;
   max-height: 20rem;
 }
 
+// .nhsuk-select sets min-width: 100%, which overrides the max-width from
+// nhsuk-input--width-* modifiers. Drop the min-width so selects can be sized
+// by the width modifier (the native dropdown list follows the control width).
+.nhsuk-select.nhsuk-input--width-3 {
+  min-width: 0;
+}
+
 .table-actions {
   align-items: center;
   display: inline-flex;

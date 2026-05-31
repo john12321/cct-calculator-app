@@ -424,7 +424,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   </p>
                 )}
                 <input
-                  className="nhsuk-input nhsuk-input--width-5"
+                  className="nhsuk-input nhsuk-input--width-3"
                   id="programme-length"
                   type="number"
                   step="0.1"
@@ -457,17 +457,24 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                     {selectedSpecialty.entryGrade}.
                   </p>
                 )}
+                {(overrideGrade || !selectedSpecialty) && (
+                  <p
+                    className="nhsuk-hint nhsuk-u-margin-top-1"
+                    id="programme-start-grade-hint"
+                  >
+                    Choose a different start grade
+                  </p>
+                )}
                 {overrideGrade || !selectedSpecialty ? (
                   <select
                     ref={startGradeSelectRef}
-                    className="nhsuk-select"
+                    className="nhsuk-select nhsuk-input--width-3"
                     id="programme-start-grade"
+                    aria-describedby="programme-start-grade-hint"
                     value={startGrade}
                     onChange={e => setStartGrade(e.target.value)}
                   >
-                    <option value="" disabled>
-                      Select a start grade
-                    </option>
+                    <option value="" hidden />
                     {sortedTrainingGrades.map(g => (
                       <option key={g} value={g}>
                         {g}
@@ -476,7 +483,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   </select>
                 ) : (
                   <input
-                    className="nhsuk-input nhsuk-input--width-5"
+                    className="nhsuk-input nhsuk-input--width-3"
                     id="programme-start-grade"
                     type="text"
                     value={startGrade}

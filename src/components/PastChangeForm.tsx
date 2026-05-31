@@ -172,26 +172,92 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
             />
           </div>
         </div>
-        {type === "LTFT" && (
-          <div className="nhsuk-grid-column-one-quarter">
+      </div>
+
+      {type === "LTFT" && (
+        <div className="nhsuk-grid-row">
+          <div className="nhsuk-grid-column-one-half">
             <div className="nhsuk-form-group">
               <label className="nhsuk-label" htmlFor="past-wte">
                 WTE % (1-99)
               </label>
               <input
-                className="nhsuk-input nhsuk-input--width-5"
+                className="nhsuk-input nhsuk-input--width-2"
                 id="past-wte"
-                type="number"
-                min="1"
-                max="99"
-                step="1"
+                type="text"
+                inputMode="numeric"
+                maxLength={2}
                 value={wte}
-                onChange={e => setWte(e.target.value)}
+                onChange={e =>
+                  setWte(e.target.value.replace(/\D/g, "").slice(0, 2))
+                }
               />
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {(type === "OOPT" || type === "OOPR") && (
+        <div className="nhsuk-grid-row">
+          <div className="nhsuk-grid-column-one-half">
+            <div className="nhsuk-form-group">
+              <div className="nhsuk-checkboxes">
+                <div className="nhsuk-checkboxes__item">
+                  <input
+                    className="nhsuk-checkboxes__input"
+                    id="past-counted"
+                    type="checkbox"
+                    checked={countedAsTraining}
+                    onChange={e => setCountedAsTraining(e.target.checked)}
+                  />
+                  <label
+                    className="nhsuk-label nhsuk-checkboxes__label"
+                    htmlFor="past-counted"
+                  >
+                    Counted as training
+                  </label>
+                </div>
+              </div>
+              {type === "OOPT" ? (
+                <p className="nhsuk-hint">
+                  OOPT counted as training is credited at 100% and can be
+                  recorded for up to 12 months.
+                </p>
+              ) : (
+                <p className="nhsuk-hint">
+                  Only approved OOPR time contributing towards a Certificate of
+                  Completion of Training (CCT) should be counted. OOPR is
+                  normally up to 3 years, or 4 years in exceptional
+                  circumstances; LTFT OOPR duration is normally pro rata.
+                </p>
+              )}
+            </div>
+            {type === "OOPR" && countedAsTraining && (
+              <div className="nhsuk-form-group">
+                <label className="nhsuk-label" htmlFor="past-oopr-wte">
+                  Approved CCT credit % (1-100)
+                </label>
+                <input
+                  className="nhsuk-input nhsuk-input--width-3"
+                  id="past-oopr-wte"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={3}
+                  value={wte}
+                  onChange={e =>
+                    setWte(e.target.value.replace(/\D/g, "").slice(0, 3))
+                  }
+                />
+                <p className="nhsuk-hint">
+                  Enter the proportion of this OOPR period prospectively
+                  approved to count towards CCT. For LTFT OOPR, this may match
+                  your WTE.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {type === "LTFT" && (
         <>
@@ -288,67 +354,6 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
             </div>
           </div>
         </>
-      )}
-
-      {(type === "OOPT" || type === "OOPR") && (
-        <div className="nhsuk-form-group">
-          <div className="nhsuk-checkboxes">
-            <div className="nhsuk-checkboxes__item">
-              <input
-                className="nhsuk-checkboxes__input"
-                id="past-counted"
-                type="checkbox"
-                checked={countedAsTraining}
-                onChange={e => setCountedAsTraining(e.target.checked)}
-              />
-              <label
-                className="nhsuk-label nhsuk-checkboxes__label"
-                htmlFor="past-counted"
-              >
-                Counted as training
-              </label>
-            </div>
-          </div>
-          {type === "OOPT" ? (
-            <p className="nhsuk-hint">
-              OOPT counted as training is credited at 100% and can be recorded
-              for up to 12 months.
-            </p>
-          ) : (
-            <p className="nhsuk-hint">
-              Only approved OOPR time contributing towards a Certificate of
-              Completion of Training (CCT) should be counted. OOPR is normally
-              up to 3 years, or 4 years in exceptional circumstances; LTFT OOPR
-              duration is normally pro rata.
-            </p>
-          )}
-        </div>
-      )}
-
-      {type === "OOPR" && countedAsTraining && (
-        <div className="nhsuk-grid-row">
-          <div className="nhsuk-grid-column-one-half">
-            <div className="nhsuk-form-group">
-              <label className="nhsuk-label" htmlFor="past-oopr-wte">
-                Approved CCT credit % (1-100)
-              </label>
-              <input
-                className="nhsuk-input nhsuk-input--width-5"
-                id="past-oopr-wte"
-                type="number"
-                min="1"
-                max="100"
-                step="1"
-                value={wte}
-                onChange={e => setWte(e.target.value)}
-              />
-              <p className="nhsuk-hint">
-                Enter the proportion of this OOPR period prospectively approved
-                to count towards CCT. For LTFT OOPR, this may match your WTE.
-              </p>
-            </div>
-          </div>
-        </div>
       )}
 
       <div className="nhsuk-grid-row">
