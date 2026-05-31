@@ -11,6 +11,7 @@ import {
   type TrainingPeriodType
 } from "../core";
 import { formatDate } from "../utils/format";
+import { DateInput } from "./DateInput";
 
 type TrainingPeriodFormProps = {
   formId?: string;
@@ -321,25 +322,18 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
 
       <div className="nhsuk-grid-row">
         <div className="nhsuk-grid-column-one-quarter">
-          <div className="nhsuk-form-group">
-            <label className="nhsuk-label" htmlFor="period-start">
-              Start date
-            </label>
-            <input
-              className="nhsuk-input nhsuk-input--width-10"
-              id="period-start"
-              type="date"
-              value={isEditing ? (editing?.startDate ?? "") : lockedStart}
-              readOnly
-              disabled
-            />
-            {!isEditing && (
-              <p className="nhsuk-hint">
-                Follows on from {formatDate(lockedStart)} to keep the record
-                contiguous.
-              </p>
-            )}
-          </div>
+          <DateInput
+            id="period-start"
+            label="Start date"
+            value={isEditing ? (editing?.startDate ?? "") : lockedStart}
+            disabled
+            readOnly
+            hint={
+              !isEditing
+                ? `Follows on from ${formatDate(lockedStart)} to keep the record contiguous.`
+                : undefined
+            }
+          />
         </div>
       </div>
 
@@ -366,13 +360,11 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
             </div>
             {endMode === "SET" && (
               <div className="nhsuk-u-margin-left-5 nhsuk-u-margin-bottom-3">
-                <input
-                  className="nhsuk-input nhsuk-input--width-10"
+                <DateInput
                   id="period-end"
-                  type="date"
+                  label="End date"
                   value={endDate}
-                  onChange={e => setEndDate(e.target.value)}
-                  aria-label="End date"
+                  onChange={setEndDate}
                 />
               </div>
             )}

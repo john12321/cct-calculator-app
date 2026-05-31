@@ -83,6 +83,26 @@ describe("past change validation", () => {
     ).toEqual({ ok: true });
   });
 
+  it("rejects impossible typed dates", () => {
+    expect(
+      validatePastChange(
+        { ...priorLtft, startDate: "2021-02-31" },
+        programme,
+        []
+      )
+    ).toEqual({
+      ok: false,
+      message: "Start date must be a real date."
+    });
+
+    expect(
+      validatePastChange({ ...priorLtft, endDate: "2021-02-31" }, programme, [])
+    ).toEqual({
+      ok: false,
+      message: "End date must be a real date."
+    });
+  });
+
   it("accepts a completed change with future dates for what-if scenarios", () => {
     const futureProgramme: ProgrammeDetails = {
       ...programme,
@@ -347,6 +367,15 @@ describe("derived projection validation", () => {
 });
 
 describe("programme detail validation", () => {
+  it("rejects an impossible programme start date", () => {
+    expect(
+      validateProgrammeDetails({ ...programme, startDate: "2020-02-31" })
+    ).toEqual({
+      ok: false,
+      message: "Programme start date must be a real date."
+    });
+  });
+
   it("requires a reason when the specialty default start grade is overridden", () => {
     expect(
       validateProgrammeDetails({ ...programme, startGrade: "ST3" })

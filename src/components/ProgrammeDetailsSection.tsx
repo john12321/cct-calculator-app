@@ -10,6 +10,7 @@ import {
   type ProgrammeDetails
 } from "../core";
 import { formatDate, formatMonths } from "../utils/format";
+import { DateInput } from "./DateInput";
 import { SpecialtyAutocompleteSelect } from "./SpecialtyAutocompleteSelect";
 
 type ProgrammeDetailsSectionProps = {
@@ -75,7 +76,9 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
         ? programme.eighteenMonthFinalGradeNotes
         : ""
     );
-  const [hasSkippedGrade, setHasSkippedGrade] = useState(initialHasSkippedGrade);
+  const [hasSkippedGrade, setHasSkippedGrade] = useState(
+    initialHasSkippedGrade
+  );
   const [skippedGrade, setSkippedGrade] = useState(
     initialHasSkippedGrade ? programme.skippedGrade : ""
   );
@@ -396,384 +399,383 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
 
           {selectedSpecialty && (
             <>
-          <div className="nhsuk-form-group">
-            <label className="nhsuk-label" htmlFor="programme-length">
-              Programme length (months)
-            </label>
-            {selectedSpecialty && (
-              <p className="nhsuk-hint nhsuk-u-margin-top-1">
-                Default for {selectedSpecialty.name} is{" "}
-                {selectedSpecialty.lengthMonths} months.
-              </p>
-            )}
-            <input
-              className="nhsuk-input nhsuk-input--width-5"
-              id="programme-length"
-              type="number"
-              step="0.1"
-              min="0"
-              value={selectedSpecialty?.lengthMonths ?? ""}
-              readOnly
-            />
-            {selectedSpecialty?.info && (
-              <p className="nhsuk-hint nhsuk-u-margin-top-2">
-                {selectedSpecialty.info}
-              </p>
-            )}
-          </div>
-
-          <div className="nhsuk-form-group">
-            <label className="nhsuk-label" htmlFor="programme-start">
-              Programme start date
-            </label>
-            <input
-              className="nhsuk-input nhsuk-input--width-10"
-              id="programme-start"
-              type="date"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-            />
-          </div>
-
-          <div className="nhsuk-form-group">
-            <label className="nhsuk-label" htmlFor="programme-start-grade">
-              Start grade
-            </label>
-            {selectedSpecialty && !overrideGrade && (
-              <p className="nhsuk-hint nhsuk-u-margin-top-1">
-                Default for {selectedSpecialty.name} is{" "}
-                {selectedSpecialty.entryGrade}.
-              </p>
-            )}
-            {overrideGrade || !selectedSpecialty ? (
-              <select
-                className="nhsuk-select"
-                id="programme-start-grade"
-                value={startGrade}
-                onChange={e => setStartGrade(e.target.value)}
-              >
-                <option value="" disabled>
-                  Select a start grade
-                </option>
-                {TRAINING_GRADES.map(g => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                className="nhsuk-input nhsuk-input--width-5"
-                id="programme-start-grade"
-                type="text"
-                value={startGrade}
-                readOnly
-              />
-            )}
-            {selectedSpecialty && (
-              <div
-                className="nhsuk-checkboxes__item nhsuk-u-margin-top-2"
-                style={{ paddingLeft: "32px" }}
-              >
-                <input
-                  className="nhsuk-checkboxes__input"
-                  id="programme-start-grade-override"
-                  type="checkbox"
-                  checked={overrideGrade}
-                  onChange={e => handleGradeOverrideToggle(e.target.checked)}
-                />
-                <label
-                  className="nhsuk-label nhsuk-checkboxes__label"
-                  htmlFor="programme-start-grade-override"
-                >
-                  I am overriding default start grade because...
+              <div className="nhsuk-form-group">
+                <label className="nhsuk-label" htmlFor="programme-length">
+                  Programme length (months)
                 </label>
-              </div>
-            )}
-            {selectedSpecialty && overrideGrade && (
-              <div className="nhsuk-u-margin-top-3">
-                <label
-                  className="nhsuk-label"
-                  htmlFor="programme-start-grade-override-notes"
-                >
-                  Reason for start grade override
-                </label>
-                <input
-                  className="nhsuk-input nhsuk-input--width-30"
-                  id="programme-start-grade-override-notes"
-                  type="text"
-                  value={startGradeOverrideNotes}
-                  onChange={e => setStartGradeOverrideNotes(e.target.value)}
-                  placeholder="e.g. Entering programme at ST4"
-                  required
-                />
-              </div>
-            )}
-          </div>
-
-          <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-5">
-            Other training time adjustments (optional)
-          </h3>
-
-          <div className="nhsuk-form-group">
-            <div
-              className="nhsuk-checkboxes__item"
-              style={{ paddingLeft: "32px" }}
-            >
-              <input
-                className="nhsuk-checkboxes__input"
-                id="programme-additional-training-toggle"
-                type="checkbox"
-                checked={hasAdditionalTraining}
-                onChange={e => handleAdditionalTrainingToggle(e.target.checked)}
-              />
-              <label
-                className="nhsuk-label nhsuk-checkboxes__label"
-                htmlFor="programme-additional-training-toggle"
-              >
-                Add additional training time
-              </label>
-            </div>
-            {hasAdditionalTraining && (
-              <div className="nhsuk-u-margin-top-3">
-                <label
-                  className="nhsuk-label"
-                  htmlFor="programme-additional-months"
-                >
-                  Additional training time (months)
-                </label>
-                <p className="nhsuk-hint">
-                  For example, additional time required following an ARCP
-                  outcome. Enter up to 24 months.
-                </p>
+                {selectedSpecialty && (
+                  <p className="nhsuk-hint nhsuk-u-margin-top-1">
+                    Default for {selectedSpecialty.name} is{" "}
+                    {selectedSpecialty.lengthMonths} months.
+                  </p>
+                )}
                 <input
                   className="nhsuk-input nhsuk-input--width-5"
-                  id="programme-additional-months"
+                  id="programme-length"
                   type="number"
                   step="0.1"
                   min="0"
-                  max="24"
-                  value={additionalMonthsText}
-                  onChange={e => setAdditionalMonthsText(e.target.value)}
+                  value={selectedSpecialty?.lengthMonths ?? ""}
+                  readOnly
                 />
-                <label
-                  className="nhsuk-label nhsuk-u-margin-top-3"
-                  htmlFor="programme-additional-months-notes"
-                >
-                  Reason for additional training time
-                </label>
-                <input
-                  className="nhsuk-input nhsuk-input--width-30"
-                  id="programme-additional-months-notes"
-                  type="text"
-                  value={additionalMonthsNotes}
-                  onChange={e => setAdditionalMonthsNotes(e.target.value)}
-                  placeholder="e.g. Outcome 3 following ARCP"
-                  required
-                />
+                {selectedSpecialty?.info && (
+                  <p className="nhsuk-hint nhsuk-u-margin-top-2">
+                    {selectedSpecialty.info}
+                  </p>
+                )}
               </div>
-            )}
-          </div>
 
-          <div className="nhsuk-form-group">
-            <div
-              className="nhsuk-checkboxes__item"
-              style={{ paddingLeft: "32px" }}
-            >
-              <input
-                className="nhsuk-checkboxes__input"
-                id="programme-accelerated-training-toggle"
-                type="checkbox"
-                checked={hasAcceleratedTraining}
-                onChange={e =>
-                  handleAcceleratedTrainingToggle(e.target.checked)
-                }
+              <DateInput
+                id="programme-start"
+                label="Programme start date"
+                value={startDate}
+                onChange={setStartDate}
+                hint=""
               />
-              <label
-                className="nhsuk-label nhsuk-checkboxes__label"
-                htmlFor="programme-accelerated-training-toggle"
-              >
-                Add accelerated training time (reduce programme length)
-              </label>
-            </div>
-            {hasAcceleratedTraining && (
-              <div className="nhsuk-u-margin-top-3">
-                <label
-                  className="nhsuk-label"
-                  htmlFor="programme-accelerated-months"
-                >
-                  Accelerated training time (months)
-                </label>
-                <p className="nhsuk-hint">
-                  For example, recognised prior learning that reduces the
-                  remaining training requirement. Enter up to 12 months.
-                </p>
-                <input
-                  className="nhsuk-input nhsuk-input--width-5"
-                  id="programme-accelerated-months"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="12"
-                  value={acceleratedMonthsText}
-                  onChange={e => setAcceleratedMonthsText(e.target.value)}
-                />
-                <label
-                  className="nhsuk-label nhsuk-u-margin-top-3"
-                  htmlFor="programme-accelerated-months-notes"
-                >
-                  Reason for accelerated training time
-                </label>
-                <input
-                  className="nhsuk-input nhsuk-input--width-30"
-                  id="programme-accelerated-months-notes"
-                  type="text"
-                  value={acceleratedMonthsNotes}
-                  onChange={e => setAcceleratedMonthsNotes(e.target.value)}
-                  placeholder="e.g. Recognised prior learning"
-                  required
-                />
-              </div>
-            )}
-          </div>
 
-          <div className="nhsuk-form-group">
-            <div
-              className="nhsuk-checkboxes__item"
-              style={{ paddingLeft: "32px" }}
-            >
-              <input
-                className="nhsuk-checkboxes__input"
-                id="programme-eighteen-month-final-year-toggle"
-                type="checkbox"
-                checked={hasEighteenMonthFinalYear}
-                onChange={e =>
-                  handleEighteenMonthFinalYearToggle(e.target.checked)
-                }
-              />
-              <label
-                className="nhsuk-label nhsuk-checkboxes__label"
-                htmlFor="programme-eighteen-month-final-year-toggle"
-              >
-                Set an 18-month final year
-              </label>
-            </div>
-            {hasEighteenMonthFinalYear && (
-              <div className="nhsuk-u-margin-top-3">
-                <label
-                  className="nhsuk-label"
-                  htmlFor="programme-eighteen-month-final-grade"
-                >
-                  Final grade lasting 18 months
+              <div className="nhsuk-form-group">
+                <label className="nhsuk-label" htmlFor="programme-start-grade">
+                  Start grade
                 </label>
-                <p className="nhsuk-hint">
-                  For specialties with an 18-month final year, for example
-                  intensive care medicine with a dual specialty. This changes
-                  grade progression, not total training time.
-                </p>
-                <select
-                  className="nhsuk-select"
-                  id="programme-eighteen-month-final-grade"
-                  value={eighteenMonthFinalGrade}
-                  onChange={e => setEighteenMonthFinalGrade(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>
-                    Select the final grade
-                  </option>
-                  {TRAINING_GRADES.map(g => (
-                    <option key={g} value={g}>
-                      {g}
+                {selectedSpecialty && !overrideGrade && (
+                  <p className="nhsuk-hint nhsuk-u-margin-top-1">
+                    Default for {selectedSpecialty.name} is{" "}
+                    {selectedSpecialty.entryGrade}.
+                  </p>
+                )}
+                {overrideGrade || !selectedSpecialty ? (
+                  <select
+                    className="nhsuk-select"
+                    id="programme-start-grade"
+                    value={startGrade}
+                    onChange={e => setStartGrade(e.target.value)}
+                  >
+                    <option value="" disabled>
+                      Select a start grade
                     </option>
-                  ))}
-                </select>
-                <label
-                  className="nhsuk-label nhsuk-u-margin-top-3"
-                  htmlFor="programme-eighteen-month-final-grade-notes"
-                >
-                  Reason for 18-month final year
-                </label>
-                <input
-                  className="nhsuk-input nhsuk-input--width-30"
-                  id="programme-eighteen-month-final-grade-notes"
-                  type="text"
-                  value={eighteenMonthFinalGradeNotes}
-                  onChange={e =>
-                    setEighteenMonthFinalGradeNotes(e.target.value)
-                  }
-                  placeholder="e.g. ICM dual-specialty final year"
-                  required
-                />
+                    {TRAINING_GRADES.map(g => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    className="nhsuk-input nhsuk-input--width-5"
+                    id="programme-start-grade"
+                    type="text"
+                    value={startGrade}
+                    readOnly
+                  />
+                )}
+                {selectedSpecialty && (
+                  <div
+                    className="nhsuk-checkboxes__item nhsuk-u-margin-top-2"
+                    style={{ paddingLeft: "32px" }}
+                  >
+                    <input
+                      className="nhsuk-checkboxes__input"
+                      id="programme-start-grade-override"
+                      type="checkbox"
+                      checked={overrideGrade}
+                      onChange={e =>
+                        handleGradeOverrideToggle(e.target.checked)
+                      }
+                    />
+                    <label
+                      className="nhsuk-label nhsuk-checkboxes__label"
+                      htmlFor="programme-start-grade-override"
+                    >
+                      Check this box to override default start grade
+                    </label>
+                  </div>
+                )}
+                {selectedSpecialty && overrideGrade && (
+                  <div className="nhsuk-u-margin-top-3">
+                    <label
+                      className="nhsuk-label"
+                      htmlFor="programme-start-grade-override-notes"
+                    >
+                      Reason for start grade override
+                    </label>
+                    <input
+                      className="nhsuk-input nhsuk-input--width-30"
+                      id="programme-start-grade-override-notes"
+                      type="text"
+                      value={startGradeOverrideNotes}
+                      onChange={e => setStartGradeOverrideNotes(e.target.value)}
+                      placeholder="e.g. Entering programme at ST4"
+                      required
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          <div className="nhsuk-form-group">
-            <div
-              className="nhsuk-checkboxes__item"
-              style={{ paddingLeft: "32px" }}
-            >
-              <input
-                className="nhsuk-checkboxes__input"
-                id="programme-skipped-grade-toggle"
-                type="checkbox"
-                checked={hasSkippedGrade}
-                onChange={e => handleSkippedGradeToggle(e.target.checked)}
-              />
-              <label
-                className="nhsuk-label nhsuk-checkboxes__label"
-                htmlFor="programme-skipped-grade-toggle"
-              >
-                Skip one grade year
-              </label>
-            </div>
-            {hasSkippedGrade && (
-              <div className="nhsuk-u-margin-top-3">
-                <label
-                  className="nhsuk-label"
-                  htmlFor="programme-skipped-grade"
+              <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-5">
+                Other training time adjustments (optional)
+              </h3>
+
+              <div className="nhsuk-form-group">
+                <div
+                  className="nhsuk-checkboxes__item"
+                  style={{ paddingLeft: "32px" }}
                 >
-                  Grade year to skip
-                </label>
-                <p className="nhsuk-hint">
-                  This moves later displayed grades on by one year. Record any
-                  shorter programme duration separately as accelerated
-                  training time.
-                </p>
-                <select
-                  className="nhsuk-select"
-                  id="programme-skipped-grade"
-                  value={skippedGrade}
-                  onChange={e => setSkippedGrade(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>
-                    Select the grade to skip
-                  </option>
-                  {TRAINING_GRADES.map(g => (
-                    <option key={g} value={g}>
-                      {g}
-                    </option>
-                  ))}
-                </select>
-                <label
-                  className="nhsuk-label nhsuk-u-margin-top-3"
-                  htmlFor="programme-skipped-grade-notes"
-                >
-                  Reason for skipping a grade year
-                </label>
-                <input
-                  className="nhsuk-input nhsuk-input--width-30"
-                  id="programme-skipped-grade-notes"
-                  type="text"
-                  value={skippedGradeNotes}
-                  onChange={e => setSkippedGradeNotes(e.target.value)}
-                  placeholder="e.g. Progression from ST1 to ST3 after core competencies"
-                  required
-                />
+                  <input
+                    className="nhsuk-checkboxes__input"
+                    id="programme-additional-training-toggle"
+                    type="checkbox"
+                    checked={hasAdditionalTraining}
+                    onChange={e =>
+                      handleAdditionalTrainingToggle(e.target.checked)
+                    }
+                  />
+                  <label
+                    className="nhsuk-label nhsuk-checkboxes__label"
+                    htmlFor="programme-additional-training-toggle"
+                  >
+                    Add additional training time
+                  </label>
+                </div>
+                {hasAdditionalTraining && (
+                  <div className="nhsuk-u-margin-top-3">
+                    <label
+                      className="nhsuk-label"
+                      htmlFor="programme-additional-months"
+                    >
+                      Additional training time (months)
+                    </label>
+                    <p className="nhsuk-hint">
+                      For example, additional time required following an ARCP
+                      outcome. Enter up to 24 months.
+                    </p>
+                    <input
+                      className="nhsuk-input nhsuk-input--width-5"
+                      id="programme-additional-months"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="24"
+                      value={additionalMonthsText}
+                      onChange={e => setAdditionalMonthsText(e.target.value)}
+                    />
+                    <label
+                      className="nhsuk-label nhsuk-u-margin-top-3"
+                      htmlFor="programme-additional-months-notes"
+                    >
+                      Reason for additional training time
+                    </label>
+                    <input
+                      className="nhsuk-input nhsuk-input--width-30"
+                      id="programme-additional-months-notes"
+                      type="text"
+                      value={additionalMonthsNotes}
+                      onChange={e => setAdditionalMonthsNotes(e.target.value)}
+                      placeholder="e.g. Outcome 3 following ARCP"
+                      required
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              <div className="nhsuk-form-group">
+                <div
+                  className="nhsuk-checkboxes__item"
+                  style={{ paddingLeft: "32px" }}
+                >
+                  <input
+                    className="nhsuk-checkboxes__input"
+                    id="programme-accelerated-training-toggle"
+                    type="checkbox"
+                    checked={hasAcceleratedTraining}
+                    onChange={e =>
+                      handleAcceleratedTrainingToggle(e.target.checked)
+                    }
+                  />
+                  <label
+                    className="nhsuk-label nhsuk-checkboxes__label"
+                    htmlFor="programme-accelerated-training-toggle"
+                  >
+                    Add accelerated training time (reduce programme length)
+                  </label>
+                </div>
+                {hasAcceleratedTraining && (
+                  <div className="nhsuk-u-margin-top-3">
+                    <label
+                      className="nhsuk-label"
+                      htmlFor="programme-accelerated-months"
+                    >
+                      Accelerated training time (months)
+                    </label>
+                    <p className="nhsuk-hint">
+                      For example, recognised prior learning that reduces the
+                      remaining training requirement. Enter up to 12 months.
+                    </p>
+                    <input
+                      className="nhsuk-input nhsuk-input--width-5"
+                      id="programme-accelerated-months"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="12"
+                      value={acceleratedMonthsText}
+                      onChange={e => setAcceleratedMonthsText(e.target.value)}
+                    />
+                    <label
+                      className="nhsuk-label nhsuk-u-margin-top-3"
+                      htmlFor="programme-accelerated-months-notes"
+                    >
+                      Reason for accelerated training time
+                    </label>
+                    <input
+                      className="nhsuk-input nhsuk-input--width-30"
+                      id="programme-accelerated-months-notes"
+                      type="text"
+                      value={acceleratedMonthsNotes}
+                      onChange={e => setAcceleratedMonthsNotes(e.target.value)}
+                      placeholder="e.g. Recognised prior learning"
+                      required
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="nhsuk-form-group">
+                <div
+                  className="nhsuk-checkboxes__item"
+                  style={{ paddingLeft: "32px" }}
+                >
+                  <input
+                    className="nhsuk-checkboxes__input"
+                    id="programme-eighteen-month-final-year-toggle"
+                    type="checkbox"
+                    checked={hasEighteenMonthFinalYear}
+                    onChange={e =>
+                      handleEighteenMonthFinalYearToggle(e.target.checked)
+                    }
+                  />
+                  <label
+                    className="nhsuk-label nhsuk-checkboxes__label"
+                    htmlFor="programme-eighteen-month-final-year-toggle"
+                  >
+                    Set an 18-month final year
+                  </label>
+                </div>
+                {hasEighteenMonthFinalYear && (
+                  <div className="nhsuk-u-margin-top-3">
+                    <label
+                      className="nhsuk-label"
+                      htmlFor="programme-eighteen-month-final-grade"
+                    >
+                      Final grade lasting 18 months
+                    </label>
+                    <p className="nhsuk-hint">
+                      For specialties with an 18-month final year, for example
+                      intensive care medicine with a dual specialty. This
+                      changes grade progression, not total training time.
+                    </p>
+                    <select
+                      className="nhsuk-select"
+                      id="programme-eighteen-month-final-grade"
+                      value={eighteenMonthFinalGrade}
+                      onChange={e => setEighteenMonthFinalGrade(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled>
+                        Select the final grade
+                      </option>
+                      {TRAINING_GRADES.map(g => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
+                    </select>
+                    <label
+                      className="nhsuk-label nhsuk-u-margin-top-3"
+                      htmlFor="programme-eighteen-month-final-grade-notes"
+                    >
+                      Reason for 18-month final year
+                    </label>
+                    <input
+                      className="nhsuk-input nhsuk-input--width-30"
+                      id="programme-eighteen-month-final-grade-notes"
+                      type="text"
+                      value={eighteenMonthFinalGradeNotes}
+                      onChange={e =>
+                        setEighteenMonthFinalGradeNotes(e.target.value)
+                      }
+                      placeholder="e.g. ICM dual-specialty final year"
+                      required
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="nhsuk-form-group">
+                <div
+                  className="nhsuk-checkboxes__item"
+                  style={{ paddingLeft: "32px" }}
+                >
+                  <input
+                    className="nhsuk-checkboxes__input"
+                    id="programme-skipped-grade-toggle"
+                    type="checkbox"
+                    checked={hasSkippedGrade}
+                    onChange={e => handleSkippedGradeToggle(e.target.checked)}
+                  />
+                  <label
+                    className="nhsuk-label nhsuk-checkboxes__label"
+                    htmlFor="programme-skipped-grade-toggle"
+                  >
+                    Skip one grade year
+                  </label>
+                </div>
+                {hasSkippedGrade && (
+                  <div className="nhsuk-u-margin-top-3">
+                    <label
+                      className="nhsuk-label"
+                      htmlFor="programme-skipped-grade"
+                    >
+                      Grade year to skip
+                    </label>
+                    <p className="nhsuk-hint">
+                      This moves later displayed grades on by one year. Record
+                      any shorter programme duration separately as accelerated
+                      training time.
+                    </p>
+                    <select
+                      className="nhsuk-select"
+                      id="programme-skipped-grade"
+                      value={skippedGrade}
+                      onChange={e => setSkippedGrade(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled>
+                        Select the grade to skip
+                      </option>
+                      {TRAINING_GRADES.map(g => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
+                    </select>
+                    <label
+                      className="nhsuk-label nhsuk-u-margin-top-3"
+                      htmlFor="programme-skipped-grade-notes"
+                    >
+                      Reason for skipping a grade year
+                    </label>
+                    <input
+                      className="nhsuk-input nhsuk-input--width-30"
+                      id="programme-skipped-grade-notes"
+                      type="text"
+                      value={skippedGradeNotes}
+                      onChange={e => setSkippedGradeNotes(e.target.value)}
+                      placeholder="e.g. Progression from ST1 to ST3 after core competencies"
+                      required
+                    />
+                  </div>
+                )}
+              </div>
             </>
           )}
 

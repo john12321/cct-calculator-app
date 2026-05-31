@@ -21,6 +21,12 @@ const ok: ValidationResult = { ok: true };
 const err = (message: string): ValidationResult => ({ ok: false, message });
 
 const formatDate = (date: string) => dayjs(date).format("DD/MM/YYYY");
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+const isRealIsoDate = (date: string): boolean =>
+  ISO_DATE_RE.test(date) &&
+  dayjs(date).isValid() &&
+  dayjs(date).format("YYYY-MM-DD") === date;
 
 const currentCompletionDateBeforeChange = (
   candidate: PastChange,
@@ -53,6 +59,12 @@ export const validatePastChange = (
     (!projectsRemainingTraining && !candidate.endDate)
   ) {
     return err("Please enter both a start date and an end date.");
+  }
+  if (!isRealIsoDate(candidate.startDate)) {
+    return err("Start date must be a real date.");
+  }
+  if (candidate.endDate && !isRealIsoDate(candidate.endDate)) {
+    return err("End date must be a real date.");
   }
 
   if (
@@ -184,6 +196,9 @@ export const validateProposedChange = (
   if (!proposed.startDate) {
     return err("Please enter a projection start date.");
   }
+  if (!isRealIsoDate(proposed.startDate)) {
+    return err("Projection start date must be a real date.");
+  }
 
   if (dayjs(proposed.startDate).isBefore(dayjs(programme.startDate))) {
     return err(
@@ -234,6 +249,9 @@ export const validateProgrammeDetails = (
 ): ValidationResult => {
   if (!programme.specialty.trim()) return err("Please choose a specialty.");
   if (!programme.startDate) return err("Please enter a programme start date.");
+  if (!isRealIsoDate(programme.startDate)) {
+    return err("Programme start date must be a real date.");
+  }
   if (!Number.isFinite(programme.lengthMonths) || programme.lengthMonths <= 0) {
     return err("Programme length must be greater than zero.");
   }
@@ -347,6 +365,12 @@ export const validateTrainingPeriod = (
 ): ValidationResult => {
   if (!candidate.startDate) {
     return err("Please enter a start date.");
+  }
+  if (!isRealIsoDate(candidate.startDate)) {
+    return err("Start date must be a real date.");
+  }
+  if (candidate.endDate !== null && !isRealIsoDate(candidate.endDate)) {
+    return err("End date must be a real date.");
   }
   const priorEndDate = priorPeriods.at(-1)?.endDate ?? null;
   if (priorPeriods.length > 0 && priorEndDate === null) {

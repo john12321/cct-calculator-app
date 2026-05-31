@@ -70,6 +70,22 @@ describe("training period validation", () => {
     expect(result.ok).toBe(false);
   });
 
+  it("rejects impossible typed dates", () => {
+    expect(
+      validateTrainingPeriod(grade({ startDate: "2020-02-31" }), programme, [])
+    ).toEqual({
+      ok: false,
+      message: "Start date must be a real date."
+    });
+
+    expect(
+      validateTrainingPeriod(grade({ endDate: "2020-02-31" }), programme, [])
+    ).toEqual({
+      ok: false,
+      message: "End date must be a real date."
+    });
+  });
+
   it("rejects an overlap with the prior period", () => {
     const prior = grade({ id: "p0", endDate: "2020-12-31" });
     const candidate = grade({

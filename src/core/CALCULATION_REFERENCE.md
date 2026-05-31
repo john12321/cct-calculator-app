@@ -67,8 +67,8 @@ The central calculation types live in
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `CalculationMode`  | The selected workflow: `QUICK` or `FULL`.                                                                                                          |
 | `ProgrammeDetails` | The user's programme: specialty, start date, baseline length, start grade, and optional training-time adjustments with required reasons when used. |
-| `PastChange`       | A completed Quick-mode LTFT or absence period, including any OOPT/OOPR training-credit decision and optional LTFT remaining-time projection flag.   |
-| `ProposedChange`   | The internally derived Quick-mode projection: either full-time or an LTFT WTE selected from a projected LTFT change.                                |
+| `PastChange`       | A completed Quick-mode LTFT or absence period, including any OOPT/OOPR training-credit decision and optional LTFT remaining-time projection flag.  |
+| `ProposedChange`   | The internally derived Quick-mode projection: either full-time or an LTFT WTE selected from a projected LTFT change.                               |
 | `TrainingPeriod`   | A Full-mode contiguous timeline row: grade, OOP or leave, with training-credit and WTE fields where supported.                                     |
 | `Specialty`        | Reference data from the Excel `Lists` sheet (in [`specialties.ts`](specialties.ts), distinct from `calculationTypes.ts`).                          |
 
@@ -94,7 +94,21 @@ itself to become multiline.
 
 ### 3.2 Programme start date
 
-Plain date input. Acts as the reference point for every other calculation.
+Date entry uses an NHS/GOV.UK-style day/month/year component
+([`DateInput.tsx`](../components/DateInput.tsx)) rather than native
+`<input type="date">`, because browser-native date controls vary in
+appearance and behaviour. The component stores ISO `YYYY-MM-DD` values for the
+calculation engine while presenting separate numeric day, month and year fields
+to users.
+
+The fields deliberately do not auto-advance focus after day or month reaches
+two digits. Although auto-advance can feel fast for some keyboard users, it can
+make corrections, paste behaviour, screen-reader use and mobile input less
+predictable. Focus movement remains under the user's control unless future user
+testing shows a clear need to revisit this.
+
+The programme start date acts as the reference point for every other
+calculation.
 
 ### 3.3 Programme length
 
@@ -123,7 +137,7 @@ This app does the same:
 
 - Picking a specialty auto-fills the start grade from `Specialty.entryGrade`.
 - A read-only text field shows the value with hint "Default for X is Y."
-- "I am overriding default start grade because..." swaps the field to a
+- "Check this box to override default start grade" swaps the field to a
   `<select>` of all training grades (FY1, FY2, CT1-CT4, ST1-ST9, DFT).
 - The view-mode shows "(overridden — default X)" annotation when applicable.
 - A reason field is required when the start grade override checkbox is checked,
@@ -313,10 +327,10 @@ WTE without needing a WTE value.
 
 ### 5.1 Two kinds
 
-| Kind        | Meaning                                                                 | WTE used in formula         |
-| ----------- | ----------------------------------------------------------------------- | --------------------------- |
-| `FULL_TIME` | Default projection from the day after the latest completed change, or programme start when no changes exist. | 100%                        |
-| `LTFT`      | Projection from the projected LTFT change's start date when it is open-ended, or the day after its end date when it has one. | Selected LTFT WTE % (1–99)  |
+| Kind        | Meaning                                                                                                                      | WTE used in formula        |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `FULL_TIME` | Default projection from the day after the latest completed change, or programme start when no changes exist.                 | 100%                       |
+| `LTFT`      | Projection from the projected LTFT change's start date when it is open-ended, or the day after its end date when it has one. | Selected LTFT WTE % (1–99) |
 
 The projection is derived by `deriveQuickProjection`. If no LTFT change is
 marked for projection, Quick mode projects remaining training at full-time.
@@ -905,7 +919,7 @@ behaviour differs between modes, both are noted:
 | `K50` / `O9:O17` skip one grade year rule                                                                      | Implemented, with mandatory reason, carried display offset and clear summary display. Shared by both modes.                                                                                                                                                                                                                                                                                                                          |
 | Generated grade labels beyond `ST9`                                                                            | Deliberately differs from the workbook's raw string-concatenation behaviour: the app allows `ST9` but displays later generated rows as "Additional training after ST9" with a warning, rather than inventing `ST10+` labels.                                                                                                                                                                                                         |
 | Completed LTFT/absence recording                                                                               | Quick mode: typed by LTFT/OOP/leave exceptions, with implicit 100% gaps. Full mode: contiguous timeline of grade/OOP/leave rows (mirrors `A24:E46`).                                                                                                                                                                                                                                                                                 |
-| `B13` / `I47` future completion projection                                                                     | Quick mode: projection starts after the latest completed change, using 100% WTE by default or the WTE from one projected LTFT change, which can be open-ended. Full mode: uses the recorded end date once required training is covered; while under-covered it projects at the latest grade WTE, with a project-forward grade row used to record a planned future rate.                                                               |
+| `B13` / `I47` future completion projection                                                                     | Quick mode: projection starts after the latest completed change, using 100% WTE by default or the WTE from one projected LTFT change, which can be open-ended. Full mode: uses the recorded end date once required training is covered; while under-covered it projects at the latest grade WTE, with a project-forward grade row used to record a planned future rate.                                                              |
 | `A24:A46` Grade / Period Type label                                                                            | Quick mode: not modelled (Quick uses absence/LTFT typing instead). Full mode: 9 period types (`GRADE`, `OOPC/E/P/R/T`, `PARENTAL`, `SICK`, `ACCRUED_LEAVE`) plus a `gradeTag` of `REGULAR`/`ACF`/`ACL`/`ADDITIONAL_TRAINING_TIME` on GRADE rows.                                                                                                                                                                                     |
 | `E24:E46` Counted as training?                                                                                 | Full mode mirrors the row-level control; Quick mode applies the same policy through its completed-change form. OOPT may be credited at fixed 100% for up to 12 months; OOPR accrues only when approved to contribute towards CCT and records the approved credit percentage. OOPR is normally limited to 3 years, or 4 years exceptionally, with duration normally pro rata for LTFT OOPR. Other OOP/leave periods are non-training. |
 | `L9:L17` branch B grade-name lookup                                                                            | Quick mode: not modelled (no grade-tagged rows). Full mode: each grade row switches to the last matching recorded timeline end date as soon as its own baseline WTE threshold is recorded, ignoring `gradeTag`, matching the per-row Excel formula.                                                                                                                                                                                  |
@@ -964,11 +978,11 @@ Quick mode's list of exceptions plus a derived projection:
 These differences are intentional in **Quick mode**; Full mode is the
 in-app remedy for users who need the Excel-style workflow.
 
-| Excel workflow                                                                                        | Quick-mode approach                                                                                                                                     | Implication                                                                                                           |
-| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Excel workflow                                                                                        | Quick-mode approach                                                                                                                                                                             | Implication                                                                                                           |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | Rows `24:46` let users type every full-time, LTFT or non-training period and may include grade names. | Users record only completed or hypothetical completed LTFT/absence exceptions; gaps are treated as full-time and can be displayed as read-only inferred rows, followed by a derived projection. | Faster data entry, but not a cell-for-cell replacement for arbitrary Excel timelines. Use Full mode if that's needed. |
-| Grade end dates can use a matching named-grade row from the training grid.                            | Grade end dates are derived by walking WTE segments, with a user-facing note to check confirmed completed-grade dates against the authoritative record. | A manual grade end-date override is not offered in Quick mode. Full mode provides the named-grade lookup.             |
-| Excel can extrapolate from the most recent WTE row in its free-form grid.                             | Quick mode uses 100% WTE by default, or one selected LTFT change as the forward rate.                                                                    | Full mode instead uses the latest recorded grade WTE, or an open-ended project-forward grade period.                  |
+| Grade end dates can use a matching named-grade row from the training grid.                            | Grade end dates are derived by walking WTE segments, with a user-facing note to check confirmed completed-grade dates against the authoritative record.                                         | A manual grade end-date override is not offered in Quick mode. Full mode provides the named-grade lookup.             |
+| Excel can extrapolate from the most recent WTE row in its free-form grid.                             | Quick mode uses 100% WTE by default, or one selected LTFT change as the forward rate.                                                                                                           | Full mode instead uses the latest recorded grade WTE, or an open-ended project-forward grade period.                  |
 
 ### 10.4 Prioritised next steps
 
@@ -1001,16 +1015,16 @@ formula parity gaps.
 | [`calculationTypeLabels.ts`](calculationTypeLabels.ts) | Display labels for each change type                                                                                                           |
 | [`validation.ts`](validation.ts)                       | Programme, Quick-mode change/projection and Full-mode timeline validation                                                                     |
 | `../components/ProgrammeDetailsSection.tsx`            | Programme details form (specialty, dates, baseline length, start grade, training-time, final-year and skipped-grade adjustments with reasons) |
-| `../components/SpecialtyAutocompleteSelect.tsx`        | Progressively enhanced accessible-autocomplete select for picking specialty                                                                    |
+| `../components/SpecialtyAutocompleteSelect.tsx`        | Progressively enhanced accessible-autocomplete select for picking specialty                                                                   |
 | `../components/ModePicker.tsx`                         | Selects Quick or Full calculation mode                                                                                                        |
-| `../components/PastChangeForm.tsx`                     | Quick-mode add/edit change form, including OOPT/OOPR credit controls and LTFT projection selection                                             |
-| `../components/PastChangesList.tsx`                    | Quick-mode table of changes with Edit/Remove, optional assumed full-time rows and entered/inclusive totals                                      |
+| `../components/PastChangeForm.tsx`                     | Quick-mode add/edit change form, including OOPT/OOPR credit controls and LTFT projection selection                                            |
+| `../components/PastChangesList.tsx`                    | Quick-mode table of changes with Edit/Remove, optional assumed full-time rows and entered/inclusive totals                                    |
 | `../components/NextPostSummary.tsx`                    | Quick-mode read-only projection summary                                                                                                       |
 | `../components/TrainingPeriodForm.tsx`                 | Full-mode add/edit timeline row form, including OOPT/OOPR credit controls                                                                     |
 | `../components/TimelineGrid.tsx`                       | Full-mode contiguous timeline table                                                                                                           |
 | `../components/TimelineProjection.tsx`                 | Full-mode WTE totals and projected Completion of Training Date                                                                                |
 | `../components/GradeTable.tsx`                         | Year-by-year grade progression with end dates and special-duration/skipped-grade explanations                                                 |
-| `../components/CalculationSummary.tsx`                 | Quick-mode summary block, including optional assumed full-time rows in the completed-changes table                                             |
+| `../components/CalculationSummary.tsx`                 | Quick-mode summary block, including optional assumed full-time rows in the completed-changes table                                            |
 | `../components/FullModeCalculationSummary.tsx`         | Full-mode summary block                                                                                                                       |
 | `../components/StepIndicator.tsx`, `BackLink.tsx`      | Wizard chrome                                                                                                                                 |
 | `../pages/SetupPage.tsx`                               | Quick-mode setup page (programme details, changes, projection and grade progression)                                                          |

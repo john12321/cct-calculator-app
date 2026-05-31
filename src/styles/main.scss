@@ -94,34 +94,15 @@ $nhsuk-page-width: 1800px;
   max-height: 20rem;
 }
 
-.ltft-projection-choice,
-.ltft-date-projection-row,
-.change-type-row {
+.inline-form-row {
   display: flex;
   align-items: flex-end;
   gap: 18px;
   flex-wrap: wrap;
 }
 
-.ltft-projection-choice__end-date,
-.ltft-date-projection-row__date,
-.change-type-row__type,
-.change-type-row__wte {
+.inline-form-row__item {
   flex: 0 0 auto;
-}
-
-.ltft-projection-choice__or {
-  padding-bottom: 8px;
-}
-
-.ltft-projection-choice__project {
-  flex: 0 1 auto;
-  padding-bottom: 0;
-
-  .nhsuk-checkboxes,
-  .nhsuk-checkboxes__item {
-    margin-bottom: 0;
-  }
 }
 
 .assumed-full-time-row {
