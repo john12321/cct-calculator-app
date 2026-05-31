@@ -81,18 +81,16 @@ The form for these fields lives in
 
 ### 3.1 Specialty
 
-The user picks from 173 specialties using a custom **type-to-filter combobox**
-([`SpecialtyCombobox.tsx`](../components/SpecialtyCombobox.tsx)). The dropdown
-is grouped by School with sticky headers, and each option shows the Dual-CCT
-or Triple-CCT marker if applicable.
+The user picks from 173 specialties using a progressively enhanced
+**autocomplete select**
+([`SpecialtyAutocompleteSelect.tsx`](../components/SpecialtyAutocompleteSelect.tsx)). A native
+`<select>` with school `<optgroup>`s is rendered first as the fallback, then
+enhanced with GOV.UK's `accessible-autocomplete` so users can type to filter or
+open the full alphabetically sorted specialty list.
 
-The combobox is a custom W3C ARIA combobox rather than a native `<select>` or
-`<datalist>` because:
-
-- 173 entries are awkward in a native `<select>` (no real search on most
-  browsers).
-- `<datalist>` is rendered fully by the OS on mobile (black background,
-  fullscreen-ish picker that obscures the input).
+Once a specialty is selected, the form shows the long selected name and school
+metadata in wrapped hint text below the control rather than forcing the input
+itself to become multiline.
 
 ### 3.2 Programme start date
 
@@ -1003,7 +1001,7 @@ formula parity gaps.
 | [`calculationTypeLabels.ts`](calculationTypeLabels.ts) | Display labels for each change type                                                                                                           |
 | [`validation.ts`](validation.ts)                       | Programme, Quick-mode change/projection and Full-mode timeline validation                                                                     |
 | `../components/ProgrammeDetailsSection.tsx`            | Programme details form (specialty, dates, baseline length, start grade, training-time, final-year and skipped-grade adjustments with reasons) |
-| `../components/SpecialtyCombobox.tsx`                  | Custom W3C ARIA combobox for picking specialty                                                                                                |
+| `../components/SpecialtyAutocompleteSelect.tsx`        | Progressively enhanced accessible-autocomplete select for picking specialty                                                                    |
 | `../components/ModePicker.tsx`                         | Selects Quick or Full calculation mode                                                                                                        |
 | `../components/PastChangeForm.tsx`                     | Quick-mode add/edit change form, including OOPT/OOPR credit controls and LTFT projection selection                                             |
 | `../components/PastChangesList.tsx`                    | Quick-mode table of changes with Edit/Remove, optional assumed full-time rows and entered/inclusive totals                                      |

@@ -16,27 +16,27 @@ export const calculationTypeLabels: Record<
   CalculationTypeLabelSet
 > = {
   LTFT: {
-    full: "Less Than Full-time (LTFT)",
+    full: "LTFT (Less than full-time)",
     short: "LTFT"
   },
   OOPC: {
-    full: "Out of Programme Career Break (OOPC)",
+    full: "OOPC (Career break)",
     short: "OOPC"
   },
   OOPP: {
-    full: "Out of Programme Pause (OOPP)",
+    full: "OOPP (Pause)",
     short: "OOPP"
   },
   OOPE: {
-    full: "Out of Programme Experience (OOPE)",
+    full: "OOPE (Experience)",
     short: "OOPE"
   },
   OOPR: {
-    full: "Out of Programme Research (OOPR)",
+    full: "OOPR (Research)",
     short: "OOPR"
   },
   OOPT: {
-    full: "Out of Programme Training (OOPT)",
+    full: "OOPT (Training)",
     short: "OOPT"
   },
   PARENTAL: {
@@ -72,23 +72,23 @@ export const trainingPeriodTypeLabels: Record<
 > = {
   GRADE: { full: "Grade", short: "Grade" },
   OOPC: {
-    full: "Out of Programme Career Break (OOPC)",
+    full: "OOPC (Career break)",
     short: "OOPC"
   },
   OOPE: {
-    full: "Out of Programme Experience (OOPE)",
+    full: "OOPE (Experience)",
     short: "OOPE"
   },
   OOPP: {
-    full: "Out of Programme Pause (OOPP)",
+    full: "OOPP (Pause)",
     short: "OOPP"
   },
   OOPR: {
-    full: "Out of Programme Research (OOPR)",
+    full: "OOPR (Research)",
     short: "OOPR"
   },
   OOPT: {
-    full: "Out of Programme Training (OOPT)",
+    full: "OOPT (Training)",
     short: "OOPT"
   },
   PARENTAL: { full: "Parental Leave", short: "Parental Leave" },

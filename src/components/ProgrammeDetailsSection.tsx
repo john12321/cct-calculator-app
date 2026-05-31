@@ -10,7 +10,7 @@ import {
   type ProgrammeDetails
 } from "../core";
 import { formatDate, formatMonths } from "../utils/format";
-import { SpecialtyCombobox } from "./SpecialtyCombobox";
+import { SpecialtyAutocompleteSelect } from "./SpecialtyAutocompleteSelect";
 
 type ProgrammeDetailsSectionProps = {
   programme: ProgrammeDetails | null;
@@ -371,15 +371,26 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
             <label className="nhsuk-label" htmlFor="programme-specialty">
               Specialty
             </label>
-            <SpecialtyCombobox
+            <SpecialtyAutocompleteSelect
               inputId="programme-specialty"
               value={specialty}
               onChange={handleSpecialtyChange}
             />
-            {selectedSpecialty?.dual && (
-              <p className="nhsuk-hint nhsuk-u-margin-top-1">
-                {selectedSpecialty.dual}
-              </p>
+            {selectedSpecialty && (
+              <div className="nhsuk-hint nhsuk-u-margin-top-2">
+                <p className="nhsuk-u-margin-bottom-1">
+                  Selected specialty: {selectedSpecialty.name}
+                </p>
+                <p className="nhsuk-u-margin-bottom-0">
+                  School: {selectedSpecialty.school}
+                  {selectedSpecialty.dual && `, ${selectedSpecialty.dual}`}
+                </p>
+                {selectedSpecialty.info && (
+                  <p className="nhsuk-u-margin-bottom-0">
+                    {selectedSpecialty.info}
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
