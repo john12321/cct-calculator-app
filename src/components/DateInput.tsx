@@ -6,6 +6,7 @@ import {
   type FC,
   type ReactNode
 } from "react";
+import { toIsoDate } from "./dateInputUtils";
 
 type DateInputProps = {
   id: string;
@@ -17,8 +18,6 @@ type DateInputProps = {
   readOnly?: boolean;
   className?: string;
 };
-
-const INVALID_DATE_VALUE = "invalid-date";
 
 type DatePart = "day" | "month" | "year";
 
@@ -38,27 +37,8 @@ const parseIsoParts = (value: string) => {
   };
 };
 
-const pad2 = (value: number) => String(value).padStart(2, "0");
-
 const normaliseNumericInput = (value: string, part: DatePart) =>
   value.replace(/\D/g, "").slice(0, FIELD_LENGTHS[part]);
-
-const toIsoDate = (day: string, month: string, year: string): string => {
-  const trimmedDay = day.trim();
-  const trimmedMonth = month.trim();
-  const trimmedYear = year.trim();
-
-  if (!trimmedDay && !trimmedMonth && !trimmedYear) return "";
-  if (!trimmedDay || !trimmedMonth || !trimmedYear) return "";
-  if (!/^\d{4}$/.test(trimmedYear) || !/^\d+$/.test(trimmedDay)) {
-    return INVALID_DATE_VALUE;
-  }
-
-  const dayNumber = Number(trimmedDay);
-  const monthNumber = Number(trimmedMonth);
-
-  return `${trimmedYear}-${pad2(monthNumber)}-${pad2(dayNumber)}`;
-};
 
 export const DateInput: FC<DateInputProps> = ({
   id,
