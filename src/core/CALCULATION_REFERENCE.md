@@ -101,11 +101,10 @@ appearance and behaviour. The component stores ISO `YYYY-MM-DD` values for the
 calculation engine while presenting separate numeric day, month and year fields
 to users.
 
-The fields deliberately do not auto-advance focus after day or month reaches
-two digits. Although auto-advance can feel fast for some keyboard users, it can
-make corrections, paste behaviour, screen-reader use and mobile input less
-predictable. Focus movement remains under the user's control unless future user
-testing shows a clear need to revisit this.
+The fields auto-advance focus from day to month, and from month to year, once
+the user has entered the required two digits. Auto-advance is skipped during
+delete/backspace edits so corrections remain under the user's control. Users
+entering single-digit days or months can still tab or click to move on.
 
 The programme start date acts as the reference point for every other
 calculation.

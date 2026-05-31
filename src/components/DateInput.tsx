@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type FC, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FC,
+  type ReactNode
+} from "react";
 
 type DateInputProps = {
   id: string;
@@ -12,6 +19,8 @@ type DateInputProps = {
 };
 
 const INVALID_DATE_VALUE = "invalid-date";
+
+type DatePart = "day" | "month" | "year";
 
 const FIELD_LENGTHS = {
   day: 2,
@@ -31,10 +40,8 @@ const parseIsoParts = (value: string) => {
 
 const pad2 = (value: number) => String(value).padStart(2, "0");
 
-const normaliseNumericInput = (
-  value: string,
-  part: "day" | "month" | "year"
-) => value.replace(/\D/g, "").slice(0, FIELD_LENGTHS[part]);
+const normaliseNumericInput = (value: string, part: DatePart) =>
+  value.replace(/\D/g, "").slice(0, FIELD_LENGTHS[part]);
 
 const toIsoDate = (day: string, month: string, year: string): string => {
   const trimmedDay = day.trim();
@@ -67,6 +74,8 @@ export const DateInput: FC<DateInputProps> = ({
     parseIsoParts(value)
   );
   const lastEmittedValue = useRef<string | null>(null);
+  const monthInputRef = useRef<HTMLInputElement>(null);
+  const yearInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (value === lastEmittedValue.current) {
@@ -76,14 +85,40 @@ export const DateInput: FC<DateInputProps> = ({
     setParts(parseIsoParts(value));
   }, [value]);
 
-  const updatePart = (part: "day" | "month" | "year", nextValue: string) => {
-    const next = { day, month, year, [part]: normaliseNumericInput(nextValue, part) };
+  const focusNextPart = (part: DatePart) => {
+    if (disabled || readOnly) return;
+    if (part === "day") monthInputRef.current?.focus();
+    if (part === "month") yearInputRef.current?.focus();
+  };
+
+  const updatePart = (
+    part: DatePart,
+    nextValue: string,
+    shouldAutoAdvance: boolean
+  ) => {
+    const normalisedValue = normaliseNumericInput(nextValue, part);
+    const next = { day, month, year, [part]: normalisedValue };
     const nextIsoDate = toIsoDate(next.day, next.month, next.year);
 
     lastEmittedValue.current = nextIsoDate;
     setParts(next);
     onChange?.(nextIsoDate);
+
+    if (
+      shouldAutoAdvance &&
+      part !== "year" &&
+      normalisedValue.length === FIELD_LENGTHS[part]
+    ) {
+      focusNextPart(part);
+    }
   };
+
+  const handlePartChange =
+    (part: DatePart) => (event: ChangeEvent<HTMLInputElement>) => {
+      const inputEvent = event.nativeEvent as InputEvent;
+      const isDeleting = inputEvent.inputType?.startsWith("delete") ?? false;
+      updatePart(part, event.target.value, !isDeleting);
+    };
 
   const describedBy = hint ? `${id}-hint` : undefined;
 
@@ -119,7 +154,7 @@ export const DateInput: FC<DateInputProps> = ({
                 value={day}
                 disabled={disabled}
                 readOnly={readOnly}
-                onChange={e => updatePart("day", e.target.value)}
+                onChange={handlePartChange("day")}
               />
             </div>
           </div>
@@ -132,6 +167,7 @@ export const DateInput: FC<DateInputProps> = ({
                 Month
               </label>
               <input
+                ref={monthInputRef}
                 className="nhsuk-input nhsuk-date-input__input nhsuk-input--width-2"
                 id={`${id}-month`}
                 name={`${id}-month`}
@@ -141,7 +177,7 @@ export const DateInput: FC<DateInputProps> = ({
                 value={month}
                 disabled={disabled}
                 readOnly={readOnly}
-                onChange={e => updatePart("month", e.target.value)}
+                onChange={handlePartChange("month")}
               />
             </div>
           </div>
@@ -154,6 +190,7 @@ export const DateInput: FC<DateInputProps> = ({
                 Year
               </label>
               <input
+                ref={yearInputRef}
                 className="nhsuk-input nhsuk-date-input__input nhsuk-input--width-4"
                 id={`${id}-year`}
                 name={`${id}-year`}
@@ -163,7 +200,7 @@ export const DateInput: FC<DateInputProps> = ({
                 value={year}
                 disabled={disabled}
                 readOnly={readOnly}
-                onChange={e => updatePart("year", e.target.value)}
+                onChange={handlePartChange("year")}
               />
             </div>
           </div>
