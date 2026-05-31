@@ -1,8 +1,21 @@
 @use "../../node_modules/nhsuk-frontend/dist/nhsuk" with (
-  $nhsuk-font-family: ("Frutiger W01", Arial, sans-serif),
+  $nhsuk-font-family: (
+    "Frutiger W01",
+    Arial,
+    sans-serif
+  ),
   $nhsuk-page-width: 1800px
 );
 @import "../../node_modules/accessible-autocomplete/dist/accessible-autocomplete.min.css";
+
+// NHS palette colours (https://service-manual.nhs.uk/design-system/styles/colour)
+$color-nhsuk-blue: #005eb8;
+$color-nhsuk-green: #007f3b;
+$color-nhsuk-black: #212b32;
+$color-nhsuk-yellow: #ffeb3b;
+$color-nhsuk-grey-1: #4c6272;
+$color-nhsuk-grey-5: #f0f4f5;
+$color-nhsuk-white: #ffffff;
 
 @media print {
   .table-wrapper {
@@ -48,15 +61,97 @@
   overflow-x: auto;
 }
 
-// NHS Blue utility class — replaces inline style={{ color: "#005eb8" }}
 .nhsuk-u-color-blue {
-  color: #005eb8;
+  color: $color-nhsuk-blue;
+}
+
+.app-step-indicator__list {
+  margin-bottom: 0;
+}
+
+.app-step-indicator__item {
+  margin-bottom: 12px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.app-step-indicator__link,
+.app-step-indicator__static {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+}
+
+.app-step-indicator__link {
+  padding: 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: $color-nhsuk-black;
+  font: inherit;
+
+  &:hover .app-step-indicator__title {
+    text-decoration: underline;
+  }
+
+  &:focus {
+    outline: 4px solid transparent;
+    background-color: $color-nhsuk-yellow;
+    box-shadow:
+      0 -2px $color-nhsuk-yellow,
+      0 4px $color-nhsuk-black;
+    text-decoration: none;
+    color: $color-nhsuk-black;
+  }
+}
+
+.app-step-indicator__static {
+  padding: 4px;
+  color: $color-nhsuk-grey-1;
+}
+
+.app-step-indicator__number {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: $color-nhsuk-white;
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1;
+
+  &--completed {
+    background-color: $color-nhsuk-green;
+  }
+
+  &--current {
+    background-color: $color-nhsuk-blue;
+  }
+
+  &--upcoming {
+    background-color: $color-nhsuk-grey-1;
+  }
+}
+
+.app-step-indicator__title {
+  margin-left: 12px;
+  white-space: nowrap;
+}
+
+.app-step-indicator__item--current .app-step-indicator__title {
+  font-weight: 700;
 }
 
 .app-heading__version {
   display: block;
   margin-top: 8px;
-  color: #4c6272;
+  color: $color-nhsuk-grey-1;
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
@@ -73,14 +168,14 @@
 }
 
 .autocomplete__input--focused.nhsuk-input {
-  border-color: #212b32;
+  border-color: $color-nhsuk-black;
   box-shadow: inset 0 0 0 2px;
-  outline: 4px solid #ffeb3b;
+  outline: 4px solid $color-nhsuk-yellow;
   outline-offset: 0;
 }
 
 .autocomplete__dropdown-arrow-down {
-  color: #212b32;
+  color: $color-nhsuk-black;
   height: 14px;
   pointer-events: none;
   right: 12px;
@@ -91,7 +186,7 @@
 
 .autocomplete-select__menu,
 .specialty-autocomplete__menu {
-  border-color: #212b32;
+  border-color: $color-nhsuk-black;
   max-height: 20rem;
 }
 
@@ -108,7 +203,7 @@
 }
 
 .assumed-full-time-row {
-  background-color: #f0f4f5;
+  background-color: $color-nhsuk-grey-5;
 
   td:first-child {
     font-weight: 600;
@@ -117,8 +212,8 @@
 
 .changes-total-row {
   td {
-    border-top: 3px solid #425563;
-    border-bottom: 3px solid #425563;
+    border-top: 3px solid $color-nhsuk-grey-1;
+    border-bottom: 3px solid $color-nhsuk-grey-1;
   }
 }
 

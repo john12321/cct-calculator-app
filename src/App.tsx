@@ -14,6 +14,7 @@ import type {
   TrainingPeriod
 } from "./core";
 import { deriveQuickProjection } from "./core";
+import { scrollTo } from "./utils/scroll";
 
 const STEPS = [{ title: "Setup" }, { title: "Summary" }];
 
@@ -30,6 +31,7 @@ export const App = () => {
   const goTo = (next: number) => {
     setStep(next);
     setMaxReachedStep(prev => Math.max(prev, next));
+    scrollTo({ top: 0 });
   };
 
   const handleStartOver = () => {
@@ -65,7 +67,7 @@ export const App = () => {
                 currentStep={step}
                 maxReachedStep={maxReachedStep}
                 onStepClick={index => {
-                  if (index <= maxReachedStep) setStep(index);
+                  if (index <= maxReachedStep) goTo(index);
                 }}
               />
             </div>
@@ -115,7 +117,7 @@ export const App = () => {
 
               {step > 0 && (
                 <div className="nhsuk-u-margin-top-4 no-print">
-                  <BackLink onClick={() => setStep(step - 1)}>
+                  <BackLink onClick={() => goTo(step - 1)}>
                     Back to {STEPS[step - 1].title}
                   </BackLink>
                 </div>

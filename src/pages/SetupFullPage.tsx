@@ -10,7 +10,7 @@ import {
   type ProgrammeDetails,
   type TrainingPeriod
 } from "../core";
-import { scrollToElement } from "../utils/scroll";
+import { scrollTo } from "../utils/scroll";
 
 type SetupFullPageProps = {
   programme: ProgrammeDetails | null;
@@ -31,29 +31,29 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
 
   const handleAdd = (period: TrainingPeriod) => {
     onTimelineChange([...timeline, period]);
-    scrollToElement("timeline-table");
+    scrollTo({ id: "timeline-table" });
   };
 
   const handleUpdate = (period: TrainingPeriod) => {
     onTimelineChange(timeline.map(p => (p.id === period.id ? period : p)));
     setEditingId(null);
-    scrollToElement("timeline-table");
+    scrollTo({ id: "timeline-table" });
   };
 
   const handleRemove = (id: string) => {
     onTimelineChange(timeline.filter(p => p.id !== id));
     if (editingId === id) setEditingId(null);
-    scrollToElement("training-period-form");
+    scrollTo({ id: "training-period-form" });
   };
 
   const handleStartEdit = (id: string) => {
     setEditingId(id);
-    scrollToElement("training-period-form");
+    scrollTo({ id: "training-period-form" });
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    scrollToElement("timeline-table");
+    scrollTo({ id: "timeline-table" });
   };
 
   const editingPeriod =
@@ -76,7 +76,7 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
       <ProgrammeDetailsSection
         programme={programme}
         onChange={onProgrammeChange}
-        onSaved={() => scrollToElement("training-timeline-section")}
+        onSaved={() => scrollTo({ id: "training-timeline-section" })}
       />
 
       {programme && (

@@ -1,18 +1,22 @@
-export const scrollToElement = (id: string) => {
+type ScrollTarget = { id: string } | { top: number };
+
+export const scrollTo = (target: ScrollTarget) => {
   if (typeof document === "undefined") return;
 
   const run = () => {
-    const element = document.getElementById(id);
-    if (!element) return;
-
     const prefersReducedMotion =
       typeof globalThis !== "undefined" &&
       globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const behavior: ScrollBehavior = prefersReducedMotion ? "auto" : "smooth";
 
-    element.scrollIntoView({
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-      block: "start"
-    });
+    if ("id" in target) {
+      const element = document.getElementById(target.id);
+      if (!element) return;
+      element.scrollIntoView({ behavior, block: "start" });
+      return;
+    }
+
+    globalThis.scrollTo({ top: target.top, left: 0, behavior });
   };
 
   if (typeof requestAnimationFrame === "function") {

@@ -15,7 +15,7 @@ import {
   type ProgrammeDetails
 } from "../core";
 import { formatDate } from "../utils/format";
-import { scrollToElement } from "../utils/scroll";
+import { scrollTo } from "../utils/scroll";
 
 type SetupPageProps = {
   programme: ProgrammeDetails | null;
@@ -39,17 +39,17 @@ export const SetupPage: FC<SetupPageProps> = ({
       ? pastChanges.map(c => ({ ...c, projectsRemainingTraining: false }))
       : pastChanges;
     onPastChangesChange([...existing, change]);
-    scrollToElement("past-changes-table");
+    scrollTo({ id: "past-changes-table" });
   };
 
   const handleRemovePast = (id: string) => {
     onPastChangesChange(pastChanges.filter(c => c.id !== id));
-    scrollToElement("past-change-form");
+    scrollTo({ id: "past-change-form" });
   };
 
   const handleStartEdit = (id: string) => {
     setEditingId(id);
-    scrollToElement("past-change-form");
+    scrollTo({ id: "past-change-form" });
   };
 
   const handleUpdatePast = (updated: PastChange) => {
@@ -63,12 +63,12 @@ export const SetupPage: FC<SetupPageProps> = ({
       })
     );
     setEditingId(null);
-    scrollToElement("past-changes-table");
+    scrollTo({ id: "past-changes-table" });
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    scrollToElement("past-changes-table");
+    scrollTo({ id: "past-changes-table" });
   };
 
   const editingChange =
@@ -94,7 +94,7 @@ export const SetupPage: FC<SetupPageProps> = ({
       <ProgrammeDetailsSection
         programme={programme}
         onChange={onProgrammeChange}
-        onSaved={() => scrollToElement("past-changes-section")}
+        onSaved={() => scrollTo({ id: "past-changes-section" })}
       />
 
       {programme && projected && (

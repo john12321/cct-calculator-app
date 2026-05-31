@@ -7,86 +7,79 @@ type StepIndicatorProps = {
   onStepClick: (index: number) => void;
 };
 
+type StepStatus = "completed" | "current" | "upcoming";
+
+const STATUS_LABEL: Record<StepStatus, string> = {
+  completed: "completed",
+  current: "current step",
+  upcoming: "not yet started"
+};
+
 export const StepIndicator: React.FC<StepIndicatorProps> = ({
   steps,
   currentStep,
   maxReachedStep,
   onStepClick
 }) => {
-  const getStepBackgroundColor = (index: number) => {
-    if (index < currentStep) return "#007f3b"; // completed
-    if (index === currentStep) return "#005eb8"; // current
-    return "#6c757d"; // future
+  const getStatus = (index: number): StepStatus => {
+    if (index < currentStep) return "completed";
+    if (index === currentStep) return "current";
+    return "upcoming";
   };
 
+  const renderContent = (
+    step: { title: string },
+    index: number,
+    status: StepStatus
+  ) => (
+    <>
+      <span
+        className={`app-step-indicator__number app-step-indicator__number--${status}`}
+        aria-hidden="true"
+      >
+        {index + 1}
+      </span>
+      <span className="app-step-indicator__title">
+        <span className="nhsuk-u-visually-hidden">{`Step ${index + 1}, ${STATUS_LABEL[status]}: `}</span>
+        {step.title}
+      </span>
+    </>
+  );
+
   return (
-    <nav className="nhsuk-pagination no-print">
-      <ul className="nhsuk-list">
-        {steps.map((step, index) => (
-          <li
-            key={`step-${step.title.replace(/\s+/g, "-").toLowerCase()}`}
-            className="nhsuk-u-margin-bottom-3"
-          >
-            {index <= maxReachedStep ? (
-              <button
-                type="button"
-                onClick={() => onStepClick(index)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  width: "100%",
-                  textAlign: "left",
-                  fontWeight: index === currentStep ? "bold" : "normal",
-                  fontSize: index === currentStep ? "1.25rem" : "inherit",
-                  color: index === currentStep ? "#005eb8" : "inherit"
-                }}
-              >
-                <span
-                  className="nhsuk-tag"
-                  style={{
-                    borderRadius: "50%",
-                    backgroundColor: getStepBackgroundColor(index),
-                    flexShrink: 0
-                  }}
+    <nav className="app-step-indicator no-print" aria-label="Progress">
+      <ol className="nhsuk-list app-step-indicator__list">
+        {steps.map((step, index) => {
+          const status = getStatus(index);
+          const isClickable = index <= maxReachedStep;
+          const itemClassName = `app-step-indicator__item app-step-indicator__item--${status}`;
+
+          return (
+            <li
+              key={`step-${step.title.replace(/\s+/g, "-").toLowerCase()}`}
+              className={itemClassName}
+            >
+              {isClickable ? (
+                <button
+                  type="button"
+                  className="app-step-indicator__link"
+                  onClick={() => onStepClick(index)}
+                  aria-current={status === "current" ? "step" : undefined}
                 >
-                  {index + 1}
-                </span>
+                  {renderContent(step, index, status)}
+                </button>
+              ) : (
                 <span
-                  className="nhsuk-u-margin-left-2"
-                  style={{ whiteSpace: "nowrap" }}
+                  className="app-step-indicator__static"
+                  aria-current={status === "current" ? "step" : undefined}
                 >
-                  {step.title}
+                  {renderContent(step, index, status)}
                 </span>
-              </button>
-            ) : (
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <span
-                  className="nhsuk-tag"
-                  style={{
-                    borderRadius: "50%",
-                    backgroundColor: getStepBackgroundColor(index),
-                    color: "white",
-                    border: "none",
-                    flexShrink: 0
-                  }}
-                >
-                  {index + 1}
-                </span>
-                <span
-                  className="nhsuk-u-margin-left-2"
-                  style={{ whiteSpace: "nowrap" }}
-                >
-                  {step.title}
-                </span>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </nav>
   );
 };
