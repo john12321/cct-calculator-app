@@ -89,20 +89,10 @@ $nhsuk-page-width: 1800px;
   z-index: 0;
 }
 
+.autocomplete-select__menu,
 .specialty-autocomplete__menu {
   border-color: #212b32;
   max-height: 20rem;
-}
-
-.inline-form-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 18px;
-  flex-wrap: wrap;
-}
-
-.inline-form-row__item {
-  flex: 0 0 auto;
 }
 
 .assumed-full-time-row {

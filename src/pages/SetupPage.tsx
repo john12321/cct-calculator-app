@@ -134,9 +134,7 @@ export const SetupPage: FC<SetupPageProps> = ({
           )}
           {!canShowSummary && pastChangeIssues.length > 0 && (
             <p className="nhsuk-u-margin-top-3">
-              <em>
-                Fix the change errors above before continuing to summary.
-              </em>
+              <em>Fix the change errors above before continuing to summary.</em>
             </p>
           )}
         </section>
@@ -201,12 +199,13 @@ const ChangesSection: FC<ChangesSectionProps> = ({
     <section id="past-changes-section" className="nhsuk-u-margin-bottom-6">
       <h2 className="nhsuk-heading-l nhsuk-u-color-blue">Changes</h2>
 
-      <p className="nhsuk-body">
-        Record completed or hypothetical completed Less than full-time training
-        (LTFT) periods and/or absences (OOP, parental, sickness, etc.). Any
-        gaps between them will be assumed full-time (100% WTE). If no LTFT
-        change is selected for projection, remaining training is projected at
-        full-time from the day after the latest change.
+      <p className="nhsuk-body nhsuk-u-margin-bottom-1">
+        Add all your past or planned changes to your training (e.g. LTFT, OOP,
+        parental leave).
+      </p>
+      <p className="nhsuk-body nhsuk-u-margin-top-0">
+        Any gaps are assumed to be full-time, at 100% whole-time equivalent
+        (WTE).
       </p>
 
       {hasErrors && (

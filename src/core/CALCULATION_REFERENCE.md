@@ -137,7 +137,7 @@ This app does the same:
 
 - Picking a specialty auto-fills the start grade from `Specialty.entryGrade`.
 - A read-only text field shows the value with hint "Default for X is Y."
-- "Check this box to override default start grade" swaps the field to a
+- "Check this box if you want to choose a different start grade" swaps the field to a
   `<select>` of all training grades (FY1, FY2, CT1-CT4, ST1-ST9, DFT).
 - The view-mode shows "(overridden — default X)" annotation when applicable.
 - A reason field is required when the start grade override checkbox is checked,

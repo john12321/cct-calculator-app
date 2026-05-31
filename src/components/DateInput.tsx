@@ -77,13 +77,12 @@ export const DateInput: FC<DateInputProps> = ({
   }, [value]);
 
   const updatePart = (part: "day" | "month" | "year", nextValue: string) => {
-    setParts(current => {
-      const next = { ...current, [part]: normaliseNumericInput(nextValue, part) };
-      const nextIsoDate = toIsoDate(next.day, next.month, next.year);
-      lastEmittedValue.current = nextIsoDate;
-      onChange?.(nextIsoDate);
-      return next;
-    });
+    const next = { day, month, year, [part]: normaliseNumericInput(nextValue, part) };
+    const nextIsoDate = toIsoDate(next.day, next.month, next.year);
+
+    lastEmittedValue.current = nextIsoDate;
+    setParts(next);
+    onChange?.(nextIsoDate);
   };
 
   const describedBy = hint ? `${id}-hint` : undefined;

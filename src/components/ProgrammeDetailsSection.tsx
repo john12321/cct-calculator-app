@@ -1,4 +1,4 @@
-import { useEffect, useState, type FC, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FC, type FormEvent } from "react";
 import { flushSync } from "react-dom";
 import dayjs from "dayjs";
 import {
@@ -18,6 +18,10 @@ type ProgrammeDetailsSectionProps = {
   onChange: (programme: ProgrammeDetails) => void;
   onSaved?: () => void;
 };
+
+const sortedTrainingGrades = [...TRAINING_GRADES].sort((a, b) =>
+  a.localeCompare(b)
+);
 
 export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
   programme,
@@ -86,8 +90,16 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     initialHasSkippedGrade ? programme.skippedGradeNotes : ""
   );
   const [error, setError] = useState<string | null>(null);
+  const startGradeSelectRef = useRef<HTMLSelectElement>(null);
+  const shouldFocusStartGradeSelect = useRef(false);
 
   const selectedSpecialty = findSpecialty(specialty);
+
+  useEffect(() => {
+    if (!overrideGrade || !shouldFocusStartGradeSelect.current) return;
+    shouldFocusStartGradeSelect.current = false;
+    startGradeSelectRef.current?.focus();
+  }, [overrideGrade]);
 
   useEffect(() => {
     if (programme === null) {
@@ -177,8 +189,10 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
   };
 
   const handleGradeOverrideToggle = (checked: boolean) => {
+    shouldFocusStartGradeSelect.current = checked;
     setOverrideGrade(checked);
     if (!checked) {
+      shouldFocusStartGradeSelect.current = false;
       setStartGradeOverrideNotes("");
       if (selectedSpecialty) {
         setStartGrade(selectedSpecialty.entryGrade);
@@ -445,6 +459,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                 )}
                 {overrideGrade || !selectedSpecialty ? (
                   <select
+                    ref={startGradeSelectRef}
                     className="nhsuk-select"
                     id="programme-start-grade"
                     value={startGrade}
@@ -453,7 +468,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                     <option value="" disabled>
                       Select a start grade
                     </option>
-                    {TRAINING_GRADES.map(g => (
+                    {sortedTrainingGrades.map(g => (
                       <option key={g} value={g}>
                         {g}
                       </option>
@@ -486,7 +501,8 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                       className="nhsuk-label nhsuk-checkboxes__label"
                       htmlFor="programme-start-grade-override"
                     >
-                      Check this box to override default start grade
+                      Check this box if you want to choose a different start
+                      grade
                     </label>
                   </div>
                 )}

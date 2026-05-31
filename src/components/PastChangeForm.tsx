@@ -6,6 +6,7 @@ import {
   type PastChange,
   type ProgrammeDetails
 } from "../core";
+import { AutocompleteSelect } from "./AutocompleteSelect";
 import { DateInput } from "./DateInput";
 
 type PastChangeFormProps = {
@@ -27,6 +28,13 @@ const TYPE_GROUPS: { label: string; options: CalculationType[] }[] = [
   { label: "Leave types", options: ["PARENTAL", "SICKNESS", "ACCRUED_LEAVE"] },
   { label: "Health & return", options: ["SHIELDING", "PHASED"] }
 ];
+
+const CHANGE_TYPE_OPTIONS = TYPE_GROUPS.flatMap(group =>
+  group.options.map(value => ({
+    value,
+    label: getCalculationTypeLabel(value, "full")
+  }))
+).sort((a, b) => a.label.localeCompare(b.label));
 
 const newId = () =>
   `past-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -145,37 +153,27 @@ export const PastChangeForm: FC<PastChangeFormProps> = ({
         <h3 className="nhsuk-heading-s">Editing completed change</h3>
       )}
 
-      <div className="inline-form-row">
-        <div className="inline-form-row__item">
+      <div className="nhsuk-grid-row">
+        <div className="nhsuk-grid-column-one-half">
           <div className="nhsuk-form-group">
             <label className="nhsuk-label" htmlFor="past-type">
               Change type
             </label>
-            <select
-              className="nhsuk-select"
+            <AutocompleteSelect
               id="past-type"
               value={type}
-              onChange={e =>
-                handleTypeChange(e.target.value as CalculationType)
-              }
-            >
-              <option value="" disabled>
-                Select a change type
-              </option>
-              {TYPE_GROUPS.map(group => (
-                <optgroup key={group.label} label={group.label}>
-                  {group.options.map(opt => (
-                    <option key={opt} value={opt}>
-                      {getCalculationTypeLabel(opt, "full")}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+              placeholder="Select a change type"
+              options={CHANGE_TYPE_OPTIONS}
+              onChange={next => handleTypeChange(next as CalculationType)}
+              noResultsText="No change types found"
+              resultName="change type"
+              resultPluralName="change types"
+              width={30}
+            />
           </div>
         </div>
         {type === "LTFT" && (
-          <div className="inline-form-row__item">
+          <div className="nhsuk-grid-column-one-quarter">
             <div className="nhsuk-form-group">
               <label className="nhsuk-label" htmlFor="past-wte">
                 WTE % (1-99)

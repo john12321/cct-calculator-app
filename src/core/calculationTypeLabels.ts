@@ -16,7 +16,7 @@ export const calculationTypeLabels: Record<
   CalculationTypeLabelSet
 > = {
   LTFT: {
-    full: "LTFT (Less than full-time)",
+    full: "LTFT (Less than full-time) training",
     short: "LTFT"
   },
   OOPC: {
