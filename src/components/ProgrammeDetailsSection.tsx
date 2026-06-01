@@ -5,6 +5,7 @@ import {
   TRAINING_GRADES,
   findSpecialty,
   programmeAdjustedEndDate,
+  programmeAdjustedLengthMonths,
   programmeOriginalEndDate,
   validateProgrammeDetails,
   type ProgrammeDetails
@@ -94,6 +95,28 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
   const shouldFocusStartGradeSelect = useRef(false);
 
   const selectedSpecialty = findSpecialty(specialty);
+  const liveAdditionalMonths = hasAdditionalTraining
+    ? Number.parseFloat(additionalMonthsText)
+    : 0;
+  const liveAcceleratedMonths = hasAcceleratedTraining
+    ? Number.parseFloat(acceleratedMonthsText)
+    : 0;
+  const positiveAdditionalMonths =
+    Number.isFinite(liveAdditionalMonths) && liveAdditionalMonths > 0
+      ? liveAdditionalMonths
+      : 0;
+  const positiveAcceleratedMonths =
+    Number.isFinite(liveAcceleratedMonths) && liveAcceleratedMonths > 0
+      ? liveAcceleratedMonths
+      : 0;
+  const hasPositiveTrainingTimeAdjustment =
+    positiveAdditionalMonths > 0 || positiveAcceleratedMonths > 0;
+  const liveAdjustedLengthMonths =
+    selectedSpecialty !== undefined
+      ? selectedSpecialty.lengthMonths +
+        positiveAdditionalMonths -
+        positiveAcceleratedMonths
+      : null;
 
   useEffect(() => {
     if (!overrideGrade || !shouldFocusStartGradeSelect.current) return;
@@ -426,9 +449,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                 <input
                   className="nhsuk-input nhsuk-input--width-3"
                   id="programme-length"
-                  type="number"
-                  step="0.1"
-                  min="0"
+                  type="text"
                   value={selectedSpecialty?.lengthMonths ?? ""}
                   readOnly
                 />
@@ -572,12 +593,10 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                       outcome. Enter up to 24 months.
                     </p>
                     <input
-                      className="nhsuk-input nhsuk-input--width-5"
+                      className="nhsuk-input nhsuk-input--width-3"
                       id="programme-additional-months"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="24"
+                      type="text"
+                      inputMode="decimal"
                       value={additionalMonthsText}
                       onChange={e => setAdditionalMonthsText(e.target.value)}
                     />
@@ -599,6 +618,48 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   </div>
                 )}
               </div>
+
+              {hasPositiveTrainingTimeAdjustment &&
+                liveAdjustedLengthMonths !== null && (
+                  <dl className="nhsuk-summary-list nhsuk-u-margin-top-4">
+                    <div className="nhsuk-summary-list__row">
+                      <dt className="nhsuk-summary-list__key">
+                        Initial programme length
+                      </dt>
+                      <dd className="nhsuk-summary-list__value">
+                        {formatMonths(selectedSpecialty.lengthMonths)}
+                      </dd>
+                    </div>
+                    {positiveAdditionalMonths > 0 && (
+                      <div className="nhsuk-summary-list__row">
+                        <dt className="nhsuk-summary-list__key">
+                          Additional training time
+                        </dt>
+                        <dd className="nhsuk-summary-list__value">
+                          {formatMonths(positiveAdditionalMonths)}
+                        </dd>
+                      </div>
+                    )}
+                    {positiveAcceleratedMonths > 0 && (
+                      <div className="nhsuk-summary-list__row">
+                        <dt className="nhsuk-summary-list__key">
+                          Accelerated training time
+                        </dt>
+                        <dd className="nhsuk-summary-list__value">
+                          -{formatMonths(positiveAcceleratedMonths)}
+                        </dd>
+                      </div>
+                    )}
+                    <div className="nhsuk-summary-list__row">
+                      <dt className="nhsuk-summary-list__key">
+                        Adjusted programme length
+                      </dt>
+                      <dd className="nhsuk-summary-list__value">
+                        {formatMonths(liveAdjustedLengthMonths)}
+                      </dd>
+                    </div>
+                  </dl>
+                )}
 
               <div className="nhsuk-form-group">
                 <div
@@ -634,12 +695,10 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                       remaining training requirement. Enter up to 12 months.
                     </p>
                     <input
-                      className="nhsuk-input nhsuk-input--width-5"
+                      className="nhsuk-input nhsuk-input--width-3"
                       id="programme-accelerated-months"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="12"
+                      type="text"
+                      inputMode="decimal"
                       value={acceleratedMonthsText}
                       onChange={e => setAcceleratedMonthsText(e.target.value)}
                     />
@@ -877,6 +936,17 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   </dd>
                 </div>
               )}
+              {(programme.additionalMonths > 0 ||
+                programme.acceleratedMonths > 0) && (
+                <div className="nhsuk-summary-list__row">
+                  <dt className="nhsuk-summary-list__key">
+                    Adjusted programme length
+                  </dt>
+                  <dd className="nhsuk-summary-list__value">
+                    {formatMonths(programmeAdjustedLengthMonths(programme))}
+                  </dd>
+                </div>
+              )}
               {programme.eighteenMonthFinalGrade && (
                 <div className="nhsuk-summary-list__row">
                   <dt className="nhsuk-summary-list__key">
@@ -940,7 +1010,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
               </div>
               <div className="nhsuk-summary-list__row">
                 <dt className="nhsuk-summary-list__key">
-                  Original Completion of Training Date
+                  Original programme end date
                 </dt>
                 <dd className="nhsuk-summary-list__value">
                   {dayjs(programmeOriginalEndDate(programme)).format(
@@ -952,12 +1022,13 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                 programme.acceleratedMonths > 0) && (
                 <div className="nhsuk-summary-list__row">
                   <dt className="nhsuk-summary-list__key">
-                    Adjusted full-time Completion of Training Date
+                    Adjusted programme end date before changes
                   </dt>
                   <dd className="nhsuk-summary-list__value">
                     {formatDate(programmeAdjustedEndDate(programme))}
                     <span className="nhsuk-hint nhsuk-u-margin-left-2">
-                      (reflects the other training-time adjustments shown above)
+                      (based on programme length and training-time adjustments
+                      only)
                     </span>
                   </dd>
                 </div>

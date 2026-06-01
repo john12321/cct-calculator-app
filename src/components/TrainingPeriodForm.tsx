@@ -42,6 +42,9 @@ const TAG_OPTIONS: GradePeriodTag[] = [
 const newId = () =>
   `period-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
+const numericInputValue = (value: string, maxLength: number) =>
+  value.replace(/\D/g, "").slice(0, maxLength);
+
 const defaultStart = (
   programme: ProgrammeDetails,
   priorPeriods: TrainingPeriod[]
@@ -229,14 +232,13 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
                 Approved CCT credit % (1-100)
               </label>
               <input
-                className="nhsuk-input nhsuk-input--width-5"
+                className="nhsuk-input nhsuk-input--width-3"
                 id="period-oopr-wte"
-                type="number"
-                min="1"
-                max="100"
-                step="1"
+                type="text"
+                inputMode="numeric"
+                maxLength={3}
                 value={wte}
-                onChange={e => setWte(e.target.value)}
+                onChange={e => setWte(numericInputValue(e.target.value, 3))}
               />
               <p className="nhsuk-hint">
                 Enter the proportion of this OOPR period prospectively approved
@@ -278,14 +280,13 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
                   WTE % (1-100)
                 </label>
                 <input
-                  className="nhsuk-input nhsuk-input--width-5"
+                  className="nhsuk-input nhsuk-input--width-3"
                   id="period-wte"
-                  type="number"
-                  min="1"
-                  max="100"
-                  step="1"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={3}
                   value={wte}
-                  onChange={e => setWte(e.target.value)}
+                  onChange={e => setWte(numericInputValue(e.target.value, 3))}
                 />
               </div>
             </div>
