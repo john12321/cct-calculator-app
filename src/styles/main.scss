@@ -65,6 +65,31 @@ $color-nhsuk-white: #ffffff;
   color: $color-nhsuk-blue;
 }
 
+// Step layout: stacked on mobile (nav on top), narrow fixed sidebar on desktop.
+.app-step-layout__nav {
+  margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+  .app-step-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+
+  .app-step-layout__nav {
+    flex: 0 0 140px;
+    margin-bottom: 0;
+  }
+
+  .app-step-layout__content {
+    // min-width: 0 lets the content shrink so wide tables scroll within
+    // .table-wrapper instead of stretching the flex container.
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
 .app-step-indicator__list {
   margin-bottom: 0;
 }

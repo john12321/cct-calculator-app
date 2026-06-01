@@ -60,8 +60,8 @@ export const App = () => {
         {mode === null && <ModePicker onSelect={setMode} />}
 
         {mode !== null && (
-          <div className="nhsuk-grid-row">
-            <div className="nhsuk-grid-column-one-quarter no-print">
+          <div className="app-step-layout">
+            <div className="app-step-layout__nav no-print">
               <StepIndicator
                 steps={STEPS}
                 currentStep={step}
@@ -72,7 +72,7 @@ export const App = () => {
               />
             </div>
 
-            <div className="nhsuk-grid-column-three-quarters">
+            <div className="app-step-layout__content">
               <div className="nhsuk-card">
                 <div className="nhsuk-card__content">
                   {step === 0 && mode === "QUICK" && (
