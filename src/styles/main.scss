@@ -249,6 +249,26 @@ $color-nhsuk-white: #ffffff;
   }
 }
 
+.change-form-panel {
+  padding: 24px;
+  background-color: $color-nhsuk-grey-5;
+  border: 1px solid $color-nhsuk-grey-1;
+  border-left: 4px solid $color-nhsuk-blue;
+  border-radius: 4px;
+}
+
+.projection-row {
+  background-color: #fff8ba;
+
+  td {
+    border-top: 3px solid $color-nhsuk-grey-1;
+  }
+
+  td:nth-child(4) {
+    font-size: 1.1rem;
+  }
+}
+
 .changes-total-row + .changes-total-row {
   td {
     border-top: 0;

@@ -1025,7 +1025,7 @@ formula parity gaps.
 | `../components/SpecialtyAutocompleteSelect.tsx`        | Progressively enhanced accessible-autocomplete select for picking specialty                                                                   |
 | `../components/ModePicker.tsx`                         | Selects Quick or Full calculation mode                                                                                                        |
 | `../components/PastChangeForm.tsx`                     | Quick-mode add/edit change form, including OOPT/OOPR credit controls and LTFT projection selection                                            |
-| `../components/PastChangesList.tsx`                    | Quick-mode table of changes with Edit/Remove, optional assumed full-time rows and entered/inclusive totals                                    |
+| `../components/PastChangesList.tsx`                    | Quick-mode changes table (Edit/Remove), optional assumed full-time rows, totals, merged projection row and total-to-completion row            |
 | `../components/NextPostSummary.tsx`                    | Quick-mode read-only projection summary                                                                                                       |
 | `../components/TrainingPeriodForm.tsx`                 | Full-mode add/edit timeline row form, including OOPT/OOPR credit controls                                                                     |
 | `../components/TimelineGrid.tsx`                       | Full-mode contiguous timeline table                                                                                                           |

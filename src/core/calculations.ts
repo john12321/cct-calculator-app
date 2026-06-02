@@ -226,3 +226,12 @@ export const projectedCompletionDate = (
   const daysToAdd = Math.floor((monthsRemaining / wte) * DAYS_PER_MONTH);
   return dayjs(proposed.startDate).add(daysToAdd, "day").format("YYYY-MM-DD");
 };
+
+export const quickProjectionCompletionDate = (
+  programme: ProgrammeDetails,
+  pastChanges: PastChange[],
+  proposed: ProposedChange
+): string => {
+  const accrual = computeWteAccrual(programme, pastChanges, proposed.startDate);
+  return projectedCompletionDate(proposed, accrual.monthsRemaining);
+};

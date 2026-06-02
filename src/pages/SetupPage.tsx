@@ -1,7 +1,6 @@
 import { useState, type FC } from "react";
 import { CompletionDateWarning } from "../components/CompletionDateWarning";
 import { GradeTable } from "../components/GradeTable";
-import { NextPostSummary } from "../components/NextPostSummary";
 import { PastChangeForm } from "../components/PastChangeForm";
 import { PastChangesList } from "../components/PastChangesList";
 import { ProgrammeDetailsSection } from "../components/ProgrammeDetailsSection";
@@ -10,6 +9,7 @@ import {
   deriveQuickProjection,
   getCalculationTypeLabel,
   isOpenProjectedLtftChange,
+  quickProjectionCompletionDate,
   validatePastChange,
   type PastChange,
   type ProgrammeDetails
@@ -33,22 +33,31 @@ export const SetupPage: FC<SetupPageProps> = ({
   onContinue
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+
+  const handleOpenAdd = () => {
+    setEditingId(null);
+    setFormOpen(true);
+    scrollTo({ id: "past-change-form" });
+  };
 
   const handleAddPast = (change: PastChange) => {
     const existing = change.projectsRemainingTraining
       ? pastChanges.map(c => ({ ...c, projectsRemainingTraining: false }))
       : pastChanges;
     onPastChangesChange([...existing, change]);
+    setFormOpen(false);
     scrollTo({ id: "past-changes-table" });
   };
 
   const handleRemovePast = (id: string) => {
     onPastChangesChange(pastChanges.filter(c => c.id !== id));
-    scrollTo({ id: "past-change-form" });
+    scrollTo({ id: "past-changes-table" });
   };
 
   const handleStartEdit = (id: string) => {
     setEditingId(id);
+    setFormOpen(true);
     scrollTo({ id: "past-change-form" });
   };
 
@@ -63,11 +72,13 @@ export const SetupPage: FC<SetupPageProps> = ({
       })
     );
     setEditingId(null);
+    setFormOpen(false);
     scrollTo({ id: "past-changes-table" });
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
+    setFormOpen(false);
     scrollTo({ id: "past-changes-table" });
   };
 
@@ -85,7 +96,10 @@ export const SetupPage: FC<SetupPageProps> = ({
     ? deriveQuickProjection(programme, pastChanges)
     : null;
   const canShowSummary =
-    programme !== null && editingId === null && pastChangeIssues.length === 0;
+    programme !== null &&
+    editingId === null &&
+    !formOpen &&
+    pastChangeIssues.length === 0;
 
   return (
     <>
@@ -104,6 +118,8 @@ export const SetupPage: FC<SetupPageProps> = ({
           projected={projected}
           editingId={editingId}
           editingChange={editingChange}
+          formOpen={formOpen}
+          onOpenAdd={handleOpenAdd}
           onAddPast={handleAddPast}
           onUpdatePast={handleUpdatePast}
           onCancelEdit={handleCancelEdit}
@@ -149,6 +165,8 @@ type ChangesSectionProps = {
   projected: ReturnType<typeof deriveQuickProjection>;
   editingId: string | null;
   editingChange: PastChange | null;
+  formOpen: boolean;
+  onOpenAdd: () => void;
   onAddPast: (change: PastChange) => void;
   onUpdatePast: (change: PastChange) => void;
   onCancelEdit: () => void;
@@ -162,6 +180,8 @@ const ChangesSection: FC<ChangesSectionProps> = ({
   projected,
   editingId,
   editingChange,
+  formOpen,
+  onOpenAdd,
   onAddPast,
   onUpdatePast,
   onCancelEdit,
@@ -234,17 +254,6 @@ const ChangesSection: FC<ChangesSectionProps> = ({
         </div>
       )}
 
-      <PastChangeForm
-        key={editingId ?? "new"}
-        formId="past-change-form"
-        programme={programme}
-        existing={pastChanges}
-        editing={editingChange}
-        onAdd={onAddPast}
-        onUpdate={onUpdatePast}
-        onCancelEdit={onCancelEdit}
-      />
-
       <PastChangesList
         programme={programme}
         changes={pastChanges}
@@ -255,21 +264,46 @@ const ChangesSection: FC<ChangesSectionProps> = ({
         onEdit={onStartEdit}
       />
 
-      {editingId === null && !hasErrors && (
-        <section className="nhsuk-u-margin-top-5">
-          <h3 className="nhsuk-heading-m nhsuk-u-color-blue">
-            Projected Completion of Training Date
-          </h3>
-          <NextPostSummary
-            programme={programme}
-            pastChanges={pastChanges}
-            proposed={projected}
-          />
-          <p className="nhsuk-hint nhsuk-u-margin-top-1">
-            This projection updates automatically when you add, edit or remove
-            changes.
+      {!hasErrors && (
+        <div className="nhsuk-inset-text nhsuk-u-margin-top-2">
+          <p className="nhsuk-u-margin-bottom-0">
+            Projected Completion of Training Date:{" "}
+            <strong>
+              {formatDate(
+                quickProjectionCompletionDate(programme, pastChanges, projected)
+              )}
+            </strong>
           </p>
-        </section>
+        </div>
+      )}
+
+      <p className="nhsuk-hint nhsuk-u-margin-top-1">
+        The final highlighted row projects from your last change through to the
+        Projected Completion of Training Date. The table updates automatically
+        when you add, edit or remove changes.
+      </p>
+
+      {!formOpen && (
+        <button
+          type="button"
+          className="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-top-3"
+          onClick={onOpenAdd}
+        >
+          Add change
+        </button>
+      )}
+
+      {formOpen && (
+        <PastChangeForm
+          key={editingId ?? "new"}
+          formId="past-change-form"
+          programme={programme}
+          existing={pastChanges}
+          editing={editingChange}
+          onAdd={onAddPast}
+          onUpdate={onUpdatePast}
+          onCancelEdit={onCancelEdit}
+        />
       )}
     </section>
   );

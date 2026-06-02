@@ -4,9 +4,12 @@ import { Table } from "nhsuk-react-components";
 import {
   calendarMonthsFor,
   COMPLETED_PERIOD_DAYS_PER_MONTH,
+  computeWteAccrual,
+  DAYS_PER_MONTH,
   getCalculationTypeLabel,
   inferredFullTimePeriods,
   isOpenProjectedLtftChange,
+  projectedCompletionDate,
   wtePercentForPastChange,
   wteMonthsFor,
   type InferredFullTimePeriod,
@@ -55,15 +58,22 @@ export const PastChangesList: FC<PastChangesListProps> = ({
 }) => {
   const [showAssumedPeriods, setShowAssumedPeriods] = useState(false);
 
-  if (changes.length === 0) {
-    return (
-      <p className="nhsuk-body">
-        No completed changes added yet. Use the form above to record any LTFT
-        posts or absences. The calculator will project from the programme start
-        at 100% WTE until you add changes.
-      </p>
-    );
-  }
+  const accrual = computeWteAccrual(programme, changes, projected.startDate);
+  const projectedCct = projectedCompletionDate(
+    projected,
+    accrual.monthsRemaining
+  );
+  const projectionWte =
+    projected.kind === "LTFT" && projected.wte != null ? projected.wte : 100;
+  const projectionTypeLabel =
+    projected.kind === "FULL_TIME"
+      ? "Full-time projection"
+      : "LTFT projection";
+  const projectionWteMonths = Math.max(0, accrual.monthsRemaining);
+  const projectionCalendarMonths = Math.max(
+    0,
+    dayjs(projectedCct).diff(dayjs(projected.startDate), "day") / DAYS_PER_MONTH
+  );
 
   const sorted = sortByStart(changes);
   const assumedPeriods = inferredFullTimePeriods(
@@ -251,27 +261,51 @@ export const PastChangesList: FC<PastChangesListProps> = ({
                 </Table.Row>
               );
             })}
-            {showAssumedPeriods
-              ? renderTotalsRow(
-                  "Total",
-                  userCalendarMonths + assumedCalendarMonths,
-                  userWteMonths + assumedCalendarMonths
-                )
-              : (
-                  <>
-                    {renderTotalsRow(
-                      "Entered changes total",
-                      userCalendarMonths,
-                      userWteMonths
-                    )}
-                    {assumedPeriods.length > 0 &&
-                      renderTotalsRow(
-                        "Including assumed full-time total (hidden)",
-                        userCalendarMonths + assumedCalendarMonths,
-                        userWteMonths + assumedCalendarMonths
+            {changes.length > 0 &&
+              (showAssumedPeriods
+                ? renderTotalsRow(
+                    "Total",
+                    userCalendarMonths + assumedCalendarMonths,
+                    userWteMonths + assumedCalendarMonths
+                  )
+                : (
+                    <>
+                      {renderTotalsRow(
+                        "Entered changes total",
+                        userCalendarMonths,
+                        userWteMonths
                       )}
-                  </>
-                )}
+                      {assumedPeriods.length > 0 &&
+                        renderTotalsRow(
+                          "Including assumed full-time total (hidden)",
+                          userCalendarMonths + assumedCalendarMonths,
+                          userWteMonths + assumedCalendarMonths
+                        )}
+                    </>
+                  ))}
+            <Table.Row className="projection-row">
+              <Table.Cell>
+                <strong>{projectionTypeLabel}</strong>
+              </Table.Cell>
+              <Table.Cell>Projects to completion</Table.Cell>
+              <Table.Cell>{formatDate(projected.startDate)}</Table.Cell>
+              <Table.Cell>
+                <strong>{formatDate(projectedCct)}</strong>
+              </Table.Cell>
+              <Table.Cell>{projectionWte}%</Table.Cell>
+              <Table.Cell>Yes</Table.Cell>
+              <Table.Cell>{projectionCalendarMonths.toFixed(1)}</Table.Cell>
+              <Table.Cell>{projectionWteMonths.toFixed(1)}</Table.Cell>
+              <Table.Cell>Read only</Table.Cell>
+            </Table.Row>
+            {changes.length > 0 &&
+              renderTotalsRow(
+                "Total to completion",
+                userCalendarMonths +
+                  assumedCalendarMonths +
+                  projectionCalendarMonths,
+                userWteMonths + assumedCalendarMonths + projectionWteMonths
+              )}
           </Table.Body>
         </Table>
       </div>
