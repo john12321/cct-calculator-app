@@ -136,7 +136,7 @@ export const FullModeSummaryPage: FC<FullModeSummaryPageProps> = ({
         period.type === "GRADE" ? period.gradeTag : "",
         dayjs(period.startDate).format("YYYY-MM-DD"),
         period.endDate === null
-          ? "Project forward"
+          ? "For remainder of training"
           : dayjs(period.endDate).format("YYYY-MM-DD"),
         wtePercentForPeriod(period) !== null
           ? String(wtePercentForPeriod(period))

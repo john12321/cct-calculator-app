@@ -7,9 +7,11 @@ import { TimelineProjection } from "../components/TimelineProjection";
 import { TrainingPeriodForm } from "../components/TrainingPeriodForm";
 import {
   computeGradeProgressionForTimeline,
+  projectedCompletionDateForTimeline,
   type ProgrammeDetails,
   type TrainingPeriod
 } from "../core";
+import { formatDate } from "../utils/format";
 import { scrollTo } from "../utils/scroll";
 
 type SetupFullPageProps = {
@@ -28,31 +30,45 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
   onContinue
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+
+  const handleOpenAdd = () => {
+    setEditingId(null);
+    setFormOpen(true);
+    scrollTo({ id: "training-period-form" });
+  };
 
   const handleAdd = (period: TrainingPeriod) => {
     onTimelineChange([...timeline, period]);
+    setFormOpen(false);
     scrollTo({ id: "timeline-table" });
   };
 
   const handleUpdate = (period: TrainingPeriod) => {
     onTimelineChange(timeline.map(p => (p.id === period.id ? period : p)));
     setEditingId(null);
+    setFormOpen(false);
     scrollTo({ id: "timeline-table" });
   };
 
   const handleRemove = (id: string) => {
     onTimelineChange(timeline.filter(p => p.id !== id));
-    if (editingId === id) setEditingId(null);
-    scrollTo({ id: "training-period-form" });
+    if (editingId === id) {
+      setEditingId(null);
+      setFormOpen(false);
+    }
+    scrollTo({ id: "timeline-table" });
   };
 
   const handleStartEdit = (id: string) => {
     setEditingId(id);
+    setFormOpen(true);
     scrollTo({ id: "training-period-form" });
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
+    setFormOpen(false);
     scrollTo({ id: "timeline-table" });
   };
 
@@ -90,15 +106,30 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
             period's start date follows on automatically.
           </p>
 
-          {lastIsProjectForward ? (
-            <div className="nhsuk-inset-text" role="note">
-              <span className="nhsuk-u-visually-hidden">Information: </span>
-              <p>
-                The most recent period is set to project forward. To add
-                another period, edit it and set an end date instead.
-              </p>
-            </div>
-          ) : (
+          <TimelineGrid
+            periods={timeline}
+            onEdit={handleStartEdit}
+            onRemove={handleRemove}
+          />
+
+          {timeline.length > 0 && (
+            <>
+              <TimelineProjection programme={programme} timeline={timeline} />
+
+              <div className="nhsuk-inset-text nhsuk-u-margin-top-2">
+                <p className="nhsuk-u-margin-bottom-0">
+                  Projected Completion of Training Date:{" "}
+                  <strong>
+                    {formatDate(
+                      projectedCompletionDateForTimeline(programme, timeline)
+                    )}
+                  </strong>
+                </p>
+              </div>
+            </>
+          )}
+
+          {formOpen && (
             <TrainingPeriodForm
               key={editingId ?? "new"}
               programme={programme}
@@ -111,19 +142,18 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
             />
           )}
 
-          <TimelineGrid
-            periods={timeline}
-            onEdit={handleStartEdit}
-            onRemove={handleRemove}
-          />
+          {!formOpen && !lastIsProjectForward && (
+            <button
+              type="button"
+              className="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-top-3"
+              onClick={handleOpenAdd}
+            >
+              Add period
+            </button>
+          )}
 
           {timeline.length > 0 && (
             <>
-              <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
-                Projected Completion of Training Date
-              </h3>
-              <TimelineProjection programme={programme} timeline={timeline} />
-
               <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
                 Grade progression
               </h3>
@@ -136,7 +166,7 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
                 type="button"
                 className="nhsuk-button nhsuk-u-margin-top-4"
                 onClick={onContinue}
-                disabled={editingId !== null}
+                disabled={editingId !== null || formOpen}
               >
                 Show summary
               </button>

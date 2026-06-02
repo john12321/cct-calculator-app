@@ -148,9 +148,11 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
       id={formId}
       onSubmit={handleSubmit}
       noValidate
-      className="nhsuk-u-margin-bottom-4"
+      className="change-form-panel nhsuk-u-margin-bottom-4"
     >
-      {isEditing && <h3 className="nhsuk-heading-s">Editing period</h3>}
+      <h3 className="nhsuk-heading-s nhsuk-u-margin-bottom-3">
+        {isEditing ? "Editing period" : "Adding a new period"}
+      </h3>
 
       <div className="nhsuk-grid-row">
         <div className="nhsuk-grid-column-one-half">
@@ -438,15 +440,13 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
         <button type="submit" className="nhsuk-button nhsuk-u-margin-right-3">
           {isEditing ? "Save changes" : "Add period"}
         </button>
-        {isEditing && (
-          <button
-            type="button"
-            className="nhsuk-button nhsuk-button--secondary"
-            onClick={onCancelEdit}
-          >
-            Cancel
-          </button>
-        )}
+        <button
+          type="button"
+          className="nhsuk-button nhsuk-button--secondary"
+          onClick={onCancelEdit}
+        >
+          Cancel
+        </button>
       </div>
     </form>
   );

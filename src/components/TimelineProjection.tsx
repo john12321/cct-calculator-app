@@ -70,7 +70,7 @@ export const TimelineProjection: FC<TimelineProjectionProps> = ({
             </Table.Row>
           </Table.Head>
           <Table.Body>
-            <Table.Row>
+            <Table.Row className="projection-row">
               <Table.Cell>{formatMonths(adjustedLength)}</Table.Cell>
               <Table.Cell>
                 {formatMonths(accrual.totalWteMonthsCompleted)}

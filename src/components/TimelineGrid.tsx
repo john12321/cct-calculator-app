@@ -30,8 +30,8 @@ export const TimelineGrid: FC<TimelineGridProps> = ({
   if (periods.length === 0) {
     return (
       <p className="nhsuk-body">
-        No periods recorded yet. Add the first period (your training start)
-        using the form above.
+        No periods recorded yet. Use the "Add period" button below to record
+        your first period (your training start).
       </p>
     );
   }
@@ -61,7 +61,7 @@ export const TimelineGrid: FC<TimelineGridProps> = ({
                 <Table.Cell>{formatDate(period.startDate)}</Table.Cell>
                 <Table.Cell>
                   {period.endDate === null
-                    ? "Project forward"
+                    ? "For remainder of training"
                     : formatDate(period.endDate)}
                 </Table.Cell>
                 <Table.Cell>

@@ -223,7 +223,7 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
                     <Table.Cell>{formatDate(period.startDate)}</Table.Cell>
                     <Table.Cell>
                       {period.endDate === null
-                        ? "Project forward"
+                        ? "For remainder of training"
                         : formatDate(period.endDate)}
                     </Table.Cell>
                     <Table.Cell>
