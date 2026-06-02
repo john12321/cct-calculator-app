@@ -373,6 +373,14 @@ timeline projects forward from the following day at the latest recorded grade
 WTE; and an open-ended project-forward grade period supplies its own forward
 WTE.
 
+Both modes **truncate** the projected day count to whole days with
+`Math.floor`, matching Excel's fractional date-serial display — the same
+convention used for calculated grade end dates (section 7.3). This keeps the
+two engines in agreement. A parity regression test
+([`modeParity.test.ts`](modeParity.test.ts)) runs equivalent scenarios —
+including a sweep across programme lengths — through both engines and asserts
+the projected dates match.
+
 The workbook uses two closely related month-to-day conventions:
 
 | Calculation area                                           | Excel workbook                   | This app                         | Status  |

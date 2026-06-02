@@ -92,7 +92,7 @@ describe("Excel historical period convention", () => {
     );
 
     expect(accrual.totalWteMonthsCompleted).toBeCloseTo(42.0164383562, 9);
-    expect(projectedDate).toBe("2030-06-29");
+    expect(projectedDate).toBe("2030-06-28");
     expect(legacyProjectedCompletionDate(changes, proposed)).toBe(
       "2030-06-28"
     );

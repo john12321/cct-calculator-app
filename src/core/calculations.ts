@@ -223,6 +223,6 @@ export const projectedCompletionDate = (
 ): string => {
   const wte =
     proposed.kind === "LTFT" && proposed.wte != null ? proposed.wte / 100 : 1;
-  const daysToAdd = Math.round((monthsRemaining / wte) * DAYS_PER_MONTH);
+  const daysToAdd = Math.floor((monthsRemaining / wte) * DAYS_PER_MONTH);
   return dayjs(proposed.startDate).add(daysToAdd, "day").format("YYYY-MM-DD");
 };
