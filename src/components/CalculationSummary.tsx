@@ -230,7 +230,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
           programme.acceleratedMonths > 0) && (
           <div className="nhsuk-summary-list__row">
             <dt className="nhsuk-summary-list__key">
-              Adjusted full-time Completion of Training Date
+              Adjusted programme end date before changes
             </dt>
             <dd className="nhsuk-summary-list__value">
               {formatDate(adjustedEnd)}

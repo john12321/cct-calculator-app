@@ -205,7 +205,7 @@ and enters a required reason; these are stored as `skippedGrade` and
 
 The original programme length and original Completion of Training Date remain visible as the
 baseline. When additional or accelerated training time is recorded, the
-summary also shows an **Adjusted full-time Completion of Training Date** with an explanation that
+summary also shows an **Adjusted programme end date before changes** with an explanation that
 it reflects those duration adjustments.
 
 Both adjustment inputs must contain a positive number and a reason when their

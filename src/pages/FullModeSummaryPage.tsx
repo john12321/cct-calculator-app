@@ -97,7 +97,7 @@ export const FullModeSummaryPage: FC<FullModeSummaryPageProps> = ({
       ...(programme.additionalMonths > 0 || programme.acceleratedMonths > 0
         ? [
             [
-              "Adjusted full-time Completion of Training Date",
+              "Adjusted programme end date before changes",
               dayjs(programmeAdjustedEndDate(programme)).format("YYYY-MM-DD")
             ]
           ]
