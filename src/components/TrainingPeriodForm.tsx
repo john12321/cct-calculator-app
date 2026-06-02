@@ -180,79 +180,10 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
         </div>
       </div>
 
-      {type === "GRADE" || type === "OOPT" || type === "OOPR" ? (
-        <div className="nhsuk-form-group">
-          <div className="nhsuk-checkboxes">
-            <div className="nhsuk-checkboxes__item">
-              <input
-                className="nhsuk-checkboxes__input"
-                id="period-counted"
-                type="checkbox"
-                checked={countedAsTraining}
-                onChange={e => handleCountedAsTrainingChange(e.target.checked)}
-              />
-              <label
-                className="nhsuk-label nhsuk-checkboxes__label"
-                htmlFor="period-counted"
-              >
-                Counted as training
-              </label>
-            </div>
-          </div>
-          {type === "OOPT" ? (
-            <p className="nhsuk-hint">
-              OOPT counted as training is credited at 100% and can be recorded
-              for up to 12 months.
-            </p>
-          ) : type === "OOPR" ? (
-            <p className="nhsuk-hint">
-              Only approved OOPR time contributing towards a Certificate of
-              Completion of Training (CCT) should be counted. OOPR is normally
-              up to 3 years, or 4 years in exceptional circumstances; LTFT OOPR
-              duration is normally pro rata.
-            </p>
-          ) : (
-            <p className="nhsuk-hint">
-              When unchecked, the period still consumes calendar time but does
-              not accrue WTE months.
-            </p>
-          )}
-        </div>
-      ) : (
-        <p className="nhsuk-hint">
-          This absence consumes calendar time but is not counted as training.
-        </p>
-      )}
-
-      {type === "OOPR" && countedAsTraining && (
-        <div className="nhsuk-grid-row">
-          <div className="nhsuk-grid-column-one-half">
-            <div className="nhsuk-form-group">
-              <label className="nhsuk-label" htmlFor="period-oopr-wte">
-                Approved CCT credit % (1-100)
-              </label>
-              <input
-                className="nhsuk-input nhsuk-input--width-3"
-                id="period-oopr-wte"
-                type="text"
-                inputMode="numeric"
-                maxLength={3}
-                value={wte}
-                onChange={e => setWte(numericInputValue(e.target.value, 3))}
-              />
-              <p className="nhsuk-hint">
-                Enter the proportion of this OOPR period prospectively approved
-                to count towards CCT. For LTFT OOPR, this may match your WTE.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {type === "GRADE" && (
         <>
           <div className="nhsuk-grid-row">
-            <div className="nhsuk-grid-column-one-quarter">
+            <div className="nhsuk-grid-column-one-half">
               <div className="nhsuk-form-group">
                 <label className="nhsuk-label" htmlFor="period-grade">
                   Grade
@@ -273,8 +204,6 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
                   ))}
                 </select>
               </div>
-            </div>
-            <div className="nhsuk-grid-column-one-quarter">
               <div className="nhsuk-form-group">
                 <label className="nhsuk-label" htmlFor="period-wte">
                   WTE % (1-100)
@@ -292,37 +221,117 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
             </div>
           </div>
 
-          <div className="nhsuk-form-group">
-            <fieldset className="nhsuk-fieldset">
-              <legend className="nhsuk-fieldset__legend">Grade tag</legend>
-              <div className="nhsuk-radios nhsuk-radios--inline">
-                {TAG_OPTIONS.map(tag => (
-                  <div className="nhsuk-radios__item" key={tag}>
-                    <input
-                      className="nhsuk-radios__input"
-                      id={`period-tag-${tag}`}
-                      type="radio"
-                      name="period-tag"
-                      value={tag}
-                      checked={gradeTag === tag}
-                      onChange={() => setGradeTag(tag)}
-                    />
-                    <label
-                      className="nhsuk-label nhsuk-radios__label"
-                      htmlFor={`period-tag-${tag}`}
-                    >
-                      {getGradePeriodTagLabel(tag)}
-                    </label>
+          <div className="nhsuk-grid-row">
+            <div className="nhsuk-grid-column-one-half">
+              <div className="nhsuk-form-group">
+                <fieldset className="nhsuk-fieldset">
+                  <legend className="nhsuk-fieldset__legend">Grade tag</legend>
+                  <div className="nhsuk-radios">
+                    {TAG_OPTIONS.map(tag => (
+                      <div className="nhsuk-radios__item" key={tag}>
+                        <input
+                          className="nhsuk-radios__input"
+                          id={`period-tag-${tag}`}
+                          type="radio"
+                          name="period-tag"
+                          value={tag}
+                          checked={gradeTag === tag}
+                          onChange={() => setGradeTag(tag)}
+                        />
+                        <label
+                          className="nhsuk-label nhsuk-radios__label"
+                          htmlFor={`period-tag-${tag}`}
+                        >
+                          {getGradePeriodTagLabel(tag)}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </fieldset>
               </div>
-            </fieldset>
+            </div>
           </div>
         </>
       )}
 
+      {type === "GRADE" || type === "OOPT" || type === "OOPR" ? (
+        <div className="nhsuk-grid-row">
+          <div className="nhsuk-grid-column-one-half">
+            <div className="nhsuk-form-group">
+              <div className="nhsuk-checkboxes">
+                <div className="nhsuk-checkboxes__item">
+                  <input
+                    className="nhsuk-checkboxes__input"
+                    id="period-counted"
+                    type="checkbox"
+                    checked={countedAsTraining}
+                    onChange={e =>
+                      handleCountedAsTrainingChange(e.target.checked)
+                    }
+                  />
+                  <label
+                    className="nhsuk-label nhsuk-checkboxes__label"
+                    htmlFor="period-counted"
+                  >
+                    Counted as training
+                  </label>
+                </div>
+              </div>
+              {type === "OOPT" ? (
+                <p className="nhsuk-hint">
+                  OOPT counted as training is credited at 100% and can be
+                  recorded for up to 12 months.
+                </p>
+              ) : type === "OOPR" ? (
+                <p className="nhsuk-hint">
+                  Only approved OOPR time contributing towards a Certificate of
+                  Completion of Training (CCT) should be counted. OOPR is
+                  normally up to 3 years, or 4 years in exceptional
+                  circumstances; LTFT OOPR duration is normally pro rata.
+                </p>
+              ) : (
+                <p className="nhsuk-hint">
+                  When unchecked, the period still consumes calendar time but
+                  does not accrue WTE months.
+                </p>
+              )}
+            </div>
+            {type === "OOPR" && countedAsTraining && (
+              <div className="nhsuk-form-group">
+                <label className="nhsuk-label" htmlFor="period-oopr-wte">
+                  Approved CCT credit % (1-100)
+                </label>
+                <input
+                  className="nhsuk-input nhsuk-input--width-3"
+                  id="period-oopr-wte"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={3}
+                  value={wte}
+                  onChange={e => setWte(numericInputValue(e.target.value, 3))}
+                />
+                <p className="nhsuk-hint">
+                  Enter the proportion of this OOPR period prospectively
+                  approved to count towards CCT. For LTFT OOPR, this may match
+                  your WTE.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="nhsuk-grid-row">
+          <div className="nhsuk-grid-column-one-half">
+            <p className="nhsuk-hint">
+              This absence consumes calendar time but is not counted as
+              training.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="nhsuk-grid-row">
-        <div className="nhsuk-grid-column-one-quarter">
+        <div className="nhsuk-grid-column-one-half">
           <DateInput
             id="period-start"
             label="Start date"
@@ -338,63 +347,67 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
         </div>
       </div>
 
-      <div className="nhsuk-form-group">
-        <fieldset className="nhsuk-fieldset">
-          <legend className="nhsuk-fieldset__legend">End date</legend>
-          <div className="nhsuk-radios">
-            <div className="nhsuk-radios__item">
-              <input
-                className="nhsuk-radios__input"
-                id="period-end-set"
-                type="radio"
-                name="period-end-mode"
-                value="SET"
-                checked={endMode === "SET"}
-                onChange={() => setEndMode("SET")}
-              />
-              <label
-                className="nhsuk-label nhsuk-radios__label"
-                htmlFor="period-end-set"
-              >
-                Set an end date
-              </label>
-            </div>
-            {endMode === "SET" && (
-              <div className="nhsuk-u-margin-left-5 nhsuk-u-margin-bottom-3">
-                <DateInput
-                  id="period-end"
-                  label="End date"
-                  value={endDate}
-                  onChange={setEndDate}
-                />
+      <div className="nhsuk-grid-row">
+        <div className="nhsuk-grid-column-one-half">
+          <div className="nhsuk-form-group">
+            <fieldset className="nhsuk-fieldset">
+              <legend className="nhsuk-fieldset__legend">End date</legend>
+              <div className="nhsuk-radios">
+                <div className="nhsuk-radios__item">
+                  <input
+                    className="nhsuk-radios__input"
+                    id="period-end-set"
+                    type="radio"
+                    name="period-end-mode"
+                    value="SET"
+                    checked={endMode === "SET"}
+                    onChange={() => setEndMode("SET")}
+                  />
+                  <label
+                    className="nhsuk-label nhsuk-radios__label"
+                    htmlFor="period-end-set"
+                  >
+                    Set an end date
+                  </label>
+                </div>
+                {endMode === "SET" && (
+                  <div className="nhsuk-radios__conditional">
+                    <DateInput
+                      id="period-end"
+                      label="End date"
+                      value={endDate}
+                      onChange={setEndDate}
+                    />
+                  </div>
+                )}
+                {type === "GRADE" && countedAsTraining && (
+                  <div className="nhsuk-radios__item">
+                    <input
+                      className="nhsuk-radios__input"
+                      id="period-end-project"
+                      type="radio"
+                      name="period-end-mode"
+                      value="PROJECT"
+                      checked={endMode === "PROJECT"}
+                      onChange={() => setEndMode("PROJECT")}
+                    />
+                    <label
+                      className="nhsuk-label nhsuk-radios__label"
+                      htmlFor="period-end-project"
+                    >
+                      Project forward to find the Completion of Training Date
+                    </label>
+                  </div>
+                )}
               </div>
-            )}
-            {type === "GRADE" && countedAsTraining && (
-              <div className="nhsuk-radios__item">
-                <input
-                  className="nhsuk-radios__input"
-                  id="period-end-project"
-                  type="radio"
-                  name="period-end-mode"
-                  value="PROJECT"
-                  checked={endMode === "PROJECT"}
-                  onChange={() => setEndMode("PROJECT")}
-                />
-                <label
-                  className="nhsuk-label nhsuk-radios__label"
-                  htmlFor="period-end-project"
-                >
-                  Project forward to find the Completion of Training Date
-                </label>
-              </div>
-            )}
+              <p className="nhsuk-hint">
+                Choose <em>Project forward</em> when this is your planned next
+                post and you want the calculator to work out when training
+                finishes. The period must be the last on the timeline.
+              </p>
+            </fieldset>
           </div>
-          <p className="nhsuk-hint">
-            Choose <em>Project forward</em> when this is your planned next post
-            and you want the calculator to work out when training finishes. The
-            period must be the last on the timeline.
-          </p>
-        </fieldset>
+        </div>
       </div>
 
       <div className="nhsuk-grid-row">
