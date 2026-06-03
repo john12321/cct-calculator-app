@@ -358,10 +358,9 @@ const validateWte = (wte: number | null): ValidationResult => {
   return ok;
 };
 
-export const validateTrainingPeriod = (
-  candidate: TrainingPeriod,
-  programme: ProgrammeDetails,
-  priorPeriods: TrainingPeriod[]
+// Note: a period's own checks, independent of position; contiguity is separate.
+export const validateTrainingPeriodFields = (
+  candidate: TrainingPeriod
 ): ValidationResult => {
   if (!candidate.startDate) {
     return err("Please enter a start date.");
@@ -372,28 +371,11 @@ export const validateTrainingPeriod = (
   if (candidate.endDate !== null && !isRealIsoDate(candidate.endDate)) {
     return err("End date must be a real date.");
   }
-  const priorEndDate = priorPeriods.at(-1)?.endDate ?? null;
-  if (priorPeriods.length > 0 && priorEndDate === null) {
-    return err(
-      "The previous period projects forward to find the completion date. Edit it to set an end date before adding more."
-    );
-  }
   if (
     candidate.endDate !== null &&
     dayjs(candidate.endDate).isBefore(dayjs(candidate.startDate))
   ) {
     return err("End date cannot be before start date.");
-  }
-
-  const expectedStart =
-    priorPeriods.length === 0
-      ? programme.startDate
-      : dayjs(priorEndDate).add(1, "day").format("YYYY-MM-DD");
-
-  if (!dayjs(candidate.startDate).isSame(dayjs(expectedStart), "day")) {
-    return err(
-      `Start date must be ${formatDate(expectedStart)} to keep the training record contiguous.`
-    );
   }
 
   if (
@@ -446,4 +428,96 @@ export const validateTrainingPeriod = (
   }
 
   return ok;
+};
+
+// Note: checks the period starts the day after the prior one (programme start if first).
+const validateTrainingPeriodContiguity = (
+  candidate: TrainingPeriod,
+  programme: ProgrammeDetails,
+  priorPeriods: TrainingPeriod[]
+): ValidationResult => {
+  const priorEndDate = priorPeriods.at(-1)?.endDate ?? null;
+  if (priorPeriods.length > 0 && priorEndDate === null) {
+    return err(
+      "The previous period projects forward to find the completion date. Edit it to set an end date before adding more."
+    );
+  }
+
+  const expectedStart =
+    priorPeriods.length === 0
+      ? programme.startDate
+      : dayjs(priorEndDate).add(1, "day").format("YYYY-MM-DD");
+
+  if (!dayjs(candidate.startDate).isSame(dayjs(expectedStart), "day")) {
+    return err(
+      `Start date must be ${formatDate(expectedStart)} to keep the training record contiguous.`
+    );
+  }
+
+  return ok;
+};
+
+export const validateTrainingPeriod = (
+  candidate: TrainingPeriod,
+  programme: ProgrammeDetails,
+  priorPeriods: TrainingPeriod[]
+): ValidationResult => {
+  const fieldsResult = validateTrainingPeriodFields(candidate);
+  if (!fieldsResult.ok) return fieldsResult;
+  return validateTrainingPeriodContiguity(candidate, programme, priorPeriods);
+};
+
+export type TimelineIssue = {
+  id: string;
+  index: number;
+  message: string;
+};
+
+export type TimelineValidation = {
+  // Note: period id -> first error, for per-row styling.
+  rowErrors: Record<string, string>;
+  // Note: issues in timeline order, for the summary box.
+  issues: TimelineIssue[];
+};
+
+// Note: validates each row against the rows before it, so every gap/overlap is flagged.
+export const validateTimeline = (
+  programme: ProgrammeDetails,
+  timeline: TrainingPeriod[]
+): TimelineValidation => {
+  const rowErrors: Record<string, string> = {};
+  const issues: TimelineIssue[] = [];
+
+  timeline.forEach((period, index) => {
+    const result = validateTrainingPeriod(
+      period,
+      programme,
+      timeline.slice(0, index)
+    );
+    if (!result.ok) {
+      rowErrors[period.id] = result.message;
+      issues.push({ id: period.id, index, message: result.message });
+    }
+  });
+
+  return { rowErrors, issues };
+};
+
+// Note: start date an inserted period needs to close the earliest gap; null if none to fill.
+export const firstContiguityGapStart = (
+  programme: ProgrammeDetails,
+  timeline: TrainingPeriod[]
+): string | null => {
+  for (let i = 0; i < timeline.length; i++) {
+    const priorEnd = i === 0 ? null : timeline[i - 1].endDate;
+    if (i > 0 && priorEnd === null) return null;
+    const expected =
+      i === 0
+        ? programme.startDate
+        : dayjs(priorEnd).add(1, "day").format("YYYY-MM-DD");
+    if (!dayjs(timeline[i].startDate).isSame(dayjs(expected), "day")) {
+      return expected;
+    }
+  }
+  return null;
 };

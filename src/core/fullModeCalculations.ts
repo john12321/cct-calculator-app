@@ -18,6 +18,18 @@ import {
 
 const FORWARD_EXTENSION_YEARS = 50;
 
+// Note: inserts before the first period starting later, else appends (keeps order by start date).
+export const insertPeriodChronologically = (
+  timeline: TrainingPeriod[],
+  period: TrainingPeriod
+): TrainingPeriod[] => {
+  const index = timeline.findIndex(p =>
+    dayjs(p.startDate).isAfter(dayjs(period.startDate))
+  );
+  if (index === -1) return [...timeline, period];
+  return [...timeline.slice(0, index), period, ...timeline.slice(index)];
+};
+
 export const wtePercentForPeriod = (
   period: TrainingPeriod
 ): number | null => {

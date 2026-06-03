@@ -3,7 +3,12 @@ import type {
   ProgrammeDetails,
   TrainingPeriod
 } from "./calculationTypes";
-import { validateTrainingPeriod } from "./validation";
+import {
+  firstContiguityGapStart,
+  validateTimeline,
+  validateTrainingPeriod
+} from "./validation";
+import { insertPeriodChronologically } from "./fullModeCalculations";
 
 const programme: ProgrammeDetails = {
   specialty: "Cardiology",
@@ -256,5 +261,154 @@ describe("training period validation", () => {
       message:
         "OOPR counted as training must have an end date so approved credit can be calculated."
     });
+  });
+});
+
+describe("validateTimeline", () => {
+  const contiguous: TrainingPeriod[] = [
+    grade({ id: "a", startDate: "2020-01-01", endDate: "2020-12-31" }),
+    grade({ id: "b", startDate: "2021-01-01", endDate: "2021-12-31" }),
+    grade({ id: "c", startDate: "2022-01-01", endDate: "2022-12-31" })
+  ];
+
+  it("reports no issues for a fully contiguous timeline", () => {
+    const result = validateTimeline(programme, contiguous);
+    expect(result.issues).toEqual([]);
+    expect(result.rowErrors).toEqual({});
+  });
+
+  it("reports no issues for an empty timeline", () => {
+    expect(validateTimeline(programme, [])).toEqual({
+      rowErrors: {},
+      issues: []
+    });
+  });
+
+  it("flags the row left with a gap after an earlier row is removed", () => {
+    // Drop the middle row "b": "c" now starts a year after "a" ends.
+    const withGap = [contiguous[0], contiguous[2]];
+    const result = validateTimeline(programme, withGap);
+
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0]).toMatchObject({ id: "c", index: 1 });
+    expect(result.rowErrors.c).toMatch(/contiguous/);
+    expect(result.rowErrors.a).toBeUndefined();
+  });
+
+  it("flags the first row when it no longer starts at programme start", () => {
+    // Removing the original first row leaves "b" starting after programme start.
+    const result = validateTimeline(programme, [contiguous[1], contiguous[2]]);
+
+    expect(result.issues[0]).toMatchObject({ id: "b", index: 0 });
+    expect(result.rowErrors.b).toMatch(/contiguous/);
+  });
+
+  it("reports an issue for every broken row, in timeline order", () => {
+    const broken = [
+      grade({ id: "a", startDate: "2020-01-01", endDate: "2020-12-31" }),
+      grade({ id: "b", startDate: "2021-06-01", endDate: "2021-12-31" }),
+      grade({ id: "c", startDate: "2022-06-01", endDate: "2022-12-31" })
+    ];
+    const result = validateTimeline(programme, broken);
+
+    expect(result.issues.map(i => i.id)).toEqual(["b", "c"]);
+    expect(result.issues.map(i => i.index)).toEqual([1, 2]);
+  });
+
+  it("flags the row after a non-final project-forward period", () => {
+    const result = validateTimeline(programme, [
+      grade({ id: "a", startDate: "2020-01-01", endDate: null }),
+      grade({ id: "b", startDate: "2021-01-01", endDate: "2021-12-31" })
+    ]);
+
+    expect(result.rowErrors.b).toMatch(/projects forward/);
+    expect(result.rowErrors.a).toBeUndefined();
+  });
+
+  it("propagates a row's own intrinsic error", () => {
+    const result = validateTimeline(programme, [
+      grade({ id: "a", startDate: "2020-01-01", endDate: "2020-12-31" }),
+      grade({ id: "b", startDate: "2021-01-01", endDate: "2021-12-31", wte: 0 })
+    ]);
+
+    expect(result.rowErrors.b).toMatch(/WTE/);
+  });
+});
+
+describe("firstContiguityGapStart", () => {
+  const contiguous: TrainingPeriod[] = [
+    grade({ id: "a", startDate: "2020-01-01", endDate: "2020-12-31" }),
+    grade({ id: "b", startDate: "2021-01-01", endDate: "2021-12-31" }),
+    grade({ id: "c", startDate: "2022-01-01", endDate: "2022-12-31" })
+  ];
+
+  it("returns null for a contiguous timeline", () => {
+    expect(firstContiguityGapStart(programme, contiguous)).toBeNull();
+  });
+
+  it("returns null for an empty timeline", () => {
+    expect(firstContiguityGapStart(programme, [])).toBeNull();
+  });
+
+  it("returns the day after the prior period when a middle row is missing", () => {
+    // Drop "b": the gap to fill starts the day after "a" ends.
+    expect(
+      firstContiguityGapStart(programme, [contiguous[0], contiguous[2]])
+    ).toBe("2021-01-01");
+  });
+
+  it("returns the programme start when the first row is missing", () => {
+    expect(
+      firstContiguityGapStart(programme, [contiguous[1], contiguous[2]])
+    ).toBe("2020-01-01");
+  });
+
+  it("returns null when the first problem follows a project-forward period", () => {
+    expect(
+      firstContiguityGapStart(programme, [
+        grade({ id: "a", startDate: "2020-01-01", endDate: null }),
+        grade({ id: "b", startDate: "2021-01-01", endDate: "2021-12-31" })
+      ])
+    ).toBeNull();
+  });
+});
+
+describe("insertPeriodChronologically", () => {
+  const timeline: TrainingPeriod[] = [
+    grade({ id: "a", startDate: "2020-01-01", endDate: "2020-12-31" }),
+    grade({ id: "c", startDate: "2022-01-01", endDate: "2022-12-31" })
+  ];
+
+  it("inserts a gap-filling period in the correct position", () => {
+    const inserted = grade({
+      id: "b",
+      startDate: "2021-01-01",
+      endDate: "2021-12-31"
+    });
+    expect(
+      insertPeriodChronologically(timeline, inserted).map(p => p.id)
+    ).toEqual(["a", "b", "c"]);
+  });
+
+  it("appends when the new period starts after all existing periods", () => {
+    const appended = grade({
+      id: "d",
+      startDate: "2023-01-01",
+      endDate: "2023-12-31"
+    });
+    expect(
+      insertPeriodChronologically(timeline, appended).map(p => p.id)
+    ).toEqual(["a", "c", "d"]);
+  });
+
+  it("places a new period after an existing one sharing its start date", () => {
+    const inserted = grade({
+      id: "a2",
+      startDate: "2022-01-01",
+      endDate: "2022-06-30"
+    });
+    expect(
+      insertPeriodChronologically(timeline, inserted).map(p => p.id)
+    ).toEqual(["a", "c", "a2"]);
   });
 });

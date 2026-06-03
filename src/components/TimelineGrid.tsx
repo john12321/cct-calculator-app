@@ -1,29 +1,24 @@
 import { type FC } from "react";
 import { Table } from "nhsuk-react-components";
 import {
-  getGradePeriodTagLabel,
-  getTrainingPeriodTypeLabel,
+  describeTrainingPeriod,
   wtePercentForPeriod,
   type TrainingPeriod
 } from "../core";
 import { formatDate, formatPercent } from "../utils/format";
+import { timelineRowId } from "../utils/scroll";
 
 type TimelineGridProps = {
   periods: TrainingPeriod[];
+  // Note: period id -> error message, for failing rows.
+  rowErrors?: Record<string, string>;
   onEdit: (id: string) => void;
   onRemove: (id: string) => void;
 };
 
-const describeType = (period: TrainingPeriod): string => {
-  if (period.type !== "GRADE") {
-    return getTrainingPeriodTypeLabel(period.type, "short");
-  }
-  if (period.gradeTag === "REGULAR") return period.grade;
-  return `${period.grade} (${getGradePeriodTagLabel(period.gradeTag)})`;
-};
-
 export const TimelineGrid: FC<TimelineGridProps> = ({
   periods,
+  rowErrors = {},
   onEdit,
   onRemove
 }) => {
@@ -35,8 +30,6 @@ export const TimelineGrid: FC<TimelineGridProps> = ({
       </p>
     );
   }
-
-  const lastId = periods.at(-1)?.id;
 
   return (
     <div id="timeline-table" className="table-wrapper">
@@ -54,10 +47,26 @@ export const TimelineGrid: FC<TimelineGridProps> = ({
         </Table.Head>
         <Table.Body>
           {periods.map(period => {
-            const isLast = period.id === lastId;
+            const rowError = rowErrors[period.id];
             return (
-              <Table.Row key={period.id}>
-                <Table.Cell>{describeType(period)}</Table.Cell>
+              <Table.Row
+                key={period.id}
+                id={timelineRowId(period.id)}
+                className={rowError ? "timeline-row--error" : undefined}
+              >
+                <Table.Cell>
+                  {rowError && (
+                    <span
+                      className="timeline-row__error-icon"
+                      role="img"
+                      aria-label="Has a validation issue"
+                      title={rowError}
+                    >
+                      ⚠
+                    </span>
+                  )}
+                  {describeTrainingPeriod(period)}
+                </Table.Cell>
                 <Table.Cell>{formatDate(period.startDate)}</Table.Cell>
                 <Table.Cell>
                   {period.endDate === null
@@ -79,12 +88,6 @@ export const TimelineGrid: FC<TimelineGridProps> = ({
                       type="button"
                       className="nhsuk-button nhsuk-button--secondary nhsuk-button--small"
                       onClick={() => onEdit(period.id)}
-                      disabled={!isLast}
-                      title={
-                        isLast
-                          ? undefined
-                          : "Only the most recent period can be edited. Remove later periods first."
-                      }
                     >
                       Edit
                     </button>
@@ -92,12 +95,6 @@ export const TimelineGrid: FC<TimelineGridProps> = ({
                       type="button"
                       className="nhsuk-button nhsuk-button--secondary nhsuk-button--small"
                       onClick={() => onRemove(period.id)}
-                      disabled={!isLast}
-                      title={
-                        isLast
-                          ? undefined
-                          : "Only the most recent period can be removed."
-                      }
                     >
                       Remove
                     </button>

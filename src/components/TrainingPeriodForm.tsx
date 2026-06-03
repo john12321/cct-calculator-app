@@ -5,6 +5,7 @@ import {
   getGradePeriodTagLabel,
   getTrainingPeriodTypeLabel,
   validateTrainingPeriod,
+  validateTrainingPeriodFields,
   type GradePeriodTag,
   type ProgrammeDetails,
   type TrainingPeriod,
@@ -18,6 +19,12 @@ type TrainingPeriodFormProps = {
   programme: ProgrammeDetails;
   priorPeriods: TrainingPeriod[];
   editing: TrainingPeriod | null;
+  // Note: may this period project forward (open-ended)? Only the final row can.
+  allowProjectForward: boolean;
+  // Note: lock the start to follow on contiguously; false lets the user insert to fill a gap.
+  lockStart: boolean;
+  // Note: pre-filled start when inserting to fill a gap.
+  startSuggestion: string | null;
   onAdd: (period: TrainingPeriod) => void;
   onUpdate: (period: TrainingPeriod) => void;
   onCancelEdit: () => void;
@@ -59,12 +66,20 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
   programme,
   priorPeriods,
   editing,
+  allowProjectForward,
+  lockStart,
+  startSuggestion,
   onAdd,
   onUpdate,
   onCancelEdit
 }) => {
   const isEditing = editing !== null;
   const lockedStart = defaultStart(programme, priorPeriods);
+  // Note: start is editable when editing or inserting (unlocked add).
+  const startEditable = isEditing || !lockStart;
+  const addInitialStart = lockStart
+    ? lockedStart
+    : (startSuggestion ?? lockedStart);
 
   const [type, setType] = useState<TrainingPeriodType>(
     editing?.type ?? "GRADE"
@@ -74,8 +89,11 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
     editing?.gradeTag ?? "REGULAR"
   );
   const [wte, setWte] = useState(editing ? String(editing.wte ?? "") : "100");
+  const [startDate, setStartDate] = useState(
+    editing?.startDate ?? addInitialStart
+  );
   const [endMode, setEndMode] = useState<"SET" | "PROJECT">(
-    editing?.endDate === null ? "PROJECT" : "SET"
+    editing?.endDate === null && allowProjectForward ? "PROJECT" : "SET"
   );
   const [endDate, setEndDate] = useState(editing?.endDate ?? "");
   const [countedAsTraining, setCountedAsTraining] = useState(
@@ -105,6 +123,7 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
     setGrade(programme.startGrade);
     setGradeTag("REGULAR");
     setWte("100");
+    setStartDate(addInitialStart);
     setEndMode("SET");
     setEndDate("");
     setCountedAsTraining(true);
@@ -123,14 +142,17 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
       grade: type === "GRADE" ? grade : "",
       gradeTag: type === "GRADE" ? gradeTag : "REGULAR",
       wte: wteValue !== null && !Number.isNaN(wteValue) ? wteValue : null,
-      startDate: isEditing ? (editing?.startDate ?? lockedStart) : lockedStart,
+      startDate: startEditable ? startDate : lockedStart,
       endDate: endMode === "PROJECT" ? null : endDate,
       countedAsTraining:
         (type === "GRADE" || type === "OOPT" || type === "OOPR") &&
         countedAsTraining,
       notes: notes.trim()
     };
-    const result = validateTrainingPeriod(candidate, programme, priorPeriods);
+    // Note: locked append enforces full rules; editable start checks fields only (gaps flagged later).
+    const result = startEditable
+      ? validateTrainingPeriodFields(candidate)
+      : validateTrainingPeriod(candidate, programme, priorPeriods);
     if (!result.ok) {
       setError(result.message);
       return;
@@ -334,18 +356,28 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
 
       <div className="nhsuk-grid-row">
         <div className="nhsuk-grid-column-one-half">
-          <DateInput
-            id="period-start"
-            label="Start date"
-            value={isEditing ? (editing?.startDate ?? "") : lockedStart}
-            disabled
-            readOnly
-            hint={
-              !isEditing
-                ? `Follows on from ${formatDate(lockedStart)} to keep the record contiguous.`
-                : undefined
-            }
-          />
+          {startEditable ? (
+            <DateInput
+              id="period-start"
+              label="Start date"
+              value={startDate}
+              onChange={setStartDate}
+              hint={
+                isEditing
+                  ? "Editing the start date may leave a gap or overlap with the period before this one. This is flagged on the timeline above."
+                  : "Set the start date for the period you are inserting. Any gap or overlap it leaves is flagged on the timeline above."
+              }
+            />
+          ) : (
+            <DateInput
+              id="period-start"
+              label="Start date"
+              value={lockedStart}
+              disabled
+              readOnly
+              hint={`Follows on from ${formatDate(lockedStart)} to keep the record contiguous.`}
+            />
+          )}
         </div>
       </div>
 
@@ -382,25 +414,27 @@ export const TrainingPeriodForm: FC<TrainingPeriodFormProps> = ({
                     />
                   </div>
                 )}
-                {type === "GRADE" && countedAsTraining && (
-                  <div className="nhsuk-radios__item">
-                    <input
-                      className="nhsuk-radios__input"
-                      id="period-end-project"
-                      type="radio"
-                      name="period-end-mode"
-                      value="PROJECT"
-                      checked={endMode === "PROJECT"}
-                      onChange={() => setEndMode("PROJECT")}
-                    />
-                    <label
-                      className="nhsuk-label nhsuk-radios__label"
-                      htmlFor="period-end-project"
-                    >
-                      Project forward to find the Completion of Training Date
-                    </label>
-                  </div>
-                )}
+                {type === "GRADE" &&
+                  countedAsTraining &&
+                  allowProjectForward && (
+                    <div className="nhsuk-radios__item">
+                      <input
+                        className="nhsuk-radios__input"
+                        id="period-end-project"
+                        type="radio"
+                        name="period-end-mode"
+                        value="PROJECT"
+                        checked={endMode === "PROJECT"}
+                        onChange={() => setEndMode("PROJECT")}
+                      />
+                      <label
+                        className="nhsuk-label nhsuk-radios__label"
+                        htmlFor="period-end-project"
+                      >
+                        Project forward to find the Completion of Training Date
+                      </label>
+                    </div>
+                  )}
               </div>
               <p className="nhsuk-hint">
                 Choose <em>Project forward</em> when this is your planned next

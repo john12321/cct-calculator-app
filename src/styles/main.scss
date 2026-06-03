@@ -11,6 +11,7 @@
 // NHS palette colours (https://service-manual.nhs.uk/design-system/styles/colour)
 $color-nhsuk-blue: #005eb8;
 $color-nhsuk-green: #007f3b;
+$color-nhsuk-red: #d5281b;
 $color-nhsuk-black: #212b32;
 $color-nhsuk-yellow: #ffeb3b;
 $color-nhsuk-grey-1: #4c6272;
@@ -232,6 +233,25 @@ $color-nhsuk-white: #ffffff;
     margin: 0;
     white-space: nowrap;
   }
+}
+
+.timeline-row--error {
+  background-color: #fdf2f1;
+
+  td {
+    border-left: 0;
+    border-right: 0;
+  }
+
+  td:first-child {
+    border-left: 4px solid $color-nhsuk-red;
+  }
+}
+
+.timeline-row__error-icon {
+  color: $color-nhsuk-red;
+  font-weight: 700;
+  margin-right: 6px;
 }
 
 .assumed-full-time-row {

@@ -1,6 +1,7 @@
 import type {
   CalculationType,
   GradePeriodTag,
+  TrainingPeriod,
   TrainingPeriodType
 } from "./calculationTypes";
 
@@ -113,3 +114,11 @@ export const gradePeriodTagLabels: Record<GradePeriodTag, string> = {
 
 export const getGradePeriodTagLabel = (tag: GradePeriodTag): string =>
   gradePeriodTagLabels[tag];
+
+export const describeTrainingPeriod = (period: TrainingPeriod): string => {
+  if (period.type !== "GRADE") {
+    return getTrainingPeriodTypeLabel(period.type, "short");
+  }
+  if (period.gradeTag === "REGULAR") return period.grade;
+  return `${period.grade} (${getGradePeriodTagLabel(period.gradeTag)})`;
+};

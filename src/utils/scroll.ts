@@ -1,5 +1,8 @@
 type ScrollTarget = { id: string } | { top: number };
 
+// Note: DOM id for a timeline period's row, shared by the grid and its page.
+export const timelineRowId = (id: string) => `timeline-row-${id}`;
+
 export const scrollTo = (target: ScrollTarget) => {
   if (typeof document === "undefined") return;
 
