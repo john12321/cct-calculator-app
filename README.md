@@ -11,7 +11,7 @@ A client-side calculator for working out a **Completion of Training Date** for a
 - **Training-credit controls** — records approved counted OOPT and OOPR using the applicable credit rules
 - **Period recording** — supports LTFT, OOP and leave periods, including accrued annual leave
 - **Assumed full-time transparency** — Quick mode can show inferred 100% WTE gaps alongside entered changes and totals
-- **Edit & remove** — amend or remove entered changes or timeline periods
+- **Edit & remove** — amend or remove entered changes or any Full-mode timeline period
 - **Export CSV** — download a summary table of all calculations
 - **Print / PDF** — print-friendly layout for sharing at ARCP or with colleagues
 - **Fully client-side** — no data is sent to a server; everything runs in the browser
@@ -48,7 +48,8 @@ Quick mode completed-change choices are:
 1. Select **Full mode** and enter programme and specialty details.
 2. Add connected timeline rows covering all periods of training or absence.
 3. Use **Grade** rows to record the training grade, tag and WTE; an open-ended final Grade row can project forward at its WTE.
-4. Review timeline accrual, grade progression, the projected Completion of Training Date and the exportable summary.
+4. Edit or remove any row when correcting the record. Gaps, overlaps and other issues are highlighted; use **Add period to fill gap** when needed.
+5. Resolve all timeline issues, then review timeline accrual, grade progression, the projected Completion of Training Date and the exportable summary.
 
 Full mode period choices are:
 
@@ -72,7 +73,7 @@ OOPR approval is specialty-dependent. Guidance describes a usual maximum of thre
 
 In this policy context, **CCT credit** retains its formal meaning: approved contribution towards a Certificate of Completion of Training.
 
-The policy sources are the [NHS England North West Time Out of Programme guidance](https://www.nwpgmd.nhs.uk/time-out-programme#Colleges) and the [Gold Guide v10, August 2024 PDF](https://medical.hee.nhs.uk/binaries/content/assets/medical-trainee-recruitment/medical-specialty-training/gold-guide/gold-guide-10th-edition/gold-guide-10th-edition-august-2024.pdf), paragraphs 3.168 to 3.170. For formula details and Excel mapping, see [`src/core/CALCULATION_REFERENCE.md`](src/core/CALCULATION_REFERENCE.md).
+The policy sources are the [NHS England North West Time Out of Programme guidance](https://www.nwpgmd.nhs.uk/time-out-programme#Colleges) and the [Gold Guide v10, August 2024](https://www.copmed.org.uk/publications/gold-guide), paragraphs 3.156 to 3.170. For a short formula overview, see [`Calculation_logic_summary.md`](Calculation_logic_summary.md); for the full Excel mapping, see [`src/core/CALCULATION_REFERENCE.md`](src/core/CALCULATION_REFERENCE.md).
 
 ## Tech Stack
 
@@ -81,7 +82,6 @@ The policy sources are the [NHS England North West Time Out of Programme guidanc
 | Framework       | [React 19](https://react.dev/)                                                                                                             |
 | Build tool      | [Vite](https://vite.dev/)                                                                                                                  |
 | Language        | [TypeScript](https://www.typescriptlang.org/)                                                                                              |
-| Form management | [react-hook-form](https://react-hook-form.com/)                                                                                            |
 | Date handling   | [Day.js](https://day.js.org/)                                                                                                              |
 | UI components   | [nhsuk-frontend](https://github.com/nhsuk/nhsuk-frontend) / [nhsuk-react-components](https://github.com/NHSDigital/nhsuk-react-components) |
 | Styling         | SCSS (via `sass-embedded`)                                                                                                                 |
@@ -125,21 +125,21 @@ src/
 ├── pages/
 │   ├── SetupPage.tsx                  # Quick-mode entry flow
 │   ├── SummaryPage.tsx                # Quick-mode output and export
-│   ├── SetupFullPage.tsx              # Full-mode contiguous timeline entry
+│   ├── SetupFullPage.tsx              # Full-mode timeline entry, correction and validation
 │   └── FullModeSummaryPage.tsx        # Full-mode output and export
 ├── components/
 │   ├── ModePicker.tsx                 # Quick / Full selection
 │   ├── ProgrammeDetailsSection.tsx    # Shared programme inputs and adjustments
 │   ├── PastChangeForm.tsx             # Quick-mode change and projection entry
 │   ├── PastChangesList.tsx            # Quick-mode changes table with assumed full-time toggle
-│   ├── TrainingPeriodForm.tsx         # Full-mode timeline row entry
-│   ├── TimelineGrid.tsx               # Full-mode timeline display
+│   ├── TrainingPeriodForm.tsx         # Full-mode timeline row entry and editing
+│   ├── TimelineGrid.tsx               # Full-mode timeline display and invalid-row highlighting
 │   └── GradeTable.tsx                 # Grade-progression display
 ├── core/
 │   ├── calculations.ts                # Quick-mode calculation logic
-│   ├── fullModeCalculations.ts        # Full-mode calculation logic
+│   ├── fullModeCalculations.ts        # Full-mode timeline insertion and calculation logic
 │   ├── grades.ts                      # Shared grade-progression logic
-│   ├── validation.ts                  # Entry validation for both modes
+│   ├── validation.ts                  # Entry and whole-timeline validation
 │   └── CALCULATION_REFERENCE.md       # Excel mapping and policy reference
 └── styles/
     └── main.scss                      # Global NHS design system overrides

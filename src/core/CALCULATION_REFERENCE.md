@@ -842,8 +842,11 @@ recorded grade-period end dates.
 
 Full mode provides the fuller Excel-style workflow. A user records a
 contiguous sequence of grade, OOP and leave periods; grade-labelled rows can
-feed the named-grade end-date lookup. The app does not provide a separate
-manual grade-date override outside this timeline.
+feed the named-grade end-date lookup. Any row can be edited or removed; the
+timeline may temporarily contain gaps, overlaps or other invalid rows while
+the user corrects it, but calculated outputs remain unavailable until it is
+valid again. The app does not provide a separate manual grade-date override
+outside this timeline.
 
 #### Trade-offs
 
@@ -940,8 +943,8 @@ on:
 - [NHS England North West: Time Out of Programme](https://www.nwpgmd.nhs.uk/time-out-programme),
   section **Categories of OOP**. This is the operational source of truth used
   for OOPT, OOPR, OOPE, OOPC and OOPP eligibility in this app.
-- [Gold Guide v10, August 2024 (PDF)](https://medical.hee.nhs.uk/binaries/content/assets/medical-trainee-recruitment/medical-specialty-training/gold-guide/gold-guide-10th-edition/gold-guide-10th-edition-august-2024.pdf),
-  paragraphs `3.168` to `3.170`. For LTFT OOPR, paragraph `3.168` states:
+- [Gold Guide v10, August 2024](https://www.copmed.org.uk/publications/gold-guide),
+  paragraphs `3.156` to `3.170`. For LTFT OOPR, paragraph `3.168` states:
   "For postgraduate doctors in training undertaking OOPR on a LTFT basis,
   this would normally be pro rata."
 
@@ -967,18 +970,20 @@ training and does not identify a separate OOPT credit-percentage input.
 
 ### 10.2 Full-mode workflow detail
 
-Full mode stores a contiguous array of `TrainingPeriod` rows rather than
-Quick mode's list of exceptions plus a derived projection:
+Full mode stores an ordered array of `TrainingPeriod` rows intended to form a
+contiguous timeline, rather than Quick mode's list of exceptions plus a
+derived projection:
 
-| Area        | Full-mode implementation                                                                                                                                                                              |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Entry       | [`TrainingPeriodForm.tsx`](../components/TrainingPeriodForm.tsx) records grade, OOP and leave rows; [`TimelineGrid.tsx`](../components/TimelineGrid.tsx) displays the resulting sequence.             |
-| Continuity  | `validateTrainingPeriod` requires the first row to start at programme start and each later row to begin the day after the preceding completed row ends.                                               |
-| Grade rows  | Record grade, grade tag and WTE. A final counted grade row can be set to project forward at its WTE.                                                                                                  |
-| OOP rows    | Apply the OOPT/OOPR credit policy above; other OOP and leave rows consume calendar time without contributing WTE months.                                                                              |
-| Projection  | `computeTimelineAccrual` and `projectedCompletionDateForTimeline` calculate total recorded WTE, training remaining and the projected Completion of Training Date.                                     |
-| Grade dates | `computeGradeProgressionForTimeline` uses the shared grade calculation, then applies Excel's recorded named-grade lookup when the relevant WTE threshold has been met.                                |
-| Output      | [`FullModeCalculationSummary.tsx`](../components/FullModeCalculationSummary.tsx) and [`FullModeSummaryPage.tsx`](../pages/FullModeSummaryPage.tsx) render and export the timeline and derived values. |
+| Area        | Full-mode implementation                                                                                                                                                                                                                                                                                                                                                         |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entry       | [`TrainingPeriodForm.tsx`](../components/TrainingPeriodForm.tsx) records grade, OOP and leave rows; [`TimelineGrid.tsx`](../components/TimelineGrid.tsx) displays the resulting sequence. A normal append follows on automatically, while editing unlocks the start date.                                                                                                           |
+| Correction  | Every row can be edited or removed. When a gap needs filling, "Add period to fill gap" pre-fills the earliest expected start date and `insertPeriodChronologically` places the new row by start date. Multiple smaller rows may be added to fill one gap.                                                                                                                          |
+| Continuity  | `validateTrainingPeriod` enforces field and contiguity rules for normal appends. `validateTimeline` re-checks every row after edits, removals or inserts: the first row must start at programme start, each later row must begin the day after the preceding completed row ends, and only the final row may project forward. Invalid rows and an ordered issue summary are displayed. |
+| Grade rows  | Record grade, grade tag and WTE. A final counted grade row can be set to project forward at its WTE.                                                                                                                                                                                                                                                                             |
+| OOP rows    | Apply the OOPT/OOPR credit policy above; other OOP and leave rows consume calendar time without contributing WTE months.                                                                                                                                                                                                                                                         |
+| Projection  | `computeTimelineAccrual` and `projectedCompletionDateForTimeline` calculate total recorded WTE, training remaining and the projected Completion of Training Date. Projection, grade progression and summary navigation are withheld while the timeline has validation issues.                                                                                                      |
+| Grade dates | `computeGradeProgressionForTimeline` uses the shared grade calculation, then applies Excel's recorded named-grade lookup when the relevant WTE threshold has been met.                                                                                                                                                                                                           |
+| Output      | [`FullModeCalculationSummary.tsx`](../components/FullModeCalculationSummary.tsx) and [`FullModeSummaryPage.tsx`](../pages/FullModeSummaryPage.tsx) render and export the timeline and derived values.                                                                                                                                                                            |
 
 ### 10.3 Deliberate workflow differences (Quick mode)
 
@@ -997,16 +1002,14 @@ in-app remedy for users who need the Excel-style workflow.
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | 1 - planned Full-mode follow-up         | Implement a Quick-to-Full mode upgrade: a user starts in Quick, then converts; the app auto-builds a contiguous timeline from existing inputs. | Lets users escalate scope without re-entering data.                                                      | New conversion helper in `fullModeCalculations.ts`, validation pass and "Convert to Full mode" action in the Quick UI. |
 | 2 - optional administrative enhancement | Decide whether to record Excel's `D16:D17` additional training time awarded during core training field.                                        | Verified not to affect v2.17 workbook calculations, but may matter for reporting or record completeness. | Programme details and summary/export only unless requirements change.                                                  |
-| 3 - optional cross-mode polish          | Mid-row edits / cascade adjustments in Full-mode timeline (currently only the last row can be edited or removed).                              | Avoids "delete back to the row" workflows for admins correcting older entries.                           | Validation expansion + cascade-date handling in `TimelineGrid` / `validateTrainingPeriod`.                             |
 
 ### 10.5 Release position
 
 The web app implements the primary Completion of Training Date projection workflow, the
 duration/final-year/skip-grade adjustments, and (via Full mode) Excel's
 contiguous training-record workflow including the named-grade lookup branch.
-The remaining items above are workflow follow-ups (Quick → Full upgrade,
-mid-row edits) or optional reporting enhancements rather than identified
-formula parity gaps.
+The remaining items above are a workflow follow-up (Quick → Full upgrade) and
+an optional reporting enhancement rather than identified formula parity gaps.
 
 ---
 
@@ -1016,19 +1019,19 @@ formula parity gaps.
 | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`calculationTypes.ts`](calculationTypes.ts)           | Core types: `CalculationMode`, `ProgrammeDetails`, Quick-mode `PastChange` / `ProposedChange`, and Full-mode `TrainingPeriod`                 |
 | [`calculations.ts`](calculations.ts)                   | Quick-mode historical accrual, credited past-change WTE, Completion of Training Date and duration helpers                                     |
-| [`fullModeCalculations.ts`](fullModeCalculations.ts)   | Full-mode timeline accrual, completion projection and recorded-grade end-date lookup                                                          |
+| [`fullModeCalculations.ts`](fullModeCalculations.ts)   | Full-mode timeline insertion, accrual, completion projection and recorded-grade end-date lookup                                               |
 | [`grades.ts`](grades.ts)                               | Shared grade parsing, WTE segment traversal and grade-progression construction                                                                |
 | [`specialties.ts`](specialties.ts)                     | `Specialty` type, 173-entry `SPECIALTIES` array, `findSpecialty`, `specialtiesGroupedBySchool`, `TrainingGrade` / `TRAINING_GRADES`           |
-| [`calculationTypeLabels.ts`](calculationTypeLabels.ts) | Display labels for each change type                                                                                                           |
-| [`validation.ts`](validation.ts)                       | Programme, Quick-mode change/projection and Full-mode timeline validation                                                                     |
+| [`calculationTypeLabels.ts`](calculationTypeLabels.ts) | Display labels for change types and Full-mode timeline periods                                                                                 |
+| [`validation.ts`](validation.ts)                       | Programme, Quick-mode change/projection, Full-mode row and whole-timeline validation                                                          |
 | `../components/ProgrammeDetailsSection.tsx`            | Programme details form (specialty, dates, baseline length, start grade, training-time, final-year and skipped-grade adjustments with reasons) |
 | `../components/SpecialtyAutocompleteSelect.tsx`        | Progressively enhanced accessible-autocomplete select for picking specialty                                                                   |
 | `../components/ModePicker.tsx`                         | Selects Quick or Full calculation mode                                                                                                        |
 | `../components/PastChangeForm.tsx`                     | Quick-mode add/edit change form, including OOPT/OOPR credit controls and LTFT projection selection                                            |
 | `../components/PastChangesList.tsx`                    | Quick-mode changes table (Edit/Remove), optional assumed full-time rows, totals, merged projection row and total-to-completion row            |
 | `../components/NextPostSummary.tsx`                    | Quick-mode read-only projection summary                                                                                                       |
-| `../components/TrainingPeriodForm.tsx`                 | Full-mode add/edit timeline row form, including OOPT/OOPR credit controls                                                                     |
-| `../components/TimelineGrid.tsx`                       | Full-mode contiguous timeline table                                                                                                           |
+| `../components/TrainingPeriodForm.tsx`                 | Full-mode add/edit timeline row form, including editable starts for corrections and OOPT/OOPR credit controls                                 |
+| `../components/TimelineGrid.tsx`                       | Full-mode timeline table with edit/remove actions and invalid-row highlighting                                                                |
 | `../components/TimelineProjection.tsx`                 | Full-mode WTE totals and projected Completion of Training Date                                                                                |
 | `../components/GradeTable.tsx`                         | Year-by-year grade progression with end dates and special-duration/skipped-grade explanations                                                 |
 | `../components/CalculationSummary.tsx`                 | Quick-mode summary block, including optional assumed full-time rows in the completed-changes table                                            |
@@ -1036,6 +1039,6 @@ formula parity gaps.
 | `../components/StepIndicator.tsx`, `BackLink.tsx`      | Wizard chrome                                                                                                                                 |
 | `../pages/SetupPage.tsx`                               | Quick-mode setup page (programme details, changes, projection and grade progression)                                                          |
 | `../pages/SummaryPage.tsx`                             | Quick-mode final summary page with CSV / print export                                                                                         |
-| `../pages/SetupFullPage.tsx`                           | Full-mode setup page (programme details and contiguous timeline)                                                                              |
+| `../pages/SetupFullPage.tsx`                           | Full-mode setup page (programme details, timeline correction, validation gating and calculated outputs)                                       |
 | `../pages/FullModeSummaryPage.tsx`                     | Full-mode final summary page with CSV / print export                                                                                          |
 | `../App.tsx`                                           | Mode picker and setup-to-summary flow for Quick and Full modes                                                                                |
