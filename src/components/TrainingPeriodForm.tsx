@@ -39,12 +39,7 @@ const TYPE_GROUPS: { label: string; options: TrainingPeriodType[] }[] = [
   { label: "Leave", options: ["PARENTAL", "SICK", "ACCRUED_LEAVE"] }
 ];
 
-const TAG_OPTIONS: GradePeriodTag[] = [
-  "REGULAR",
-  "ACF",
-  "ACL",
-  "ADDITIONAL_TRAINING_TIME"
-];
+const TAG_OPTIONS: GradePeriodTag[] = ["REGULAR", "ACF", "ACL"];
 
 const newId = () =>
   `period-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;

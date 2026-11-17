@@ -108,8 +108,7 @@ export const getTrainingPeriodTypeLabel = (
 export const gradePeriodTagLabels: Record<GradePeriodTag, string> = {
   REGULAR: "Standard",
   ACF: "ACF (Academic Clinical Fellow)",
-  ACL: "ACL (Academic Clinical Lecturer)",
-  ADDITIONAL_TRAINING_TIME: "Additional training time"
+  ACL: "ACL (Academic Clinical Lecturer)"
 };
 
 export const getGradePeriodTagLabel = (tag: GradePeriodTag): string =>

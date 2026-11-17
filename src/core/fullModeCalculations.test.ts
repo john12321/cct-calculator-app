@@ -305,7 +305,7 @@ describe("computeGradeProgressionForTimeline (lookup branch)", () => {
       grade({
         id: "p2",
         grade: "ST4",
-        gradeTag: "ADDITIONAL_TRAINING_TIME",
+        gradeTag: "ACL",
         startDate: "2026-01-01",
         endDate: "2026-03-31",
         wte: 100

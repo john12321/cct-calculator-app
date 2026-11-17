@@ -43,11 +43,7 @@ export type TrainingPeriodType =
   | "SICK"
   | "ACCRUED_LEAVE";
 
-export type GradePeriodTag =
-  | "REGULAR"
-  | "ACF"
-  | "ACL"
-  | "ADDITIONAL_TRAINING_TIME";
+export type GradePeriodTag = "REGULAR" | "ACF" | "ACL";
 
 export type TrainingPeriod = {
   id: string;
