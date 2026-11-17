@@ -53,36 +53,6 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     startGradeSelectRef.current?.focus();
   }, [overrideGrade]);
 
-  useEffect(() => {
-    if (programme === null) {
-      setEditing(true);
-      setSpecialty("");
-      setStartDate("");
-      setOverrideGrade(false);
-      setStartGrade("");
-      setStartGradeOverrideNotes("");
-      setError(null);
-      return;
-    }
-
-    const nextSpecialty = findSpecialty(programme.specialty);
-    setEditing(false);
-    setSpecialty(programme.specialty);
-    setStartDate(programme.startDate);
-    setOverrideGrade(
-      nextSpecialty !== undefined &&
-        programme.startGrade !== nextSpecialty.entryGrade
-    );
-    setStartGrade(programme.startGrade);
-    setStartGradeOverrideNotes(
-      nextSpecialty !== undefined &&
-        programme.startGrade !== nextSpecialty.entryGrade
-        ? programme.startGradeOverrideNotes
-        : ""
-    );
-    setError(null);
-  }, [programme]);
-
   const handleSpecialtyChange = (next: string) => {
     setSpecialty(next);
     const found = findSpecialty(next);
