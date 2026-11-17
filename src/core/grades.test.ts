@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { ProgrammeDetails } from "./calculationTypes";
+import type { PastChange, ProgrammeDetails } from "./calculationTypes";
 import {
   programmeAdjustedEndDate,
   programmeAdjustedLengthMonths
 } from "./calculations";
+import { calculateCct, deriveQuickProjection } from "./cctEngine";
 import { BEYOND_ST9_GRADE_LABEL, computeGradeProgression } from "./grades";
 import { validateProgrammeDetails } from "./validation";
 
@@ -71,6 +72,56 @@ describe("grade end date display parity", () => {
 
     expect(rows[0]?.endDate).toBe("2028-01-02");
     expect(rows.at(-1)?.endDate).toBe("2034-06-30");
+  });
+});
+
+describe("changes outside the programme", () => {
+  const ltft = (startDate: string, endDate: string): PastChange => ({
+    id: "ltft",
+    type: "LTFT",
+    startDate,
+    endDate,
+    wte: 50,
+    countedAsTraining: true,
+    notes: ""
+  });
+  const gradeDates = (changes: PastChange[]) =>
+    computeGradeProgression(
+      tripleCctProgramme,
+      changes,
+      deriveQuickProjection(tripleCctProgramme, changes)
+    ).map(row => row.endDate);
+
+  it("counts a change starting before the programme from the programme start", () => {
+    expect(gradeDates([ltft("2025-01-01", "2026-06-30")])).toEqual(
+      gradeDates([ltft("2026-01-01", "2026-06-30")])
+    );
+  });
+
+  it("does not count a change ending before the programme", () => {
+    expect(gradeDates([ltft("2025-01-01", "2025-12-31")])).toEqual(
+      gradeDates([])
+    );
+  });
+
+  // Note: validation blocks overlaps; this guards parity with the engine's assumed periods.
+  it("does not assume full-time training inside an earlier, longer change", () => {
+    const changes: PastChange[] = [
+      {
+        id: "outer",
+        type: "OOPC",
+        startDate: "2026-03-01",
+        endDate: "2026-12-31",
+        wte: null,
+        countedAsTraining: false,
+        notes: ""
+      },
+      ltft("2026-05-01", "2026-06-30")
+    ];
+
+    expect(gradeDates(changes).at(-1)).toBe(
+      calculateCct(tripleCctProgramme, changes).result.cctDate
+    );
   });
 });
 

@@ -79,7 +79,7 @@ const wteMonths = (change: PastChange): number =>
   calendarMonths(change) * wteFractionFor(change);
 
 // Note: only time in the programme counts; a change ending before it counts for nothing.
-const countedChange = (
+export const countedChange = (
   change: PastChange,
   programmeStartDate: string
 ): PastChange | null => {

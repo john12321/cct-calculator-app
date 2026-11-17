@@ -13,6 +13,7 @@ import type {
   ProgrammeDetails,
   ProposedChange
 } from "./calculationTypes";
+import { countedChange } from "./cctEngine";
 import { findSpecialty } from "./specialties";
 
 export type GradeYear = {
@@ -74,9 +75,12 @@ const buildSegments = (
   pastChanges: PastChange[],
   proposed: ProposedChange | null
 ): Segment[] => {
-  const sorted = completedPastChanges(pastChanges).sort((a, b) =>
-    dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf()
-  );
+  const sorted = completedPastChanges(pastChanges)
+    .flatMap(change => {
+      const counted = countedChange(change, programme.startDate);
+      return counted ? [counted] : [];
+    })
+    .sort((a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf());
 
   const segments: Segment[] = [];
   let cursor = dayjs(programme.startDate);
@@ -97,7 +101,8 @@ const buildSegments = (
       wteFraction: wteFractionFor(change),
       daysPerMonth: COMPLETED_PERIOD_DAYS_PER_MONTH
     });
-    cursor = dayjs(change.endDate).add(1, "day");
+    const dayAfterChange = dayjs(change.endDate).add(1, "day");
+    if (dayAfterChange.isAfter(cursor)) cursor = dayAfterChange;
   }
 
   if (proposed) {

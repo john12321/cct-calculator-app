@@ -501,7 +501,8 @@ For calculated dates, this becomes (see `dateAtCumulativeWteMonths` in
 [`grades.ts`](grades.ts)):
 
 1. Build WTE-rated **segments** from programme start onwards. Quick mode uses
-   recorded past changes, inferred 100% gaps and the derived projection. Full
+   recorded past changes, inferred 100% gaps and the derived projection, and
+   counts changes from the programme start as the CCT engine does. Full
    mode uses its entered contiguous training timeline and, where needed, a
    forward projection at the latest grade WTE. Completed segments use
    `365 / 12`; projected segments use `30.4`.
