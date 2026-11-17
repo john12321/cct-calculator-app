@@ -36,7 +36,10 @@ export const TrainingTimeAdjustmentsSection: FC<
   const hasAdjustment = additionalMonths > 0 || acceleratedMonths > 0;
 
   return (
-    <section className="nhsuk-u-margin-bottom-6">
+    <section
+      id="training-time-adjustments-section"
+      className="nhsuk-u-margin-bottom-6"
+    >
       <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
         Training time adjustments
       </h2>

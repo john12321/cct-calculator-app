@@ -123,7 +123,7 @@ export const SetupPage: FC<SetupPageProps> = ({
       <ProgrammeDetailsSection
         programme={programme}
         onChange={onProgrammeChange}
-        onSaved={() => scrollTo({ id: "past-changes-section" })}
+        onSaved={() => scrollTo({ id: "training-time-adjustments-section" })}
       />
 
       {programme && (
