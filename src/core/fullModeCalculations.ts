@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import {
   COMPLETED_PERIOD_DAYS_PER_MONTH,
   DAYS_PER_MONTH,
+  dateAfterMonths,
   inclusiveDays,
   programmeAdjustedLengthMonths
 } from "./calculations";
@@ -174,13 +175,10 @@ export const projectedCompletionDateForTimeline = (
       return last.endDate;
     }
 
-    const projectionStart = dayjs(last.endDate).add(1, "day");
-    return projectionStart
-      .add(
-        Math.floor((monthsRemaining / lastGradeWteFraction(timeline)) * DAYS_PER_MONTH),
-        "day"
-      )
-      .format("YYYY-MM-DD");
+    return dateAfterMonths(
+      dayjs(last.endDate).add(1, "day").format("YYYY-MM-DD"),
+      monthsRemaining / lastGradeWteFraction(timeline)
+    );
   }
 
   const segments = buildSegmentsFromTimeline(programme, timeline);

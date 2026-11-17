@@ -4,21 +4,14 @@ import { Table } from "nhsuk-react-components";
 import { GradeTable } from "./GradeTable";
 import { NextPostSummary } from "./NextPostSummary";
 import {
-  calendarMonthsFor,
-  COMPLETED_PERIOD_DAYS_PER_MONTH,
+  calculateCct,
   computeGradeProgression,
-  computeWteAccrual,
   findSpecialty,
   getCalculationTypeLabel,
-  inferredFullTimePeriods,
   isOpenProjectedLtftChange,
-  programmeAdjustedEndDate,
-  programmeOriginalEndDate,
-  projectedCompletionDate,
-  inclusiveDays,
   wtePercentForPastChange,
-  wteMonthsFor,
-  type InferredFullTimePeriod,
+  type CctAssumedFullTimePeriod,
+  type CctCalculatedChange,
   type PastChange,
   type ProgrammeDetails,
   type ProposedChange
@@ -32,27 +25,20 @@ type CalculationSummaryProps = {
   variant?: "inline" | "page";
 };
 
-const sortByStart = (changes: PastChange[]): PastChange[] =>
-  [...changes].sort(
-    (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf()
-  );
-
 type ChangeRow =
-  | { kind: "user"; change: PastChange }
-  | { kind: "assumed"; period: InferredFullTimePeriod };
+  | { kind: "user"; calculated: CctCalculatedChange }
+  | { kind: "assumed"; period: CctAssumedFullTimePeriod };
+
+const rowStart = (row: ChangeRow): string =>
+  row.kind === "user" ? row.calculated.change.startDate : row.period.startDate;
 
 const sortRows = (rows: ChangeRow[]): ChangeRow[] =>
-  [...rows].sort((a, b) => {
-    const startA =
-      a.kind === "user" ? a.change.startDate : a.period.startDate;
-    const startB =
-      b.kind === "user" ? b.change.startDate : b.period.startDate;
-    return dayjs(startA).valueOf() - dayjs(startB).valueOf();
-  });
+  [...rows].sort(
+    (a, b) => dayjs(rowStart(a)).valueOf() - dayjs(rowStart(b)).valueOf()
+  );
 
-const assumedMonthsFor = (period: InferredFullTimePeriod): number =>
-  inclusiveDays(period.startDate, period.endDate) /
-  COMPLETED_PERIOD_DAYS_PER_MONTH;
+const formatMonthsCell = (months: number | null): string =>
+  months === null ? "-" : months.toFixed(1);
 
 export const CalculationSummary: FC<CalculationSummaryProps> = ({
   programme,
@@ -61,41 +47,39 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
   variant = "inline"
 }) => {
   const [showAssumedPeriods, setShowAssumedPeriods] = useState(false);
-  const sorted = sortByStart(pastChanges);
-  const accrual = computeWteAccrual(programme, sorted, proposed.startDate);
-  const newCct = projectedCompletionDate(proposed, accrual.monthsRemaining);
-  const originalEnd = programmeOriginalEndDate(programme);
-  const adjustedEnd = programmeAdjustedEndDate(programme);
+  const { changes: calculatedChanges, result } = calculateCct(
+    programme,
+    pastChanges
+  );
   const specialtyMeta = findSpecialty(programme.specialty);
   const startGradeIsOverridden =
     specialtyMeta !== undefined &&
     programme.startGrade !== specialtyMeta.entryGrade;
 
-  const assumedPeriods = inferredFullTimePeriods(
-    programme,
-    sorted,
-    proposed.startDate
+  const assumedPeriods = result.assumedFullTimePeriods;
+  const userRows = calculatedChanges.map(
+    (calculated): ChangeRow => ({ kind: "user", calculated })
   );
-  const rows = showAssumedPeriods
-    ? sortRows([
-        ...sorted.map((change): ChangeRow => ({ kind: "user", change })),
-        ...assumedPeriods.map(
-          (period): ChangeRow => ({ kind: "assumed", period })
-        )
-      ])
-    : sorted.map((change): ChangeRow => ({ kind: "user", change }));
-  const totalUserCalendar = sorted.reduce(
-    (sum, change) =>
-      sum + (isOpenProjectedLtftChange(change) ? 0 : calendarMonthsFor(change)),
+  const rows = sortRows(
+    showAssumedPeriods
+      ? [
+          ...userRows,
+          ...assumedPeriods.map(
+            (period): ChangeRow => ({ kind: "assumed", period })
+          )
+        ]
+      : userRows
+  );
+  const totalUserCalendar = calculatedChanges.reduce(
+    (sum, calculated) => sum + (calculated.calendarMonths ?? 0),
     0
   );
-  const totalUserWte = sorted.reduce(
-    (sum, change) =>
-      sum + (isOpenProjectedLtftChange(change) ? 0 : wteMonthsFor(change)),
+  const totalUserWte = calculatedChanges.reduce(
+    (sum, calculated) => sum + (calculated.wteMonths ?? 0),
     0
   );
   const totalAssumedCalendar = assumedPeriods.reduce(
-    (sum, period) => sum + assumedMonthsFor(period),
+    (sum, period) => sum + period.months,
     0
   );
   const renderTotalsRow = (
@@ -223,7 +207,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
             Original Completion of Training Date
           </dt>
           <dd className="nhsuk-summary-list__value">
-            {formatDate(originalEnd)}
+            {formatDate(result.originalProgrammeEndDate)}
           </dd>
         </div>
         {(programme.additionalMonths > 0 ||
@@ -233,7 +217,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
               Adjusted programme end date before changes
             </dt>
             <dd className="nhsuk-summary-list__value">
-              {formatDate(adjustedEnd)}
+              {formatDate(result.adjustedProgrammeEndDate)}
               <span className="nhsuk-hint nhsuk-u-margin-left-2">
                 (reflects the other training-time adjustments shown above)
               </span>
@@ -245,13 +229,13 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
             Total WTE completed (up to projection start)
           </dt>
           <dd className="nhsuk-summary-list__value">
-            {formatMonths(accrual.totalWteMonthsCompleted)}
+            {formatMonths(result.totalWteMonthsCompleted)}
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">Training remaining</dt>
           <dd className="nhsuk-summary-list__value">
-            {formatMonths(Math.max(0, accrual.monthsRemaining))}
+            {formatMonths(Math.max(0, result.monthsRemaining))}
           </dd>
         </div>
         <div className="nhsuk-summary-list__row">
@@ -259,7 +243,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
             Projected Completion of Training Date
           </dt>
           <dd className="nhsuk-summary-list__value">
-            <strong>{formatDate(newCct)}</strong>
+            <strong>{formatDate(result.cctDate)}</strong>
           </dd>
         </div>
       </dl>
@@ -267,7 +251,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
       <h3 className="nhsuk-heading-m nhsuk-u-color-blue">
         Completed changes
       </h3>
-      {sorted.length === 0 ? (
+      {calculatedChanges.length === 0 ? (
         <p className="nhsuk-body-s">No completed changes recorded.</p>
       ) : (
         <>
@@ -307,10 +291,10 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
               <Table.Body>
                 {rows.map(row => {
                   if (row.kind === "assumed") {
-                    const calendarMonths = assumedMonthsFor(row.period);
+                    const calendarMonths = row.period.months;
                     return (
                       <Table.Row
-                        key={row.period.id}
+                        key={`assumed-${row.period.startDate}`}
                         className="assumed-full-time-row"
                       >
                         <Table.Cell>
@@ -331,7 +315,8 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                     );
                   }
 
-                  const change = row.change;
+                  const { change, calendarMonths, wteMonths } =
+                    row.calculated;
                   return (
                     <Table.Row key={change.id}>
                       <Table.Cell>
@@ -345,9 +330,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                           : formatDate(change.endDate)}
                       </Table.Cell>
                       <Table.Cell>
-                        {isOpenProjectedLtftChange(change)
-                          ? "-"
-                          : calendarMonthsFor(change).toFixed(1)}
+                        {formatMonthsCell(calendarMonths)}
                       </Table.Cell>
                       <Table.Cell>
                         {formatPercent(wtePercentForPastChange(change) ?? 0)}
@@ -355,11 +338,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                       <Table.Cell>
                         {change.countedAsTraining ? "Yes" : "No"}
                       </Table.Cell>
-                      <Table.Cell>
-                        {isOpenProjectedLtftChange(change)
-                          ? "-"
-                          : wteMonthsFor(change).toFixed(1)}
-                      </Table.Cell>
+                      <Table.Cell>{formatMonthsCell(wteMonths)}</Table.Cell>
                     </Table.Row>
                   );
                 })}
@@ -393,11 +372,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
       <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
         Projection
       </h3>
-      <NextPostSummary
-        programme={programme}
-        pastChanges={pastChanges}
-        proposed={proposed}
-      />
+      <NextPostSummary programme={programme} pastChanges={pastChanges} />
       <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
         Grade progression
       </h3>

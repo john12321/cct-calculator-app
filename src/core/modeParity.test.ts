@@ -4,11 +4,7 @@ import type {
   ProgrammeDetails,
   TrainingPeriod
 } from "./calculationTypes";
-import {
-  computeWteAccrual,
-  deriveQuickProjection,
-  projectedCompletionDate
-} from "./calculations";
+import { calculateCct } from "./cctEngine";
 import { projectedCompletionDateForTimeline } from "./fullModeCalculations";
 
 // Quick and Full mode share the same accrual maths and must therefore agree on
@@ -34,11 +30,7 @@ const baseProgramme: ProgrammeDetails = {
 const quickCompletionDate = (
   programme: ProgrammeDetails,
   pastChanges: PastChange[]
-): string => {
-  const proposed = deriveQuickProjection(programme, pastChanges);
-  const accrual = computeWteAccrual(programme, pastChanges, proposed.startDate);
-  return projectedCompletionDate(proposed, accrual.monthsRemaining);
-};
+): string => calculateCct(programme, pastChanges).result.cctDate;
 
 describe("Quick vs Full mode projected completion date parity", () => {
   it("agrees for a completed 50% LTFT year then full-time to completion", () => {

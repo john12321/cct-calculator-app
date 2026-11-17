@@ -136,7 +136,8 @@ src/
 │   ├── TimelineGrid.tsx               # Full-mode timeline display and invalid-row highlighting
 │   └── GradeTable.tsx                 # Grade-progression display
 ├── core/
-│   ├── calculations.ts                # Quick-mode calculation logic
+│   ├── calculations.ts                # Shared calculation helpers
+│   ├── cctEngine.ts                   # Quick-mode engine (port of CctEngine.java)
 │   ├── fullModeCalculations.ts        # Full-mode timeline insertion and calculation logic
 │   ├── grades.ts                      # Shared grade-progression logic
 │   ├── validation.ts                  # Entry and whole-timeline validation

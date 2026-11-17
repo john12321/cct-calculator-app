@@ -3,15 +3,11 @@ import dayjs from "dayjs";
 import { CalculationSummary } from "../components/CalculationSummary";
 import { CompletionDateWarning } from "../components/CompletionDateWarning";
 import {
-  calendarMonthsFor,
-  computeWteAccrual,
+  calculateCct,
   findSpecialty,
   getCalculationTypeLabel,
   isOpenProjectedLtftChange,
-  programmeAdjustedEndDate,
-  projectedCompletionDate,
   wtePercentForPastChange,
-  wteMonthsFor,
   type PastChange,
   type ProgrammeDetails,
   type ProposedChange
@@ -36,19 +32,23 @@ export const SummaryPage: FC<SummaryPageProps> = ({
   pastChanges,
   proposed
 }) => {
-  const sorted = [...pastChanges].sort(
-    (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf()
+  const { changes: calculatedChanges, result } = calculateCct(
+    programme,
+    pastChanges
   );
-  const accrual = computeWteAccrual(programme, sorted, proposed.startDate);
-  const newCct = projectedCompletionDate(proposed, accrual.monthsRemaining);
+  const sorted = [...calculatedChanges].sort(
+    (a, b) =>
+      dayjs(a.change.startDate).valueOf() - dayjs(b.change.startDate).valueOf()
+  );
+  const newCct = result.cctDate;
   const specialtyMeta = findSpecialty(programme.specialty);
   const startGradeIsOverridden =
     specialtyMeta !== undefined &&
     programme.startGrade !== specialtyMeta.entryGrade;
 
   const handleExportCsv = () => {
-    const proposedWte =
-      proposed.kind === "LTFT" && proposed.wte != null ? proposed.wte : 100;
+    const { projection } = result;
+    const proposedWte = Math.round(projection.wte * 100);
 
     const headerLines = [
       ["Specialty", programme.specialty],
@@ -104,17 +104,17 @@ export const SummaryPage: FC<SummaryPageProps> = ({
         ? [
             [
               "Adjusted programme end date before changes",
-              dayjs(programmeAdjustedEndDate(programme)).format("YYYY-MM-DD")
+              dayjs(result.adjustedProgrammeEndDate).format("YYYY-MM-DD")
             ]
           ]
         : []),
       [
         "Total WTE completed (months)",
-        accrual.totalWteMonthsCompleted.toFixed(2)
+        result.totalWteMonthsCompleted.toFixed(2)
       ],
       [
         "Training remaining (months)",
-        Math.max(0, accrual.monthsRemaining).toFixed(2)
+        Math.max(0, result.monthsRemaining).toFixed(2)
       ],
       [
         "Projected Completion of Training Date",
@@ -135,7 +135,7 @@ export const SummaryPage: FC<SummaryPageProps> = ({
       "Projects remaining training?",
       "WTE months"
     ];
-    const pastRows = sorted.map(c => [
+    const pastRows = sorted.map(({ change: c, calendarMonths, wteMonths }) => [
       "Completed change",
       getCalculationTypeLabel(c.type, "short"),
       c.notes,
@@ -143,20 +143,18 @@ export const SummaryPage: FC<SummaryPageProps> = ({
       isOpenProjectedLtftChange(c)
         ? "For remainder of training"
         : dayjs(c.endDate).format("YYYY-MM-DD"),
-      isOpenProjectedLtftChange(c) ? "" : calendarMonthsFor(c).toFixed(2),
+      calendarMonths === null ? "" : calendarMonths.toFixed(2),
       String(wtePercentForPastChange(c) ?? 0),
       c.countedAsTraining ? "Yes" : "No",
       c.projectsRemainingTraining ? "Yes" : "No",
-      isOpenProjectedLtftChange(c) ? "" : wteMonthsFor(c).toFixed(2)
+      wteMonths === null ? "" : wteMonths.toFixed(2)
     ]);
 
     const proposedRow = [
       "Projection",
-      proposed.kind === "FULL_TIME"
-        ? "Full-time projection"
-        : "LTFT projection",
+      projection.wte === 1 ? "Full-time projection" : "LTFT projection",
       "",
-      dayjs(proposed.startDate).format("YYYY-MM-DD"),
+      dayjs(projection.startDate).format("YYYY-MM-DD"),
       dayjs(newCct).format("YYYY-MM-DD"),
       "",
       String(proposedWte),

@@ -1,8 +1,8 @@
 export type DualCct = "Dual-CCT" | "Triple CCT";
 
 export type TrainingGrade =
-  | "FY1"
-  | "FY2"
+  | "F1"
+  | "F2"
   | "CT1"
   | "CT2"
   | "CT3"
@@ -16,11 +16,14 @@ export type TrainingGrade =
   | "ST7"
   | "ST8"
   | "ST9"
-  | "DFT";
+  | "DFT"
+  | "DCT1"
+  | "DCT2"
+  | "DCT3";
 
 export const TRAINING_GRADES: ReadonlyArray<TrainingGrade> = [
-  "FY1",
-  "FY2",
+  "F1",
+  "F2",
   "CT1",
   "CT2",
   "CT3",
@@ -34,7 +37,10 @@ export const TRAINING_GRADES: ReadonlyArray<TrainingGrade> = [
   "ST7",
   "ST8",
   "ST9",
-  "DFT"
+  "DFT",
+  "DCT1",
+  "DCT2",
+  "DCT3"
 ];
 
 export type Specialty = {
@@ -57,7 +63,7 @@ export const SPECIALTIES: ReadonlyArray<Specialty> = [
   { name: "Acute internal medicine with Intensive Care and GIM (ST4 start)", school: "Medicine", dual: "Triple CCT", lengthMonths: 78, entryGrade: "ST4", twentyFourMonthGrade: null, info: "Usual length of training is 78 months, but can be 12 months shorter" },
   { name: "Acute internal medicine with Intensive Care (old curriculum, following ACCS)", school: "Medicine", dual: "Dual-CCT", lengthMonths: 66, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Acute internal medicine with Intensive Care (old curriculum, following CMT)", school: "Medicine", dual: "Dual-CCT", lengthMonths: 78, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
-  { name: "Allergy", school: "Medicine", dual: null, lengthMonths: 60, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
+  { name: "Allergy", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Allergy and clinical immunology", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Allergy, clinical and laboratory immunology", school: "Medicine", dual: null, lengthMonths: 60, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Anaesthetics (higher)", school: "Anaesthesia", dual: null, lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
@@ -88,11 +94,11 @@ export const SPECIALTIES: ReadonlyArray<Specialty> = [
   { name: "Core psychiatry training", school: "Psychiatry", dual: null, lengthMonths: 36, entryGrade: "CT1", twentyFourMonthGrade: null, info: "" },
   { name: "Core surgical training", school: "Surgery", dual: null, lengthMonths: 24, entryGrade: "CT1", twentyFourMonthGrade: null, info: "" },
   { name: "Dental and maxillo-facial radiology", school: "Dental", dual: null, lengthMonths: 48, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
-  { name: "Dental core training", school: "Dental", dual: null, lengthMonths: 12, entryGrade: "CT1", twentyFourMonthGrade: null, info: "" },
+  { name: "Dental core training", school: "Dental", dual: null, lengthMonths: 12, entryGrade: "DCT1", twentyFourMonthGrade: null, info: "" },
   { name: "Dental foundation training", school: "Dental", dual: null, lengthMonths: 12, entryGrade: "DFT", twentyFourMonthGrade: null, info: "" },
   { name: "Dental public health", school: "Dental", dual: null, lengthMonths: 48, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Dermatology", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
-  { name: "Diagnostic neuropathology", school: "Pathology", dual: null, lengthMonths: 66, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
+  { name: "Diagnostic neuropathology", school: "Pathology", dual: null, lengthMonths: 36, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Emergency medicine", school: "Emergency medicine", dual: null, lengthMonths: 36, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Emergency medicine with Intensive care medicine", school: "Emergency medicine", dual: null, lengthMonths: 78, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Emergency medicine (run-through)", school: "Emergency medicine", dual: null, lengthMonths: 72, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
@@ -105,16 +111,16 @@ export const SPECIALTIES: ReadonlyArray<Specialty> = [
   { name: "Endocrinology and diabetes mellitus", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Endocrinology and diabetes mellitus with General Internal Medicine", school: "Medicine", dual: "Dual-CCT", lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Endodontics", school: "Dental", dual: null, lengthMonths: 36, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
-  { name: "Forensic histopathology", school: "Pathology", dual: null, lengthMonths: 60, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
+  { name: "Forensic histopathology", school: "Pathology", dual: null, lengthMonths: 30, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Forensic psychiatry", school: "Psychiatry", dual: null, lengthMonths: 36, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Forensic psychiatry with Child and adolescent psychiatry", school: "Psychiatry", dual: "Dual-CCT", lengthMonths: 60, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Forensic psychiatry with General psychiatry", school: "Psychiatry", dual: "Dual-CCT", lengthMonths: 60, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Forensic psychiatry with Medical psychotherapy", school: "Psychiatry", dual: "Dual-CCT", lengthMonths: 60, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Forensic psychiatry with Psychiatry of learning disability", school: "Psychiatry", dual: "Dual-CCT", lengthMonths: 60, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
-  { name: "Foundation", school: "Foundation", dual: null, lengthMonths: 24, entryGrade: "FY1", twentyFourMonthGrade: null, info: "" },
+  { name: "Foundation", school: "Foundation", dual: null, lengthMonths: 24, entryGrade: "F1", twentyFourMonthGrade: null, info: "" },
   { name: "Gastroenterology", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Gastroenterology with General Internal Medicine", school: "Medicine", dual: "Dual-CCT", lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
-  { name: "General (internal) medicine / Internal medicine stage 2", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
+  { name: "General (internal) medicine / Internal medicine stage 2", school: "Medicine", dual: null, lengthMonths: 36, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "General practice", school: "General practice", dual: null, lengthMonths: 36, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "General practice with Public health medicine", school: "General practice", dual: "Dual-CCT", lengthMonths: 84, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "General psychiatry", school: "Psychiatry", dual: null, lengthMonths: 36, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
@@ -128,7 +134,7 @@ export const SPECIALTIES: ReadonlyArray<Specialty> = [
   { name: "Geriatric medicine", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Geriatric medicine with General Internal Medicine", school: "Medicine", dual: "Dual-CCT", lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Haematology", school: "Medicine", dual: null, lengthMonths: 60, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
-  { name: "Histopathology", school: "Pathology", dual: null, lengthMonths: 60, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
+  { name: "Histopathology", school: "Pathology", dual: null, lengthMonths: 60, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Immunology", school: "Medicine", dual: null, lengthMonths: 60, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Infectious diseases", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Infectious diseases with General Internal Medicine", school: "Medicine", dual: "Dual-CCT", lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
@@ -153,7 +159,7 @@ export const SPECIALTIES: ReadonlyArray<Specialty> = [
   { name: "Interventional radiology with Clinical radiology", school: "Radiology", dual: "Dual-CCT", lengthMonths: 72, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Medical microbiology", school: "Pathology", dual: null, lengthMonths: 48, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Medical microbiology with Infectious diseases", school: "Pathology", dual: "Dual-CCT", lengthMonths: 60, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
-  { name: "Medical microbiology with Tropical medicine", school: "Pathology", dual: "Dual-CCT", lengthMonths: 72, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
+  { name: "Medical microbiology with Tropical medicine", school: "Pathology", dual: "Dual-CCT", lengthMonths: 72, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Medical oncology", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Medical ophthalmology", school: "Medicine", dual: null, lengthMonths: 60, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Medical psychotherapy", school: "Psychiatry", dual: null, lengthMonths: 36, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
@@ -162,7 +168,7 @@ export const SPECIALTIES: ReadonlyArray<Specialty> = [
   { name: "Medical psychotherapy with General psychiatry", school: "Psychiatry", dual: "Dual-CCT", lengthMonths: 60, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Medical virology", school: "Pathology", dual: null, lengthMonths: 48, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Medical virology with Infectious diseases", school: "Pathology", dual: "Dual-CCT", lengthMonths: 60, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
-  { name: "Medical virology with Tropical medicine", school: "Pathology", dual: "Dual-CCT", lengthMonths: 72, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
+  { name: "Medical virology with Tropical medicine", school: "Pathology", dual: "Dual-CCT", lengthMonths: 72, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Neurology", school: "Medicine", dual: null, lengthMonths: 60, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Neurology with General Internal Medicine", school: "Medicine", dual: "Dual-CCT", lengthMonths: 60, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Neurosurgery", school: "Surgery", dual: null, lengthMonths: 96, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
@@ -175,7 +181,7 @@ export const SPECIALTIES: ReadonlyArray<Specialty> = [
   { name: "Ophthalmology", school: "Ophthalmology", dual: null, lengthMonths: 84, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Oral and maxillo-facial pathology", school: "Dental", dual: null, lengthMonths: 60, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Oral and maxillo-facial surgery", school: "Surgery", dual: null, lengthMonths: 60, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
-  { name: "Oral and maxillo-facial surgery (run-through)", school: "Surgery", dual: null, lengthMonths: 84, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
+  { name: "Oral and maxillo-facial surgery (run-through)", school: "Surgery", dual: null, lengthMonths: 72, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Oral medicine", school: "Dental", dual: null, lengthMonths: 60, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Oral microbiology", school: "Dental", dual: null, lengthMonths: 48, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Oral surgery", school: "Dental", dual: null, lengthMonths: 36, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
@@ -184,7 +190,7 @@ export const SPECIALTIES: ReadonlyArray<Specialty> = [
   { name: "Otolaryngology (run-through)", school: "Surgery", dual: null, lengthMonths: 96, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Paediatric and perinatal pathology", school: "Pathology", dual: null, lengthMonths: 36, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Paediatric cardiology", school: "Medicine", dual: null, lengthMonths: 60, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
-  { name: "Paediatric dentistry", school: "Dental", dual: null, lengthMonths: 36, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
+  { name: "Paediatric dentistry", school: "Dental", dual: null, lengthMonths: 48, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Paediatric surgery", school: "Surgery", dual: null, lengthMonths: 72, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Paediatric surgery (run-through)", school: "Surgery", dual: null, lengthMonths: 96, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Paediatrics", school: "Paediatrics", dual: null, lengthMonths: 84, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
@@ -199,7 +205,7 @@ export const SPECIALTIES: ReadonlyArray<Specialty> = [
   { name: "Psychiatry of learning disability with Forensic psychiatry", school: "Psychiatry", dual: "Dual-CCT", lengthMonths: 60, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Public health medicine", school: "Public Health", dual: null, lengthMonths: 60, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Public health medicine with General Practice", school: "Public Health", dual: "Dual-CCT", lengthMonths: 84, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
-  { name: "Rehabilitation medicine", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
+  { name: "Rehabilitation medicine", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Renal medicine", school: "Medicine", dual: null, lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Renal medicine with General Internal Medicine", school: "Medicine", dual: "Dual-CCT", lengthMonths: 48, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
   { name: "Renal medicine with GIM and Intensive care medicine", school: "Medicine", dual: "Triple CCT", lengthMonths: 90, entryGrade: "ST3", twentyFourMonthGrade: null, info: "Usual length of training is 90 months, but can be 12 months shorter" },
@@ -216,9 +222,9 @@ export const SPECIALTIES: ReadonlyArray<Specialty> = [
   { name: "Trauma and orthopaedic surgery", school: "Surgery", dual: null, lengthMonths: 72, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Trauma and orthopaedic surgery (run-through)", school: "Surgery", dual: null, lengthMonths: 96, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Tropical medicine", school: "Medicine", dual: null, lengthMonths: 72, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
-  { name: "Tropical medicine with General Internal Medicine", school: "Medicine", dual: "Dual-CCT", lengthMonths: 72, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
-  { name: "Tropical medicine with Medical microbiology", school: "Pathology", dual: "Dual-CCT", lengthMonths: 72, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
-  { name: "Tropical medicine with Medical virology", school: "Pathology", dual: "Dual-CCT", lengthMonths: 72, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
+  { name: "Tropical medicine with General Internal Medicine", school: "Medicine", dual: "Dual-CCT", lengthMonths: 60, entryGrade: "ST4", twentyFourMonthGrade: null, info: "" },
+  { name: "Tropical medicine with Medical microbiology", school: "Pathology", dual: "Dual-CCT", lengthMonths: 72, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
+  { name: "Tropical medicine with Medical virology", school: "Pathology", dual: "Dual-CCT", lengthMonths: 72, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Urology", school: "Surgery", dual: null, lengthMonths: 60, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },
   { name: "Urology (run-through)", school: "Surgery", dual: null, lengthMonths: 84, entryGrade: "ST1", twentyFourMonthGrade: null, info: "" },
   { name: "Vascular surgery", school: "Surgery", dual: null, lengthMonths: 72, entryGrade: "ST3", twentyFourMonthGrade: null, info: "" },

@@ -2,55 +2,44 @@ import { useState, type FC } from "react";
 import dayjs from "dayjs";
 import { Table } from "nhsuk-react-components";
 import {
-  calendarMonthsFor,
-  COMPLETED_PERIOD_DAYS_PER_MONTH,
-  computeWteAccrual,
-  DAYS_PER_MONTH,
+  calculateCct,
   getCalculationTypeLabel,
-  inferredFullTimePeriods,
   isOpenProjectedLtftChange,
-  projectedCompletionDate,
   wtePercentForPastChange,
-  wteMonthsFor,
-  type InferredFullTimePeriod,
+  type CctAssumedFullTimePeriod,
+  type CctCalculatedChange,
   type PastChange,
-  type ProgrammeDetails,
-  type ProposedChange
+  type ProgrammeDetails
 } from "../core";
 import { formatDate, formatPercent } from "../utils/format";
 
 type PastChangesListProps = {
   programme: ProgrammeDetails;
   changes: PastChange[];
-  projected: ProposedChange;
   editingId: string | null;
   errorsById: Record<string, string>;
   onRemove: (id: string) => void;
   onEdit: (id: string) => void;
 };
 
-const sortByStart = (changes: PastChange[]): PastChange[] =>
-  [...changes].sort(
-    (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf()
-  );
-
 type ChangeRow =
-  | { kind: "user"; change: PastChange }
-  | { kind: "assumed"; period: InferredFullTimePeriod };
+  | { kind: "user"; calculated: CctCalculatedChange }
+  | { kind: "assumed"; period: CctAssumedFullTimePeriod };
+
+const rowStart = (row: ChangeRow): string =>
+  row.kind === "user" ? row.calculated.change.startDate : row.period.startDate;
 
 const sortRows = (rows: ChangeRow[]): ChangeRow[] =>
-  [...rows].sort((a, b) => {
-    const startA =
-      a.kind === "user" ? a.change.startDate : a.period.startDate;
-    const startB =
-      b.kind === "user" ? b.change.startDate : b.period.startDate;
-    return dayjs(startA).valueOf() - dayjs(startB).valueOf();
-  });
+  [...rows].sort(
+    (a, b) => dayjs(rowStart(a)).valueOf() - dayjs(rowStart(b)).valueOf()
+  );
+
+const formatMonthsCell = (months: number | null): string =>
+  months === null ? "-" : months.toFixed(1);
 
 export const PastChangesList: FC<PastChangesListProps> = ({
   programme,
   changes,
-  projected,
   editingId,
   errorsById,
   onRemove,
@@ -58,52 +47,41 @@ export const PastChangesList: FC<PastChangesListProps> = ({
 }) => {
   const [showAssumedPeriods, setShowAssumedPeriods] = useState(false);
 
-  const accrual = computeWteAccrual(programme, changes, projected.startDate);
-  const projectedCct = projectedCompletionDate(
-    projected,
-    accrual.monthsRemaining
-  );
-  const projectionWte =
-    projected.kind === "LTFT" && projected.wte != null ? projected.wte : 100;
-  const projectionTypeLabel =
-    projected.kind === "FULL_TIME"
-      ? "Full-time projection"
-      : "LTFT projection";
-  const projectionWteMonths = Math.max(0, accrual.monthsRemaining);
-  const projectionCalendarMonths = Math.max(
-    0,
-    dayjs(projectedCct).diff(dayjs(projected.startDate), "day") / DAYS_PER_MONTH
-  );
-
-  const sorted = sortByStart(changes);
-  const assumedPeriods = inferredFullTimePeriods(
+  const { changes: calculatedChanges, result } = calculateCct(
     programme,
-    changes,
-    projected.startDate
+    changes
   );
-  const rows = showAssumedPeriods
-    ? sortRows([
-        ...sorted.map((change): ChangeRow => ({ kind: "user", change })),
-        ...assumedPeriods.map(
-          (period): ChangeRow => ({ kind: "assumed", period })
-        )
-      ])
-    : sorted.map((change): ChangeRow => ({ kind: "user", change }));
-  const userCalendarMonths = sorted.reduce(
-    (sum, change) =>
-      sum + (isOpenProjectedLtftChange(change) ? 0 : calendarMonthsFor(change)),
+  const { projection } = result;
+  const projectionWte = Math.round(projection.wte * 100);
+  const projectionTypeLabel =
+    projection.wte === 1 ? "Full-time projection" : "LTFT projection";
+  const projectionWteMonths = Math.max(0, projection.wteMonths);
+  const projectionCalendarMonths = Math.max(0, projection.calendarMonths);
+
+  const assumedPeriods = result.assumedFullTimePeriods;
+  const userRows = calculatedChanges.map(
+    (calculated): ChangeRow => ({ kind: "user", calculated })
+  );
+  const rows = sortRows(
+    showAssumedPeriods
+      ? [
+          ...userRows,
+          ...assumedPeriods.map(
+            (period): ChangeRow => ({ kind: "assumed", period })
+          )
+        ]
+      : userRows
+  );
+  const userCalendarMonths = calculatedChanges.reduce(
+    (sum, calculated) => sum + (calculated.calendarMonths ?? 0),
     0
   );
-  const userWteMonths = sorted.reduce(
-    (sum, change) =>
-      sum + (isOpenProjectedLtftChange(change) ? 0 : wteMonthsFor(change)),
+  const userWteMonths = calculatedChanges.reduce(
+    (sum, calculated) => sum + (calculated.wteMonths ?? 0),
     0
   );
   const assumedCalendarMonths = assumedPeriods.reduce(
-    (sum, period) =>
-      sum +
-      (dayjs(period.endDate).diff(dayjs(period.startDate), "day") + 1) /
-        COMPLETED_PERIOD_DAYS_PER_MONTH,
+    (sum, period) => sum + period.months,
     0
   );
   const renderTotalsRow = (
@@ -170,16 +148,10 @@ export const PastChangesList: FC<PastChangesListProps> = ({
           <Table.Body>
             {rows.map(row => {
               if (row.kind === "assumed") {
-                const calendarMonths =
-                  (dayjs(row.period.endDate).diff(
-                    dayjs(row.period.startDate),
-                    "day"
-                  ) +
-                    1) /
-                  COMPLETED_PERIOD_DAYS_PER_MONTH;
+                const calendarMonths = row.period.months;
                 return (
                   <Table.Row
-                    key={row.period.id}
+                    key={`assumed-${row.period.startDate}`}
                     className="assumed-full-time-row"
                   >
                     <Table.Cell>Assumed full-time</Table.Cell>
@@ -195,7 +167,7 @@ export const PastChangesList: FC<PastChangesListProps> = ({
                 );
               }
 
-              const change = row.change;
+              const { change, calendarMonths, wteMonths } = row.calculated;
               const error = errorsById[change.id];
               const rowStyle = error
                 ? { backgroundColor: "#fdf1f1" }
@@ -226,16 +198,8 @@ export const PastChangesList: FC<PastChangesListProps> = ({
                   <Table.Cell>
                     {change.countedAsTraining ? "Yes" : "No"}
                   </Table.Cell>
-                  <Table.Cell>
-                    {isOpenProjectedLtftChange(change)
-                      ? "-"
-                      : calendarMonthsFor(change).toFixed(1)}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {isOpenProjectedLtftChange(change)
-                      ? "-"
-                      : wteMonthsFor(change).toFixed(1)}
-                  </Table.Cell>
+                  <Table.Cell>{formatMonthsCell(calendarMonths)}</Table.Cell>
+                  <Table.Cell>{formatMonthsCell(wteMonths)}</Table.Cell>
                   <Table.Cell>
                     <div className="table-actions">
                       <button
@@ -288,9 +252,9 @@ export const PastChangesList: FC<PastChangesListProps> = ({
                 <strong>{projectionTypeLabel}</strong>
               </Table.Cell>
               <Table.Cell>Projects to completion</Table.Cell>
-              <Table.Cell>{formatDate(projected.startDate)}</Table.Cell>
+              <Table.Cell>{formatDate(projection.startDate)}</Table.Cell>
               <Table.Cell>
-                <strong>{formatDate(projectedCct)}</strong>
+                <strong>{formatDate(result.cctDate)}</strong>
               </Table.Cell>
               <Table.Cell>{projectionWte}%</Table.Cell>
               <Table.Cell>Yes</Table.Cell>

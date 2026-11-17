@@ -1,40 +1,26 @@
-import dayjs from "dayjs";
 import type { FC } from "react";
 import { Table } from "nhsuk-react-components";
-import {
-  computeWteAccrual,
-  DAYS_PER_MONTH,
-  projectedCompletionDate,
-  type PastChange,
-  type ProgrammeDetails,
-  type ProposedChange
-} from "../core";
+import { calculateCct, type PastChange, type ProgrammeDetails } from "../core";
 import { formatDate, formatMonths } from "../utils/format";
 
 type NextPostSummaryProps = {
   programme: ProgrammeDetails;
   pastChanges: PastChange[];
-  proposed: ProposedChange;
 };
 
 export const NextPostSummary: FC<NextPostSummaryProps> = ({
   programme,
-  pastChanges,
-  proposed
+  pastChanges
 }) => {
-  const accrual = computeWteAccrual(programme, pastChanges, proposed.startDate);
-  const newCct = projectedCompletionDate(proposed, accrual.monthsRemaining);
+  const { result } = calculateCct(programme, pastChanges);
+  const { projection } = result;
 
-  const trainingRemainingMonths = Math.max(0, accrual.monthsRemaining);
-  const calendarMonthsToCompletion = Math.max(
-    0,
-    dayjs(newCct).diff(dayjs(proposed.startDate), "day") / DAYS_PER_MONTH
-  );
+  const trainingRemainingMonths = Math.max(0, projection.wteMonths);
+  const calendarMonthsToCompletion = Math.max(0, projection.calendarMonths);
 
-  const proposedWte =
-    proposed.kind === "LTFT" && proposed.wte != null ? proposed.wte : 100;
+  const proposedWte = Math.round(projection.wte * 100);
   const proposedLabel =
-    proposed.kind === "FULL_TIME"
+    projection.wte === 1
       ? "Full-time projection (100%)"
       : `LTFT projection (${proposedWte}%)`;
 
@@ -54,12 +40,12 @@ export const NextPostSummary: FC<NextPostSummaryProps> = ({
         <Table.Body>
           <Table.Row>
             <Table.Cell>{proposedLabel}</Table.Cell>
-            <Table.Cell>{formatDate(proposed.startDate)}</Table.Cell>
+            <Table.Cell>{formatDate(projection.startDate)}</Table.Cell>
             <Table.Cell>{proposedWte}%</Table.Cell>
             <Table.Cell>{formatMonths(trainingRemainingMonths)}</Table.Cell>
             <Table.Cell>{formatMonths(calendarMonthsToCompletion)}</Table.Cell>
             <Table.Cell>
-              <strong>{formatDate(newCct)}</strong>
+              <strong>{formatDate(result.cctDate)}</strong>
             </Table.Cell>
           </Table.Row>
         </Table.Body>

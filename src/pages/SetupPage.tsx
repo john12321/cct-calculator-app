@@ -5,11 +5,11 @@ import { PastChangeForm } from "../components/PastChangeForm";
 import { PastChangesList } from "../components/PastChangesList";
 import { ProgrammeDetailsSection } from "../components/ProgrammeDetailsSection";
 import {
+  calculateCct,
   computeGradeProgression,
   deriveQuickProjection,
   getCalculationTypeLabel,
   isOpenProjectedLtftChange,
-  quickProjectionCompletionDate,
   validatePastChange,
   type PastChange,
   type ProgrammeDetails
@@ -115,7 +115,6 @@ export const SetupPage: FC<SetupPageProps> = ({
         <ChangesSection
           programme={programme}
           pastChanges={pastChanges}
-          projected={projected}
           editingId={editingId}
           editingChange={editingChange}
           formOpen={formOpen}
@@ -162,7 +161,6 @@ export const SetupPage: FC<SetupPageProps> = ({
 type ChangesSectionProps = {
   programme: ProgrammeDetails;
   pastChanges: PastChange[];
-  projected: ReturnType<typeof deriveQuickProjection>;
   editingId: string | null;
   editingChange: PastChange | null;
   formOpen: boolean;
@@ -177,7 +175,6 @@ type ChangesSectionProps = {
 const ChangesSection: FC<ChangesSectionProps> = ({
   programme,
   pastChanges,
-  projected,
   editingId,
   editingChange,
   formOpen,
@@ -257,7 +254,6 @@ const ChangesSection: FC<ChangesSectionProps> = ({
       <PastChangesList
         programme={programme}
         changes={pastChanges}
-        projected={projected}
         editingId={editingId}
         errorsById={errorsById}
         onRemove={onRemovePast}
@@ -269,9 +265,7 @@ const ChangesSection: FC<ChangesSectionProps> = ({
           <p className="nhsuk-u-margin-bottom-0">
             Projected Completion of Training Date:{" "}
             <strong>
-              {formatDate(
-                quickProjectionCompletionDate(programme, pastChanges, projected)
-              )}
+              {formatDate(calculateCct(programme, pastChanges).result.cctDate)}
             </strong>
           </p>
         </div>

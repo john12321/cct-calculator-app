@@ -48,9 +48,9 @@ The columns we use from the `Lists` sheet:
 | E      | Dual/Triple     | "Dual-CCT", "Triple CCT", or blank                               | `Specialty.dual`                                           |
 | F      | Length (months) | Default programme length                                         | `Specialty.lengthMonths`                                   |
 | G      | 24 months       | The grade-year (if any) that lasts 24 months instead of 12       | `Specialty.twentyFourMonthGrade`                           |
-| H      | Entry Grade     | The starting grade for this programme (e.g. "ST3", "CT1", "FY1") | `Specialty.entryGrade`                                     |
+| H      | Entry Grade     | The starting grade for this programme (e.g. "ST3", "CT1", "F1") | `Specialty.entryGrade`                                     |
 | I      | Additional info | Free-text note shown to the user                                 | `Specialty.info`                                           |
-| M      | Start grade     | Dropdown values: FY1, FY2, CT1-CT4, ST1-ST9                      | `TRAINING_GRADES` (used as the override dropdown)          |
+| M      | Start grade     | Dropdown values: F1, F2, CT1-CT4, ST1-ST9, DFT, DCT1-DCT3       | `TRAINING_GRADES` (used as the override dropdown)          |
 
 All of this is extracted once and lives in [`specialties.ts`](specialties.ts).
 If the Excel sheet changes, re-extract that file rather than editing it by
@@ -137,7 +137,7 @@ This app does the same:
 - Picking a specialty auto-fills the start grade from `Specialty.entryGrade`.
 - A read-only text field shows the value with hint "Default for X is Y."
 - "Check this box if you want to choose a different start grade" swaps the field to a
-  `<select>` of all training grades (FY1, FY2, CT1-CT4, ST1-ST9, DFT).
+  `<select>` of all training grades (F1, F2, CT1-CT4, ST1-ST9, DFT, DCT1-DCT3).
 - The view-mode shows "(overridden — default X)" annotation when applicable.
 - A reason field is required when the start grade override checkbox is checked,
   and is shown with the changed grade in the summary and CSV export.
@@ -148,7 +148,7 @@ Foundation and core training feed into specialty training. A typical career (to 
 looks like:
 
 ```
-FY1 → FY2     (Foundation, 24 months)
+F1 → F2       (Foundation, 24 months)
 CT1 → CT2 [→ CT3]     (Core training)        ─┐
                                               ├─→ ST3/ST4 → ST5 → ... → ST7/ST8  (Higher specialty training)
 ST1 → ST2     (Run-through specialty)        ─┘
@@ -157,7 +157,7 @@ ST1 → ST2     (Run-through specialty)        ─┘
 Each programme in our specialty list is **one** of those stages, with its own
 entry grade. So:
 
-- _Foundation_ starts at **FY1**.
+- _Foundation_ starts at **F1**.
 - _ACCS / Core medical / Core surgical / Core anaesthetics / Core psychiatry_
   programmes start at **CT1**.
 - _GP, Paediatrics, Ophthalmology, Obs & Gynae_ and `(run-through)` variants
@@ -165,7 +165,7 @@ entry grade. So:
 - _Cardiology, Acute internal medicine, Geriatrics_ and most mainstream
   specialties start at **ST3** or **ST4** (post-core).
 
-As far as I understand, a doctor in **Foundation** training is in **FY1** or **FY2**. That is a separate early stage from **Core** training, which starts at **CT1**. Different specialties then start at different points:
+As far as I understand, a doctor in **Foundation** training is in **F1** or **F2**. That is a separate early stage from **Core** training, which starts at **CT1**. Different specialties then start at different points:
 
 - some specialties begin after foundation, so they start in **CT1** (core training);
 - some run-through specialties start directly in **ST1** after foundation, without a separate core stage;
@@ -204,7 +204,7 @@ and enters a required reason; these are stored as `skippedGrade` and
 `skippedGradeNotes`.
 
 The original programme length and original Completion of Training Date remain visible as the
-baseline. When additional or accelerated training time is recorded, the
+baseline. Both end dates are programme start + floor(months × 30.4) days. When additional or accelerated training time is recorded, the
 summary also shows an **Adjusted programme end date before changes** with an explanation that
 it reflects those duration adjustments.
 
@@ -329,11 +329,12 @@ WTE without needing a WTE value.
 | Kind        | Meaning                                                                                                                      | WTE used in formula        |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
 | `FULL_TIME` | Default projection from the day after the latest completed change, or programme start when no changes exist.                 | 100%                       |
-| `LTFT`      | Projection from the projected LTFT change's start date when it is open-ended, or the day after its end date when it has one. | Selected LTFT WTE % (1–99) |
+| `LTFT`      | Projection from the open-ended projected LTFT change's start date.                                                           | Selected LTFT WTE % (1–99) |
 
-The projection is derived by `deriveQuickProjection`. If no LTFT change is
-marked for projection, Quick mode projects remaining training at full-time.
-If an LTFT change is marked, that WTE is used for remaining training.
+The projection comes from `calculateCct` in [`cctEngine.ts`](cctEngine.ts)
+(`deriveQuickProjection` reshapes it for grade progression). If no open-ended
+LTFT change exists, Quick mode projects remaining training at full-time. A
+dated LTFT change stops at its end date; the projection after it is 100%.
 
 ### 5.2 Validation
 
@@ -360,9 +361,18 @@ New Completion of Training Date = Projection start + Months remaining × (1 / Pr
 Where `Months remaining = (Programme length + additional training time −
 accelerated training time) − Total WTE time completed`.
 
-Implemented in [`calculations.ts`](calculations.ts) as
-`projectedCompletionDate(proposed, monthsRemaining)`, with the WTE accrual
-computed by `computeWteAccrual(programme, pastChanges, proposed.startDate)`.
+Implemented by `calculateCct(programme, pastChanges)` in
+[`cctEngine.ts`](cctEngine.ts), a 1:1 port of `CctEngine.java` in
+tis-trainee-details (see its `README-CCT-CALCULATOR.md`), ported tests included
+([`cctEngine.test.ts`](cctEngine.test.ts)). As in the BE engine:
+
+- Months remaining are rounded to 2 decimal places before projecting (Excel `I15`).
+- Days are floored with a 1e-9 day tolerance, so float noise (4,559.999…) does
+  not lose a day. Programme end dates use the same floor.
+- If recorded time alone completes training (months remaining ≤ 0), the date
+  is the day the running total reaches the months needed, found day by day.
+- A change starting before the programme is counted from the programme start;
+  one ending before it counts for nothing.
 
 This formula describes **Quick mode**, where the changes list derives the
 forward WTE. In **Full mode**,
@@ -1018,7 +1028,8 @@ an optional reporting enhancement rather than identified formula parity gaps.
 | Path                                                   | What it holds                                                                                                                                 |
 | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`calculationTypes.ts`](calculationTypes.ts)           | Core types: `CalculationMode`, `ProgrammeDetails`, Quick-mode `PastChange` / `ProposedChange`, and Full-mode `TrainingPeriod`                 |
-| [`calculations.ts`](calculations.ts)                   | Quick-mode historical accrual, credited past-change WTE, Completion of Training Date and duration helpers                                     |
+| [`cctEngine.ts`](cctEngine.ts)                         | Quick-mode CCT engine: a 1:1 port of `CctEngine.java` (tis-trainee-details)                                                                   |
+| [`calculations.ts`](calculations.ts)                   | Shared month/day conventions, credited WTE fraction and programme end date helpers                                                            |
 | [`fullModeCalculations.ts`](fullModeCalculations.ts)   | Full-mode timeline insertion, accrual, completion projection and recorded-grade end-date lookup                                               |
 | [`grades.ts`](grades.ts)                               | Shared grade parsing, WTE segment traversal and grade-progression construction                                                                |
 | [`specialties.ts`](specialties.ts)                     | `Specialty` type, 173-entry `SPECIALTIES` array, `findSpecialty`, `specialtiesGroupedBySchool`, `TrainingGrade` / `TRAINING_GRADES`           |

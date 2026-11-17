@@ -3,6 +3,7 @@ import {
   COMPLETED_PERIOD_DAYS_PER_MONTH,
   DAYS_PER_MONTH,
   completedPastChanges,
+  floorDays,
   inclusiveDays,
   programmeAdjustedLengthMonths,
   wteFractionFor
@@ -142,7 +143,7 @@ export const dateAtCumulativeWteMonths = (
     if (accumulated + segWteMonths >= targetMonths) {
       if (seg.wteFraction === 0) continue;
       const wteDeficit = targetMonths - accumulated;
-      const calendarDaysIntoSegment = Math.floor(
+      const calendarDaysIntoSegment = floorDays(
         (wteDeficit / seg.wteFraction) * seg.daysPerMonth
       );
       const date = dayjs(seg.startDate)

@@ -7,12 +7,10 @@ import type {
 } from "./calculationTypes";
 import {
   completedPastChanges,
-  computeWteAccrual,
-  deriveQuickProjection,
   programmeAdjustedEndDate,
-  programmeAdjustedLengthMonths,
-  projectedCompletionDate
+  programmeAdjustedLengthMonths
 } from "./calculations";
+import { calculateCct } from "./cctEngine";
 import { TRAINING_GRADES, findSpecialty } from "./specialties";
 
 export type ValidationResult = { ok: true } | { ok: false; message: string };
@@ -38,13 +36,7 @@ const currentCompletionDateBeforeChange = (
       change.id !== candidate.id &&
       dayjs(change.endDate).isBefore(dayjs(candidate.startDate))
   );
-  const projection = deriveQuickProjection(programme, priorChanges);
-  const accrual = computeWteAccrual(
-    programme,
-    priorChanges,
-    projection.startDate
-  );
-  return projectedCompletionDate(projection, accrual.monthsRemaining);
+  return calculateCct(programme, priorChanges).result.cctDate;
 };
 
 export const validatePastChange = (
