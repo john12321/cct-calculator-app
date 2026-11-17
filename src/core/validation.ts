@@ -2,12 +2,10 @@ import dayjs from "dayjs";
 import type {
   PastChange,
   ProgrammeDetails,
-  ProposedChange,
   TrainingPeriod
 } from "./calculationTypes";
 import {
   completedPastChanges,
-  programmeAdjustedEndDate,
   programmeAdjustedLengthMonths
 } from "./calculations";
 import { calculateCct } from "./cctEngine";
@@ -174,62 +172,6 @@ export const validatePastChange = (
       return err(
         `This change overlaps an existing change (${formatDate(other.startDate)} – ${formatDate(other.endDate)}).`
       );
-    }
-  }
-
-  return ok;
-};
-
-export const validateProposedChange = (
-  proposed: ProposedChange,
-  programme: ProgrammeDetails,
-  pastChanges: PastChange[]
-): ValidationResult => {
-  if (!proposed.startDate) {
-    return err("Please enter a projection start date.");
-  }
-  if (!isRealIsoDate(proposed.startDate)) {
-    return err("Projection start date must be a real date.");
-  }
-
-  if (dayjs(proposed.startDate).isBefore(dayjs(programme.startDate))) {
-    return err(
-      `Start date cannot be before programme start (${formatDate(programme.startDate)}).`
-    );
-  }
-
-  const programmeEnd = programmeAdjustedEndDate(programme);
-  const programmeEndLabel =
-    programme.additionalMonths > 0 || programme.acceleratedMonths > 0
-      ? "adjusted programme end"
-      : "original programme end";
-  if (dayjs(proposed.startDate).isAfter(dayjs(programmeEnd))) {
-    return err(
-      `Proposed start date cannot be after the ${programmeEndLabel} (${formatDate(programmeEnd)}).`
-    );
-  }
-
-  const completedChanges = completedPastChanges(pastChanges);
-  if (completedChanges.length > 0) {
-    const latest = completedChanges.reduce(
-      (acc, p) => (dayjs(p.endDate).isAfter(dayjs(acc.endDate)) ? p : acc),
-      completedChanges[0]
-    );
-    if (!dayjs(proposed.startDate).isAfter(dayjs(latest.endDate))) {
-      return err(
-        `Proposed start date must be after the latest completed change (ends ${formatDate(latest.endDate)}).`
-      );
-    }
-  }
-
-  if (proposed.kind === "LTFT") {
-    if (
-      proposed.wte == null ||
-      proposed.wte < 1 ||
-      proposed.wte > 99 ||
-      !Number.isInteger(proposed.wte)
-    ) {
-      return err("LTFT WTE must be a whole number between 1 and 99.");
     }
   }
 

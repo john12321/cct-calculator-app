@@ -2,13 +2,11 @@ import dayjs from "dayjs";
 import { describe, expect, it } from "vitest";
 import type {
   PastChange,
-  ProgrammeDetails,
-  ProposedChange
+  ProgrammeDetails
 } from "./calculationTypes";
 import {
   validatePastChange,
-  validateProgrammeDetails,
-  validateProposedChange
+  validateProgrammeDetails
 } from "./validation";
 
 const programme: ProgrammeDetails = {
@@ -310,59 +308,6 @@ describe("past change validation", () => {
         []
       )
     ).toEqual({ ok: true });
-  });
-});
-
-describe("derived projection validation", () => {
-  const laterAbsence: PastChange = {
-    id: "later-absence",
-    type: "OOPC",
-    startDate: "2022-01-01",
-    endDate: "2022-03-31",
-    wte: null,
-    countedAsTraining: false,
-    notes: ""
-  };
-
-  it("requires the projection to start after the latest completed change", () => {
-    const proposed: ProposedChange = {
-      kind: "FULL_TIME",
-      startDate: laterAbsence.endDate,
-      wte: null
-    };
-
-    expect(
-      validateProposedChange(proposed, programme, [laterAbsence, priorLtft])
-    ).toEqual({
-      ok: false,
-      message:
-        "Proposed start date must be after the latest completed change (ends 31/03/2022)."
-    });
-  });
-
-  it("accepts the day after the latest past change even when entries are unordered", () => {
-    const proposed: ProposedChange = {
-      kind: "LTFT",
-      startDate: "2022-04-01",
-      wte: 80
-    };
-
-    expect(
-      validateProposedChange(proposed, programme, [laterAbsence, priorLtft])
-    ).toEqual({ ok: true });
-  });
-
-  it("validates LTFT WTE for the proposed post", () => {
-    expect(
-      validateProposedChange(
-        { kind: "LTFT", startDate: "2022-04-01", wte: 100 },
-        programme,
-        []
-      )
-    ).toEqual({
-      ok: false,
-      message: "LTFT WTE must be a whole number between 1 and 99."
-    });
   });
 });
 
