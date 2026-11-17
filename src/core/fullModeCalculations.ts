@@ -218,15 +218,17 @@ export const computeGradeProgressionForTimeline = (
   );
 
   let additionalMonthsToDate = 0;
+  let acceleratedMonthsToDate = 0;
   return baseRows.map(row => {
     additionalMonthsToDate += row.additionalMonths;
+    acceleratedMonthsToDate += row.acceleratedMonths;
     return {
       ...row,
       endDate:
         completedWteMonths >=
         row.yearNumber * 12 +
           additionalMonthsToDate -
-          programme.acceleratedMonths
+          acceleratedMonthsToDate
           ? findLastEndDateForGrade(timeline, row.grade)
           : row.endDate
     };

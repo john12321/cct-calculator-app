@@ -7,6 +7,7 @@ import { PastChangesList } from "../components/PastChangesList";
 import { ProgrammeDetailsSection } from "../components/ProgrammeDetailsSection";
 import { TrainingTimeAdjustmentsSection } from "../components/TrainingTimeAdjustmentsSection";
 import {
+  acceleratedTrainingTimeIssues,
   additionalTrainingTimeIssues,
   calculateCct,
   computeGradeProgression,
@@ -104,6 +105,7 @@ export const SetupPage: FC<SetupPageProps> = ({
   const hasAdjustmentIssues =
     programme !== null &&
     (additionalTrainingTimeIssues(programme).length > 0 ||
+      acceleratedTrainingTimeIssues(programme).length > 0 ||
       gradeProgressionAdjustmentIssues(programme).length > 0);
   const canShowSummary =
     programme !== null &&

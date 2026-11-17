@@ -56,22 +56,10 @@ export const FullModeSummaryPage: FC<FullModeSummaryPageProps> = ({
         [`Additional training time ${entry.grade} (months)`, entry.months.toFixed(1)],
         [`Additional training time ${entry.grade} notes`, entry.notes]
       ]),
-      ...(programme.acceleratedMonths > 0
-        ? [
-            [
-              "Accelerated training time (months)",
-              programme.acceleratedMonths.toFixed(1)
-            ],
-            ...(programme.acceleratedMonthsNotes
-              ? [
-                  [
-                    "Accelerated training time notes",
-                    programme.acceleratedMonthsNotes
-                  ]
-                ]
-              : [])
-          ]
-        : []),
+      ...programme.acceleratedTrainingTime.flatMap(entry => [
+        [`Accelerated training time ${entry.grade} (months)`, entry.months.toFixed(1)],
+        [`Accelerated training time ${entry.grade} notes`, entry.notes]
+      ]),
       ...(programme.eighteenMonthFinalGrade
         ? [
             ["18-month final year grade", programme.eighteenMonthFinalGrade],
@@ -88,7 +76,7 @@ export const FullModeSummaryPage: FC<FullModeSummaryPageProps> = ({
           ]
         : []),
       ...(programme.additionalTrainingTime.length > 0 ||
-      programme.acceleratedMonths > 0
+      programme.acceleratedTrainingTime.length > 0
         ? [
             [
               "Adjusted programme end date before changes",

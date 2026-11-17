@@ -2,12 +2,13 @@ import { useState, type FC } from "react";
 import {
   programmeAdjustedEndDate,
   programmeAdjustedLengthMonths,
+  totalAcceleratedMonths,
   totalAdditionalMonths,
   type ProgrammeDetails
 } from "../core";
 import { formatDate, formatMonths } from "../utils/format";
-import { AcceleratedTrainingTimeSection } from "./AcceleratedTrainingTimeSection";
-import { AdditionalTrainingTimeSection } from "./AdditionalTrainingTimeSection";
+import { GradeTrainingTimeSection } from "./GradeTrainingTimeSection";
+import { ACCELERATED_TIME, ADDITIONAL_TIME } from "./gradeTrainingTimeKinds";
 
 type TrainingTimeAdjustmentsSectionProps = {
   programme: ProgrammeDetails;
@@ -31,7 +32,8 @@ export const TrainingTimeAdjustmentsSection: FC<
     };
 
   const additionalMonths = totalAdditionalMonths(programme);
-  const hasAdjustment = additionalMonths > 0 || programme.acceleratedMonths > 0;
+  const acceleratedMonths = totalAcceleratedMonths(programme);
+  const hasAdjustment = additionalMonths > 0 || acceleratedMonths > 0;
 
   return (
     <section className="nhsuk-u-margin-bottom-6">
@@ -39,13 +41,15 @@ export const TrainingTimeAdjustmentsSection: FC<
         Training time adjustments
       </h2>
 
-      <AdditionalTrainingTimeSection
+      <GradeTrainingTimeSection
+        kind={ADDITIONAL_TIME}
         programme={programme}
         onChange={onChange}
         onFormOpenChange={handleFormOpenChange("additional")}
       />
 
-      <AcceleratedTrainingTimeSection
+      <GradeTrainingTimeSection
+        kind={ACCELERATED_TIME}
         programme={programme}
         onChange={onChange}
         onFormOpenChange={handleFormOpenChange("accelerated")}
@@ -75,13 +79,13 @@ export const TrainingTimeAdjustmentsSection: FC<
                 </dd>
               </div>
             )}
-            {programme.acceleratedMonths > 0 && (
+            {acceleratedMonths > 0 && (
               <div className="nhsuk-summary-list__row">
                 <dt className="nhsuk-summary-list__key">
                   Accelerated training time
                 </dt>
                 <dd className="nhsuk-summary-list__value">
-                  -{formatMonths(programme.acceleratedMonths)}
+                  -{formatMonths(acceleratedMonths)}
                 </dd>
               </div>
             )}

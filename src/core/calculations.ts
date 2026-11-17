@@ -51,12 +51,18 @@ export const totalAdditionalMonths = (programme: ProgrammeDetails): number =>
     0
   );
 
+export const totalAcceleratedMonths = (programme: ProgrammeDetails): number =>
+  programme.acceleratedTrainingTime.reduce(
+    (total, entry) => total + entry.months,
+    0
+  );
+
 export const programmeAdjustedLengthMonths = (
   programme: ProgrammeDetails
 ): number =>
   programme.lengthMonths +
   totalAdditionalMonths(programme) -
-  programme.acceleratedMonths;
+  totalAcceleratedMonths(programme);
 
 export const programmeAdjustedEndDate = (
   programme: ProgrammeDetails

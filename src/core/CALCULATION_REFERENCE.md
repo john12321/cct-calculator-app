@@ -187,11 +187,12 @@ parts:
   many grades as needed, and the total across them is validated to at most
   `24` months (Excel's `I9:I10` limit). See §9.1.
 - **Accelerated training time** captures recognised prior learning or other
-  approved reductions in training time. It is stored as
-  `ProgrammeDetails.acceleratedMonths`, defaulting to `0`, with an
-  `acceleratedMonthsNotes` reason required whenever accelerated time is
-  recorded. Stored values are validated from `0` to `12` months, following
-  Excel's on-screen prompt for `I11`; the form requires a positive value.
+  approved reductions in training time. Like additional time, each entry
+  names the grade it applies to, a positive number of months (at most 1
+  decimal place) and a required reason. Entries are stored as
+  `ProgrammeDetails.acceleratedTrainingTime`, and the total across them is
+  validated to at most `12` months, following Excel's on-screen prompt for
+  `I11`. See §9.2.
 - **Adjusted programme length** is shown once either adjustment is recorded:
   initial length, + additional, − accelerated, the adjusted length and the
   adjusted programme end date.
@@ -215,8 +216,9 @@ cannot be set on the skipped grade. Because these choices are saved
 separately from the programme details, a later change to the specialty or
 start grade can leave a choice outside the progression.
 `gradeProgressionAdjustmentIssues` flags such choices, as
-`additionalTrainingTimeIssues` does for additional time entries, and either
-kind of issue blocks **Show summary** until it is fixed.
+`additionalTrainingTimeIssues` and `acceleratedTrainingTimeIssues` do for
+time entries, and any of these issues blocks **Show summary** until it is
+fixed.
 
 The original programme length and original Completion of Training Date remain visible as the
 baseline. Both end dates are programme start + floor(months × 30.4) days. When additional or accelerated training time is recorded, the
@@ -531,13 +533,14 @@ For calculated dates, this becomes (see `dateAtCumulativeWteMonths` in
 For the ordinary case without a 24-month grade, the target is:
 
 ```
-N × 12 + additional training time in this and earlier grades - accelerated training time
+N × 12 + additional training time in this and earlier grades - accelerated training time in this and earlier grades
 ```
 
 Additional time therefore leaves earlier grades unchanged and shifts the
-grade it was recorded against, and every later grade, later. (Excel has one
-additional-time input and adds it to every year; see §9.1.) Accelerated time
-shifts every grade end date earlier. The final threshold is wide but is capped at the net
+grade it was recorded against, and every later grade, later. Accelerated
+time does the same in the other direction, shifting its grade and every
+later grade earlier. (Excel has one input for each and applies it to every
+year; see §9.1 and §9.2.) The final threshold is wide but is capped at the net
 adjusted programme duration, while the standard specialty length continues
 to determine which grade rows exist.
 
@@ -655,8 +658,9 @@ for (let yearNumber = 1; yearNumber <= maxYears; yearNumber += 1) {
   const thisYearExtension = isTwentyFourMonth ? 12 : 0;
   const finalYearExtension =
     grade === programme.eighteenMonthFinalGrade ? 6 : 0;
-  // additional time recorded against this grade, carried into later grades
+  // additional and accelerated time recorded against this grade, carried into later grades
   carriedAdditionalMonths += additionalMonthsFor(grade);
+  carriedAcceleratedMonths += acceleratedMonthsFor(grade);
 
   // WTE-month threshold for this year-end
   const targetMonths = Math.min(
@@ -665,7 +669,7 @@ for (let yearNumber = 1; yearNumber <= maxYears; yearNumber += 1) {
       thisYearExtension +
       finalYearExtension +
       carriedAdditionalMonths -
-      programme.acceleratedMonths,
+      carriedAcceleratedMonths,
     programmeAdjustedLengthMonths(programme)
   );
 
@@ -753,19 +757,28 @@ summary is then blocked until the entry is edited or removed.
 User-entered. Excel subtracts it from every year's threshold — used for
 recognised prior learning that shortens training.
 
-Implemented as `acceleratedMonths` with required `acceleratedMonthsNotes` when
-used on `ProgrammeDetails`, entered behind a checkbox in the programme details form. It
-reduces the required training total for the projected Completion of Training Date,
-shortens the valid date range for recorded changes, and is subtracted directly
-from each grade threshold in `grades.ts` without suppressing a grade row.
+As with additional time (§9.1), the app records a list,
+`ProgrammeDetails.acceleratedTrainingTime`, of `{ grade, months, notes }`
+entries in a separate **Accelerated training time** section, rather than one
+value taken off the starting grade:
 
-The Excel source is internally inconsistent for this input: its on-screen
-prompt says a maximum of `12` months, while the data-validation rule for
-`I11:I12` accepts values from `0` to `36` months. The app follows the
-user-facing prompt: stored accelerated time is validated from `0` to `12`
-months and the programme-details input presents `12` as its maximum. Because
-the input is behind an optional checkbox, the form field is required
-once accelerated time is selected.
+- The total (`totalAcceleratedMonths`) feeds `programmeAdjustedLengthMonths`,
+  so it reduces the required training total for the projected Completion of
+  Training Date and shortens the valid date range for recorded changes, the
+  same as a single Excel value.
+- In `grades.ts`, an entry's months are subtracted from its own grade's
+  threshold and carried into every later grade. Earlier grades are
+  unaffected. No grade row is removed. Recording all of it against the start
+  grade gives Excel's result.
+- Full mode's switch to recorded grade end dates uses the same running total.
+
+`validateAcceleratedTrainingTime` applies the same entry rules as
+`validateAdditionalTrainingTime`, with a total limit of `12` months. The
+Excel source is internally inconsistent for this input: its on-screen prompt
+says a maximum of `12` months, while the data-validation rule for `I11:I12`
+accepts values from `0` to `36` months. The app follows the user-facing
+prompt. Only the total is limited, so accelerated time can shorten a grade to
+nothing, which ends it on the same date as the grade before it.
 
 ### 9.3 P9–P17 — +6 for an 18-month final year — implemented
 

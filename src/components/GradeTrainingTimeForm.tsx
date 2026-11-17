@@ -1,12 +1,13 @@
 import { useState, type FC, type FormEvent } from "react";
 import {
   programmeGrades,
-  validateAdditionalTrainingTime,
   type AdditionalTrainingTime,
   type ProgrammeDetails
 } from "../core";
+import type { GradeTrainingTimeKind } from "./gradeTrainingTimeKinds";
 
-type AdditionalTrainingTimeFormProps = {
+type GradeTrainingTimeFormProps = {
+  kind: GradeTrainingTimeKind;
   formId: string;
   programme: ProgrammeDetails;
   editing: AdditionalTrainingTime | null;
@@ -14,16 +15,18 @@ type AdditionalTrainingTimeFormProps = {
   onCancel: () => void;
 };
 
-const newId = () =>
-  `additional-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const newId = (label: string) =>
+  `${label}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-export const AdditionalTrainingTimeForm: FC<AdditionalTrainingTimeFormProps> = ({
+export const GradeTrainingTimeForm: FC<GradeTrainingTimeFormProps> = ({
+  kind,
   formId,
   programme,
   editing,
   onSave,
   onCancel
 }) => {
+  const { label } = kind;
   const [grade, setGrade] = useState(editing?.grade ?? "");
   const [monthsText, setMonthsText] = useState(
     editing ? String(editing.months) : ""
@@ -34,16 +37,12 @@ export const AdditionalTrainingTimeForm: FC<AdditionalTrainingTimeFormProps> = (
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const candidate: AdditionalTrainingTime = {
-      id: editing?.id ?? newId(),
+      id: editing?.id ?? newId(label),
       grade,
       months: Number.parseFloat(monthsText),
       notes: notes.trim()
     };
-    const result = validateAdditionalTrainingTime(
-      candidate,
-      programme,
-      programme.additionalTrainingTime
-    );
+    const result = kind.validate(candidate, programme, programme[kind.field]);
     if (!result.ok) {
       setError(result.message);
       return;
@@ -59,22 +58,20 @@ export const AdditionalTrainingTimeForm: FC<AdditionalTrainingTimeFormProps> = (
       className="change-form-panel nhsuk-u-margin-bottom-4"
     >
       <h3 className="nhsuk-heading-s nhsuk-u-margin-bottom-3">
-        {editing
-          ? "Editing additional training time"
-          : "Adding additional training time"}
+        {editing ? "Editing" : "Adding"} {label} training time
       </h3>
 
       <div className="nhsuk-form-group">
-        <label className="nhsuk-label" htmlFor="additional-grade">
+        <label className="nhsuk-label" htmlFor={`${label}-grade`}>
           Grade
         </label>
-        <p className="nhsuk-hint" id="additional-grade-hint">
-          The grade the additional time was given in.
+        <p className="nhsuk-hint" id={`${label}-grade-hint`}>
+          {kind.gradeHint}
         </p>
         <select
           className="nhsuk-select"
-          id="additional-grade"
-          aria-describedby="additional-grade-hint"
+          id={`${label}-grade`}
+          aria-describedby={`${label}-grade-hint`}
           value={grade}
           onChange={e => setGrade(e.target.value)}
         >
@@ -90,16 +87,16 @@ export const AdditionalTrainingTimeForm: FC<AdditionalTrainingTimeFormProps> = (
       </div>
 
       <div className="nhsuk-form-group">
-        <label className="nhsuk-label" htmlFor="additional-months">
-          Additional training time (months)
+        <label className="nhsuk-label" htmlFor={`${label}-months`}>
+          {kind.title} (months)
         </label>
-        <p className="nhsuk-hint" id="additional-months-hint">
-          Up to 24 months in total across all grades.
+        <p className="nhsuk-hint" id={`${label}-months-hint`}>
+          Up to {kind.maxTotalMonths} months in total across all grades.
         </p>
         <input
           className="nhsuk-input nhsuk-input--width-3"
-          id="additional-months"
-          aria-describedby="additional-months-hint"
+          id={`${label}-months`}
+          aria-describedby={`${label}-months-hint`}
           type="text"
           inputMode="decimal"
           value={monthsText}
@@ -108,16 +105,16 @@ export const AdditionalTrainingTimeForm: FC<AdditionalTrainingTimeFormProps> = (
       </div>
 
       <div className="nhsuk-form-group">
-        <label className="nhsuk-label" htmlFor="additional-notes">
+        <label className="nhsuk-label" htmlFor={`${label}-notes`}>
           Reason
         </label>
         <input
           className="nhsuk-input nhsuk-input--width-30"
-          id="additional-notes"
+          id={`${label}-notes`}
           type="text"
           value={notes}
           onChange={e => setNotes(e.target.value)}
-          placeholder="e.g. Outcome 3 following ARCP"
+          placeholder={kind.reasonPlaceholder}
         />
       </div>
 
@@ -129,7 +126,7 @@ export const AdditionalTrainingTimeForm: FC<AdditionalTrainingTimeFormProps> = (
 
       <div className="nhsuk-button-group">
         <button type="submit" className="nhsuk-button nhsuk-u-margin-right-3">
-          {editing ? "Save changes" : "Add additional time"}
+          {editing ? "Save changes" : `Add ${label} time`}
         </button>
         <button
           type="button"

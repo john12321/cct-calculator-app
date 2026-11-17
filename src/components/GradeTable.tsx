@@ -24,6 +24,7 @@ export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
   const hasSkippedGrade = rows.some(r => r.skippedGradeBeforeThisRow !== null);
   const hasBeyondKnownGrade = rows.some(r => r.exceedsKnownTrainingGrade);
   const hasAdditionalTime = rows.some(r => r.additionalMonths > 0);
+  const hasAcceleratedTime = rows.some(r => r.acceleratedMonths > 0);
   const finalGrade = rows.at(-1)?.grade;
 
   return (
@@ -89,6 +90,18 @@ export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
                       }}
                     >
                       (+{formatMonths(row.additionalMonths)} additional time)
+                    </span>
+                  )}
+                  {row.acceleratedMonths > 0 && (
+                    <span
+                      className="nhsuk-u-margin-left-2"
+                      style={{
+                        fontSize: "0.85em",
+                        color: "#005eb8",
+                        fontWeight: 600
+                      }}
+                    >
+                      (-{formatMonths(row.acceleratedMonths)} accelerated time)
                     </span>
                   )}
                   {row.exceedsKnownTrainingGrade && (
@@ -190,6 +203,20 @@ export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
             <strong>Why are some grades longer?</strong> Additional training
             time lengthens the grade it was recorded against. Earlier grades are
             unchanged; that grade and every later grade end later by the same
+            amount.
+          </p>
+        </div>
+      )}
+
+      {hasAcceleratedTime && (
+        <div
+          className="nhsuk-inset-text nhsuk-u-margin-top-3"
+          style={{ borderLeftColor: "#005eb8" }}
+        >
+          <p className="nhsuk-u-margin-0">
+            <strong>Why are some grades shorter?</strong> Accelerated training
+            time shortens the grade it was recorded against. Earlier grades are
+            unchanged; that grade and every later grade end earlier by the same
             amount.
           </p>
         </div>

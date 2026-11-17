@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import type {
+  AcceleratedTrainingTime,
   AdditionalTrainingTime,
   PastChange,
   ProgrammeDetails,
@@ -182,14 +183,25 @@ export const validatePastChange = (
 
 export const MAX_TOTAL_ADDITIONAL_MONTHS = 24;
 export const MAX_ADDITIONAL_TRAINING_TIME_ENTRIES = 20;
+// Note: 12 follows Excel's on-screen prompt for I11.
+export const MAX_TOTAL_ACCELERATED_MONTHS = 12;
+export const MAX_ACCELERATED_TRAINING_TIME_ENTRIES = 20;
 
-export const validateAdditionalTrainingTime = (
-  candidate: AdditionalTrainingTime,
+type TrainingTimeEntryRules = {
+  label: "additional" | "accelerated";
+  maxTotalMonths: number;
+  maxEntries: number;
+};
+
+const validateTrainingTimeEntry = (
+  candidate: AdditionalTrainingTime | AcceleratedTrainingTime,
   programme: ProgrammeDetails,
-  existing: AdditionalTrainingTime[]
+  existing: (AdditionalTrainingTime | AcceleratedTrainingTime)[],
+  { label, maxTotalMonths, maxEntries }: TrainingTimeEntryRules
 ): ValidationResult => {
+  const Label = label.charAt(0).toUpperCase() + label.slice(1);
   if (!candidate.grade) {
-    return err("Please choose the grade the additional time applies to.");
+    return err(`Please choose the grade the ${label} time applies to.`);
   }
   if (!programmeGrades(programme).includes(candidate.grade)) {
     return err(
@@ -197,18 +209,18 @@ export const validateAdditionalTrainingTime = (
     );
   }
   if (!Number.isFinite(candidate.months) || candidate.months <= 0) {
-    return err("Additional training time must be greater than zero.");
+    return err(`${Label} training time must be greater than zero.`);
   }
   if (Math.round(candidate.months * 10) / 10 !== candidate.months) {
-    return err("Additional training time can have at most 1 decimal place.");
+    return err(`${Label} training time can have at most 1 decimal place.`);
   }
   if (!candidate.notes.trim()) {
-    return err("Please enter a reason for the additional training time.");
+    return err(`Please enter a reason for the ${label} training time.`);
   }
   const others = existing.filter(entry => entry.id !== candidate.id);
-  if (others.length + 1 > MAX_ADDITIONAL_TRAINING_TIME_ENTRIES) {
+  if (others.length + 1 > maxEntries) {
     return err(
-      `You cannot add more than ${MAX_ADDITIONAL_TRAINING_TIME_ENTRIES} additional training time entries.`
+      `You cannot add more than ${maxEntries} ${label} training time entries.`
     );
   }
   const total = others.reduce(
@@ -216,13 +228,39 @@ export const validateAdditionalTrainingTime = (
     candidate.months
   );
   // Note: rounded because summing 1 dp months in floating point can drift.
-  if (Math.round(total * 10) / 10 > MAX_TOTAL_ADDITIONAL_MONTHS) {
+  if (Math.round(total * 10) / 10 > maxTotalMonths) {
     return err(
-      `Total additional training time cannot be more than ${MAX_TOTAL_ADDITIONAL_MONTHS} months.`
+      `Total ${label} training time cannot be more than ${maxTotalMonths} months.`
     );
   }
   return ok;
 };
+
+const ADDITIONAL_RULES: TrainingTimeEntryRules = {
+  label: "additional",
+  maxTotalMonths: MAX_TOTAL_ADDITIONAL_MONTHS,
+  maxEntries: MAX_ADDITIONAL_TRAINING_TIME_ENTRIES
+};
+
+const ACCELERATED_RULES: TrainingTimeEntryRules = {
+  label: "accelerated",
+  maxTotalMonths: MAX_TOTAL_ACCELERATED_MONTHS,
+  maxEntries: MAX_ACCELERATED_TRAINING_TIME_ENTRIES
+};
+
+export const validateAdditionalTrainingTime = (
+  candidate: AdditionalTrainingTime,
+  programme: ProgrammeDetails,
+  existing: AdditionalTrainingTime[]
+): ValidationResult =>
+  validateTrainingTimeEntry(candidate, programme, existing, ADDITIONAL_RULES);
+
+export const validateAcceleratedTrainingTime = (
+  candidate: AcceleratedTrainingTime,
+  programme: ProgrammeDetails,
+  existing: AcceleratedTrainingTime[]
+): ValidationResult =>
+  validateTrainingTimeEntry(candidate, programme, existing, ACCELERATED_RULES);
 
 // Note: entries can become invalid when the programme details change after they were added.
 export const additionalTrainingTimeIssues = (
@@ -233,6 +271,18 @@ export const additionalTrainingTimeIssues = (
       entry,
       programme,
       programme.additionalTrainingTime
+    );
+    return result.ok ? [] : [{ entry, message: result.message }];
+  });
+
+export const acceleratedTrainingTimeIssues = (
+  programme: ProgrammeDetails
+): { entry: AcceleratedTrainingTime; message: string }[] =>
+  programme.acceleratedTrainingTime.flatMap(entry => {
+    const result = validateAcceleratedTrainingTime(
+      entry,
+      programme,
+      programme.acceleratedTrainingTime
     );
     return result.ok ? [] : [{ entry, message: result.message }];
   });
@@ -293,25 +343,6 @@ export const validateProgrammeDetails = (
   const rounded = Math.round(programme.lengthMonths * 10) / 10;
   if (rounded !== programme.lengthMonths) {
     return err("Programme length can have at most 1 decimal place.");
-  }
-  if (!Number.isFinite(programme.acceleratedMonths)) {
-    return err("Please enter accelerated training time in months.");
-  }
-  if (programme.acceleratedMonths < 0) {
-    return err("Accelerated training time cannot be less than zero.");
-  }
-  if (programme.acceleratedMonths > 12) {
-    return err("Accelerated training time cannot be more than 12 months.");
-  }
-  const roundedAccelerated = Math.round(programme.acceleratedMonths * 10) / 10;
-  if (roundedAccelerated !== programme.acceleratedMonths) {
-    return err("Accelerated training time can have at most 1 decimal place.");
-  }
-  if (
-    programme.acceleratedMonths > 0 &&
-    !programme.acceleratedMonthsNotes.trim()
-  ) {
-    return err("Please enter a reason for accelerated training time.");
   }
   if (programmeAdjustedLengthMonths(programme) <= 0) {
     return err("Adjusted training duration must be greater than zero.");

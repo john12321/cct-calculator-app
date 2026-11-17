@@ -8,6 +8,7 @@ import { TimelineGrid } from "../components/TimelineGrid";
 import { TimelineProjection } from "../components/TimelineProjection";
 import { TrainingPeriodForm } from "../components/TrainingPeriodForm";
 import {
+  acceleratedTrainingTimeIssues,
   additionalTrainingTimeIssues,
   computeGradeProgressionForTimeline,
   describeTrainingPeriod,
@@ -101,6 +102,7 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
   const hasAdjustmentIssues =
     programme !== null &&
     (additionalTrainingTimeIssues(programme).length > 0 ||
+      acceleratedTrainingTimeIssues(programme).length > 0 ||
       gradeProgressionAdjustmentIssues(programme).length > 0);
 
   // Note: gap-fill start, and whether the add form should insert rather than append.

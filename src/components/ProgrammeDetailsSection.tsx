@@ -95,8 +95,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
       lengthMonths,
       // Note: edited in their own sections, so carried over unchanged.
       additionalTrainingTime: programme?.additionalTrainingTime ?? [],
-      acceleratedMonths: programme?.acceleratedMonths ?? 0,
-      acceleratedMonthsNotes: programme?.acceleratedMonthsNotes ?? "",
+      acceleratedTrainingTime: programme?.acceleratedTrainingTime ?? [],
       eighteenMonthFinalGrade: programme?.eighteenMonthFinalGrade ?? "",
       eighteenMonthFinalGradeNotes:
         programme?.eighteenMonthFinalGradeNotes ?? "",

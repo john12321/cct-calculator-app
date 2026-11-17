@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { Table } from "nhsuk-react-components";
-import { AdditionalTrainingTimeSummaryRow } from "./AdditionalTrainingTimeSummaryRow";
+import { GradeTrainingTimeSummaryRow } from "./GradeTrainingTimeSummaryRow";
+import { ACCELERATED_TIME, ADDITIONAL_TIME } from "./gradeTrainingTimeKinds";
 import { GradeTable } from "./GradeTable";
 import { TimelineProjection } from "./TimelineProjection";
 import {
@@ -70,22 +71,14 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
             {formatMonths(programme.lengthMonths)}
           </dd>
         </div>
-        <AdditionalTrainingTimeSummaryRow programme={programme} />
-        {programme.acceleratedMonths > 0 && (
-          <div className="nhsuk-summary-list__row">
-            <dt className="nhsuk-summary-list__key">
-              Accelerated training time
-            </dt>
-            <dd className="nhsuk-summary-list__value">
-              {formatMonths(programme.acceleratedMonths)}
-              {programme.acceleratedMonthsNotes && (
-                <div className="nhsuk-hint nhsuk-u-margin-top-1">
-                  {programme.acceleratedMonthsNotes}
-                </div>
-              )}
-            </dd>
-          </div>
-        )}
+        <GradeTrainingTimeSummaryRow
+          kind={ADDITIONAL_TIME}
+          programme={programme}
+        />
+        <GradeTrainingTimeSummaryRow
+          kind={ACCELERATED_TIME}
+          programme={programme}
+        />
         {programme.eighteenMonthFinalGrade && (
           <div className="nhsuk-summary-list__row">
             <dt className="nhsuk-summary-list__key">18-month final year</dt>
@@ -141,7 +134,7 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
           <dd className="nhsuk-summary-list__value">{formatDate(originalEnd)}</dd>
         </div>
         {(programme.additionalTrainingTime.length > 0 ||
-          programme.acceleratedMonths > 0) && (
+          programme.acceleratedTrainingTime.length > 0) && (
           <div className="nhsuk-summary-list__row">
             <dt className="nhsuk-summary-list__key">
               Adjusted programme end date before changes

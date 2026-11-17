@@ -1,21 +1,24 @@
 import type { FC } from "react";
 import type { ProgrammeDetails } from "../core";
 import { formatMonths } from "../utils/format";
+import type { GradeTrainingTimeKind } from "./gradeTrainingTimeKinds";
 
-type AdditionalTrainingTimeSummaryRowProps = {
+type GradeTrainingTimeSummaryRowProps = {
+  kind: GradeTrainingTimeKind;
   programme: ProgrammeDetails;
 };
 
-export const AdditionalTrainingTimeSummaryRow: FC<
-  AdditionalTrainingTimeSummaryRowProps
-> = ({ programme }) => {
-  if (programme.additionalTrainingTime.length === 0) return null;
+export const GradeTrainingTimeSummaryRow: FC<
+  GradeTrainingTimeSummaryRowProps
+> = ({ kind, programme }) => {
+  const entries = programme[kind.field];
+  if (entries.length === 0) return null;
 
   return (
     <div className="nhsuk-summary-list__row">
-      <dt className="nhsuk-summary-list__key">Additional training time</dt>
+      <dt className="nhsuk-summary-list__key">{kind.title}</dt>
       <dd className="nhsuk-summary-list__value">
-        {programme.additionalTrainingTime.map(entry => (
+        {entries.map(entry => (
           <div key={entry.id} className="nhsuk-u-margin-bottom-1">
             {entry.grade}: {formatMonths(entry.months)}
             <div className="nhsuk-hint nhsuk-u-margin-bottom-0">

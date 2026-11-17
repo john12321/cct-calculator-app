@@ -69,13 +69,15 @@ export type AdditionalTrainingTime = {
   notes: string;
 };
 
+// Note: time taken off one grade, e.g. for recognised prior learning.
+export type AcceleratedTrainingTime = AdditionalTrainingTime;
+
 export type ProgrammeDetails = {
   specialty: string;
   startDate: string;
   lengthMonths: number;
   additionalTrainingTime: AdditionalTrainingTime[];
-  acceleratedMonths: number;
-  acceleratedMonthsNotes: string;
+  acceleratedTrainingTime: AcceleratedTrainingTime[];
   eighteenMonthFinalGrade: string;
   eighteenMonthFinalGradeNotes: string;
   skippedGrade: string;

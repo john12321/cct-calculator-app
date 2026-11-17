@@ -1,30 +1,35 @@
 import { useState, type FC } from "react";
 import { Table } from "nhsuk-react-components";
 import {
-  additionalTrainingTimeIssues,
-  MAX_ADDITIONAL_TRAINING_TIME_ENTRIES,
   programmeGrades,
-  totalAdditionalMonths,
   type AdditionalTrainingTime,
   type ProgrammeDetails
 } from "../core";
 import { formatMonths } from "../utils/format";
 import { scrollTo } from "../utils/scroll";
-import { AdditionalTrainingTimeForm } from "./AdditionalTrainingTimeForm";
+import { GradeTrainingTimeForm } from "./GradeTrainingTimeForm";
+import type { GradeTrainingTimeKind } from "./gradeTrainingTimeKinds";
 
-type AdditionalTrainingTimeSectionProps = {
+type GradeTrainingTimeSectionProps = {
+  kind: GradeTrainingTimeKind;
   programme: ProgrammeDetails;
   onChange: (programme: ProgrammeDetails) => void;
   onFormOpenChange: (open: boolean) => void;
 };
 
-export const AdditionalTrainingTimeSection: FC<
-  AdditionalTrainingTimeSectionProps
-> = ({ programme, onChange, onFormOpenChange }) => {
+export const GradeTrainingTimeSection: FC<GradeTrainingTimeSectionProps> = ({
+  kind,
+  programme,
+  onChange,
+  onFormOpenChange
+}) => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const entries = programme.additionalTrainingTime;
+  const { field, label, maxEntries } = kind;
+  const entries = programme[field];
+  const sectionId = `${label}-training-time-section`;
+  const formId = `${label}-training-time-form`;
   const grades = programmeGrades(programme);
   // Note: grades no longer in the progression sort last.
   const gradeOrder = (grade: string) => {
@@ -34,7 +39,7 @@ export const AdditionalTrainingTimeSection: FC<
   const sortedEntries = [...entries].sort(
     (a, b) => gradeOrder(a.grade) - gradeOrder(b.grade)
   );
-  const issues = additionalTrainingTimeIssues(programme);
+  const issues = kind.issues(programme);
   const errorsById = Object.fromEntries(
     issues.map(issue => [issue.entry.id, issue.message])
   );
@@ -44,21 +49,21 @@ export const AdditionalTrainingTimeSection: FC<
     setEditingId(id);
     setFormOpen(true);
     onFormOpenChange(true);
-    scrollTo({ id: "additional-training-time-form" });
+    scrollTo({ id: formId });
   };
 
   const closeForm = () => {
     setEditingId(null);
     setFormOpen(false);
     onFormOpenChange(false);
-    scrollTo({ id: "additional-training-time-section" });
+    scrollTo({ id: sectionId });
   };
 
   const handleSave = (saved: AdditionalTrainingTime) => {
     const exists = entries.some(entry => entry.id === saved.id);
     onChange({
       ...programme,
-      additionalTrainingTime: exists
+      [field]: exists
         ? entries.map(entry => (entry.id === saved.id ? saved : entry))
         : [...entries, saved]
     });
@@ -68,53 +73,42 @@ export const AdditionalTrainingTimeSection: FC<
   const handleRemove = (id: string) => {
     onChange({
       ...programme,
-      additionalTrainingTime: entries.filter(entry => entry.id !== id)
+      [field]: entries.filter(entry => entry.id !== id)
     });
   };
 
   const addControl =
-    entries.length < MAX_ADDITIONAL_TRAINING_TIME_ENTRIES ? (
+    entries.length < maxEntries ? (
       <button
         type="button"
         className="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-top-3"
         onClick={() => openForm(null)}
       >
-        Add additional training time
+        Add {label} training time
       </button>
     ) : (
       <div className="nhsuk-inset-text nhsuk-u-margin-top-3">
         <p>
-          You have added the maximum of {MAX_ADDITIONAL_TRAINING_TIME_ENTRIES}{" "}
-          additional training time entries. To add another, edit or remove an
-          existing entry.
+          You have added the maximum of {maxEntries} {label} training time
+          entries. To add another, edit or remove an existing entry.
         </p>
       </div>
     );
 
   return (
-    <section
-      id="additional-training-time-section"
-      className="nhsuk-u-margin-bottom-5"
-    >
-      <h3 className="nhsuk-heading-m nhsuk-u-color-blue">
-        Additional training time
-      </h3>
-      <p className="nhsuk-body">
-        Record any extra training time you have been given, for example after an
-        ARCP outcome 3, against the grade it applies to. It makes that grade
-        longer and moves later grades on. You can add time to as many grades as
-        you need, up to 24 months in total.
-      </p>
+    <section id={sectionId} className="nhsuk-u-margin-bottom-5">
+      <h3 className="nhsuk-heading-m nhsuk-u-color-blue">{kind.title}</h3>
+      <p className="nhsuk-body">{kind.intro}</p>
 
       {issues.length > 0 && (
         <div
           className="nhsuk-error-summary"
-          aria-labelledby="additional-time-error-title"
+          aria-labelledby={`${label}-time-error-title`}
           role="alert"
         >
           <h3
             className="nhsuk-error-summary__title"
-            id="additional-time-error-title"
+            id={`${label}-time-error-title`}
           >
             These entries are no longer valid against the current programme
             details
@@ -138,14 +132,16 @@ export const AdditionalTrainingTimeSection: FC<
       )}
 
       {entries.length === 0 ? (
-        <p className="nhsuk-hint">No additional training time recorded.</p>
+        <p className="nhsuk-hint">No {label} training time recorded.</p>
       ) : (
         <div className="table-wrapper">
           <Table>
             <Table.Head>
               <Table.Row>
                 <Table.Cell>Grade</Table.Cell>
-                <Table.Cell>Additional time</Table.Cell>
+                <Table.Cell>
+                  {label === "additional" ? "Additional" : "Accelerated"} time
+                </Table.Cell>
                 <Table.Cell>Reason</Table.Cell>
                 <Table.Cell aria-label="Actions" />
               </Table.Row>
@@ -199,9 +195,7 @@ export const AdditionalTrainingTimeSection: FC<
                   <strong>Total</strong>
                 </Table.Cell>
                 <Table.Cell>
-                  <strong>
-                    {formatMonths(totalAdditionalMonths(programme))}
-                  </strong>
+                  <strong>{formatMonths(kind.total(programme))}</strong>
                 </Table.Cell>
                 <Table.Cell />
                 <Table.Cell />
@@ -212,9 +206,10 @@ export const AdditionalTrainingTimeSection: FC<
       )}
 
       {formOpen ? (
-        <AdditionalTrainingTimeForm
+        <GradeTrainingTimeForm
           key={editingId ?? "new"}
-          formId="additional-training-time-form"
+          kind={kind}
+          formId={formId}
           programme={programme}
           editing={editingEntry}
           onSave={handleSave}

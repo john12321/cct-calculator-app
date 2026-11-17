@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { describe, expect, it } from "vitest";
 import type {
+  AcceleratedTrainingTime,
   AdditionalTrainingTime,
   PastChange,
   ProgrammeDetails
@@ -12,6 +13,7 @@ import {
 import { calculateCct, deriveQuickProjection } from "./cctEngine";
 import { BEYOND_ST9_GRADE_LABEL, computeGradeProgression } from "./grades";
 import {
+  validateAcceleratedTrainingTime,
   validateAdditionalTrainingTime,
   validateProgrammeDetails
 } from "./validation";
@@ -21,8 +23,7 @@ const tripleCctProgramme: ProgrammeDetails = {
   startDate: "2026-01-01",
   lengthMonths: 90,
   additionalTrainingTime: [],
-  acceleratedMonths: 0,
-  acceleratedMonthsNotes: "",
+  acceleratedTrainingTime: [],
   eighteenMonthFinalGrade: "",
   eighteenMonthFinalGradeNotes: "",
   skippedGrade: "",
@@ -197,6 +198,77 @@ describe("additional training time by grade", () => {
   });
 });
 
+const accelerated = (
+  grade: string,
+  months: number,
+  id = `accelerated-${grade}`
+): AcceleratedTrainingTime => ({
+  id,
+  grade,
+  months,
+  notes: "Recognised prior learning"
+});
+
+describe("accelerated training time by grade", () => {
+  const withAccelerated = (...entries: AcceleratedTrainingTime[]) => ({
+    ...tripleCctProgramme,
+    acceleratedTrainingTime: entries
+  });
+  const endDates = (programme: ProgrammeDetails) =>
+    computeGradeProgression(programme, [], null).map(row => row.endDate);
+  const baseline = endDates(tripleCctProgramme);
+  const st5 = 2;
+
+  it("leaves grades before the shortened grade unchanged", () => {
+    const dates = endDates(withAccelerated(accelerated("ST5", 6)));
+
+    expect(dates.slice(0, st5)).toEqual(baseline.slice(0, st5));
+  });
+
+  it("shortens the grade and moves later grades earlier", () => {
+    const rows = computeGradeProgression(
+      withAccelerated(accelerated("ST5", 6)),
+      [],
+      null
+    );
+
+    expect(rows.map(row => row.acceleratedMonths)).toEqual([0, 0, 6, 0, 0, 0, 0, 0]);
+    expect(rows[st5]?.endDate).toBe("2028-07-01");
+    rows.slice(st5).forEach((row, i) =>
+      expect(dayjs(row.endDate).isBefore(dayjs(baseline[st5 + i]))).toBe(true)
+    );
+  });
+
+  it("shortens every grade from the start when recorded on the start grade", () => {
+    const dates = endDates(withAccelerated(accelerated("ST3", 6)));
+
+    expect(dates[0]).toBe("2026-07-02");
+    dates.forEach((date, i) =>
+      expect(dayjs(date).isBefore(dayjs(baseline[i]))).toBe(true)
+    );
+  });
+
+  it("cancels out additional time of the same length on the same grade", () => {
+    expect(
+      endDates({
+        ...withAccelerated(accelerated("ST5", 6)),
+        additionalTrainingTime: [additional("ST5", 6)]
+      })
+    ).toEqual(baseline);
+  });
+
+  it("finishes the last grade on the CCT date", () => {
+    const programme = withAccelerated(
+      accelerated("ST4", 3),
+      accelerated("ST7", 4)
+    );
+
+    expect(endDates(programme).at(-1)).toBe(
+      calculateCct(programme, []).result.cctDate
+    );
+  });
+});
+
 describe("programme training time adjustment limits", () => {
   it("accepts no adjustment and the Excel-aligned maximum additional time", () => {
     expect(validateProgrammeDetails(tripleCctProgramme)).toEqual({ ok: true });
@@ -301,26 +373,39 @@ describe("programme training time adjustment limits", () => {
     });
   });
 
-  it("accepts the prompt-aligned maximum accelerated time", () => {
+  it("accepts the prompt-aligned maximum accelerated time across grades", () => {
     expect(
-      validateProgrammeDetails({
-        ...tripleCctProgramme,
-        acceleratedMonths: 12,
-        acceleratedMonthsNotes: "Maximum accelerated time"
-      })
+      validateAcceleratedTrainingTime(
+        accelerated("ST6", 6),
+        tripleCctProgramme,
+        [accelerated("ST3", 6)]
+      )
     ).toEqual({ ok: true });
   });
 
-  it("rejects accelerated training time above 12 months", () => {
-    const result = validateProgrammeDetails({
-      ...tripleCctProgramme,
-      acceleratedMonths: 12.1,
-      acceleratedMonthsNotes: "Outside prompt limit"
-    });
+  it("rejects a total of accelerated training time above 12 months", () => {
+    const result = validateAcceleratedTrainingTime(
+      accelerated("ST6", 6.1),
+      tripleCctProgramme,
+      [accelerated("ST3", 6)]
+    );
 
     expect(result).toEqual({
       ok: false,
-      message: "Accelerated training time cannot be more than 12 months."
+      message: "Total accelerated training time cannot be more than 12 months."
+    });
+  });
+
+  it("requires a reason for accelerated time", () => {
+    expect(
+      validateAcceleratedTrainingTime(
+        { ...accelerated("ST5", 6), notes: " " },
+        tripleCctProgramme,
+        []
+      )
+    ).toEqual({
+      ok: false,
+      message: "Please enter a reason for the accelerated training time."
     });
   });
 });

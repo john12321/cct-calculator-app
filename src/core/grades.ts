@@ -25,6 +25,7 @@ export type GradeYear = {
   extendedToTwentyFourMonths: boolean;
   exceedsKnownTrainingGrade: boolean;
   additionalMonths: number;
+  acceleratedMonths: number;
 };
 
 type ParsedGrade = { prefix: string; year: number };
@@ -177,6 +178,7 @@ export const computeGradeProgressionForSegments = (
   let previousEighteenMonthExtension = 0;
   let carriedExtension = 0;
   let carriedAdditionalMonths = 0;
+  let carriedAcceleratedMonths = 0;
   let skippedGradeOffset = 0;
   const maxYears = 50;
 
@@ -225,6 +227,11 @@ export const computeGradeProgressionForSegments = (
       .filter(entry => entry.grade === grade)
       .reduce((total, entry) => total + entry.months, 0);
     carriedAdditionalMonths += additionalMonths;
+    // Note: accelerated time shortens its own grade and moves every later grade earlier.
+    const acceleratedMonths = programme.acceleratedTrainingTime
+      .filter(entry => entry.grade === grade)
+      .reduce((total, entry) => total + entry.months, 0);
+    carriedAcceleratedMonths += acceleratedMonths;
 
     const targetMonths = Math.min(
       yearNumber * 12 +
@@ -232,7 +239,7 @@ export const computeGradeProgressionForSegments = (
         thisYearExtension +
         finalYearExtension +
         carriedAdditionalMonths -
-        programme.acceleratedMonths,
+        carriedAcceleratedMonths,
       adjustedLengthMonths
     );
     const endDate = dateAtCumulativeWteMonths(segments, targetMonths);
@@ -247,7 +254,8 @@ export const computeGradeProgressionForSegments = (
       extendedToEighteenMonths: isEighteenMonthFinalYear,
       extendedToTwentyFourMonths: isTwentyFourMonth,
       exceedsKnownTrainingGrade,
-      additionalMonths
+      additionalMonths,
+      acceleratedMonths
     });
 
     previousEighteenMonthExtension = finalYearExtension;
@@ -257,7 +265,7 @@ export const computeGradeProgressionForSegments = (
   return rows;
 };
 
-// Note: the grades additional training time can be recorded against.
+// Note: the grades additional or accelerated training time can be recorded against.
 export const programmeGrades = (programme: ProgrammeDetails): string[] =>
   computeGradeProgressionForSegments(programme, [])
     .filter(row => !row.exceedsKnownTrainingGrade)
