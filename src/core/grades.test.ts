@@ -1,19 +1,26 @@
+import dayjs from "dayjs";
 import { describe, expect, it } from "vitest";
-import type { PastChange, ProgrammeDetails } from "./calculationTypes";
+import type {
+  AdditionalTrainingTime,
+  PastChange,
+  ProgrammeDetails
+} from "./calculationTypes";
 import {
   programmeAdjustedEndDate,
   programmeAdjustedLengthMonths
 } from "./calculations";
 import { calculateCct, deriveQuickProjection } from "./cctEngine";
 import { BEYOND_ST9_GRADE_LABEL, computeGradeProgression } from "./grades";
-import { validateProgrammeDetails } from "./validation";
+import {
+  validateAdditionalTrainingTime,
+  validateProgrammeDetails
+} from "./validation";
 
 const tripleCctProgramme: ProgrammeDetails = {
   specialty: "Intensive care with Acute internal medicine, and GIM",
   startDate: "2026-01-01",
   lengthMonths: 90,
-  additionalMonths: 0,
-  additionalMonthsNotes: "",
+  additionalTrainingTime: [],
   acceleratedMonths: 0,
   acceleratedMonthsNotes: "",
   eighteenMonthFinalGrade: "",
@@ -125,28 +132,172 @@ describe("changes outside the programme", () => {
   });
 });
 
+const additional = (
+  grade: string,
+  months: number,
+  id = `additional-${grade}`
+): AdditionalTrainingTime => ({ id, grade, months, notes: "ARCP outcome 3" });
+
+describe("additional training time by grade", () => {
+  const withAdditional = (...entries: AdditionalTrainingTime[]) => ({
+    ...tripleCctProgramme,
+    additionalTrainingTime: entries
+  });
+  const endDates = (programme: ProgrammeDetails) =>
+    computeGradeProgression(programme, [], null).map(row => row.endDate);
+  const baseline = endDates(tripleCctProgramme);
+  // Note: grade rows are ST3..ST9 then one beyond-ST9 row.
+  const st5 = 2;
+  const st7 = 4;
+
+  it("leaves grades before the extended grade unchanged", () => {
+    const dates = endDates(withAdditional(additional("ST5", 6)));
+
+    expect(dates.slice(0, st5)).toEqual(baseline.slice(0, st5));
+  });
+
+  it("lengthens the extended grade and moves later grades on", () => {
+    const dates = endDates(withAdditional(additional("ST5", 6)));
+
+    expect(dates[st5]).toBe("2029-06-30");
+    dates.slice(st5).forEach((date, i) =>
+      expect(dayjs(date).isAfter(dayjs(baseline[st5 + i]))).toBe(true)
+    );
+  });
+
+  it("carries extensions in several grades", () => {
+    const rows = computeGradeProgression(
+      withAdditional(additional("ST5", 6), additional("ST7", 3)),
+      [],
+      null
+    );
+    const onlySt5 = endDates(withAdditional(additional("ST5", 6)));
+
+    expect(rows.map(row => row.additionalMonths)).toEqual([0, 0, 6, 0, 3, 0, 0, 0]);
+    expect(rows.slice(0, st7).map(row => row.endDate)).toEqual(
+      onlySt5.slice(0, st7)
+    );
+    expect(rows[st7]?.endDate).not.toBe(onlySt5[st7]);
+  });
+
+  it("adds two extensions to the same grade together", () => {
+    expect(
+      endDates(
+        withAdditional(additional("ST5", 4, "first"), additional("ST5", 2, "second"))
+      )
+    ).toEqual(endDates(withAdditional(additional("ST5", 6))));
+  });
+
+  it("finishes the last grade on the CCT date", () => {
+    const programme = withAdditional(additional("ST5", 6), additional("ST7", 3));
+
+    expect(endDates(programme).at(-1)).toBe(
+      calculateCct(programme, []).result.cctDate
+    );
+  });
+});
+
 describe("programme training time adjustment limits", () => {
   it("accepts no adjustment and the Excel-aligned maximum additional time", () => {
     expect(validateProgrammeDetails(tripleCctProgramme)).toEqual({ ok: true });
     expect(
-      validateProgrammeDetails({
-        ...tripleCctProgramme,
-        additionalMonths: 24,
-        additionalMonthsNotes: "Maximum additional time"
-      })
+      validateAdditionalTrainingTime(
+        additional("ST6", 12),
+        tripleCctProgramme,
+        [additional("ST4", 12)]
+      )
     ).toEqual({ ok: true });
   });
 
-  it("rejects additional training time above 24 months", () => {
-    const result = validateProgrammeDetails({
-      ...tripleCctProgramme,
-      additionalMonths: 24.1,
-      additionalMonthsNotes: "Outside Excel limit"
-    });
+  it("rejects a total of additional training time above 24 months", () => {
+    const result = validateAdditionalTrainingTime(
+      additional("ST6", 12.1),
+      tripleCctProgramme,
+      [additional("ST4", 12)]
+    );
 
     expect(result).toEqual({
       ok: false,
-      message: "Additional training time cannot be more than 24 months."
+      message: "Total additional training time cannot be more than 24 months."
+    });
+  });
+
+  it("excludes the entry being edited from the total", () => {
+    const entry = additional("ST4", 20);
+
+    expect(
+      validateAdditionalTrainingTime(
+        { ...entry, months: 24 },
+        tripleCctProgramme,
+        [entry]
+      )
+    ).toEqual({ ok: true });
+  });
+
+  it("allows at most 20 entries", () => {
+    const twenty = Array.from({ length: 20 }, (_, i) =>
+      additional("ST5", 1, `entry-${i}`)
+    );
+
+    expect(
+      validateAdditionalTrainingTime(
+        additional("ST5", 1, "entry-20"),
+        tripleCctProgramme,
+        twenty.slice(0, 19)
+      )
+    ).toEqual({ ok: true });
+    expect(
+      validateAdditionalTrainingTime(
+        additional("ST5", 1, "entry-21"),
+        tripleCctProgramme,
+        twenty
+      )
+    ).toEqual({
+      ok: false,
+      message: "You cannot add more than 20 additional training time entries."
+    });
+    expect(
+      validateAdditionalTrainingTime(
+        { ...twenty[0], months: 2 },
+        tripleCctProgramme,
+        twenty
+      )
+    ).toEqual({ ok: true });
+  });
+
+  it("rejects a grade outside the programme's progression", () => {
+    expect(
+      validateAdditionalTrainingTime(additional("ST2", 6), tripleCctProgramme, [])
+    ).toEqual({
+      ok: false,
+      message: "ST2 is not part of this programme's grade progression."
+    });
+    expect(
+      validateAdditionalTrainingTime(
+        additional("ST5", 6),
+        {
+          ...tripleCctProgramme,
+          skippedGrade: "ST5",
+          skippedGradeNotes: "Skipped"
+        },
+        []
+      )
+    ).toEqual({
+      ok: false,
+      message: "ST5 is not part of this programme's grade progression."
+    });
+  });
+
+  it("requires a reason", () => {
+    expect(
+      validateAdditionalTrainingTime(
+        { ...additional("ST5", 6), notes: " " },
+        tripleCctProgramme,
+        []
+      )
+    ).toEqual({
+      ok: false,
+      message: "Please enter a reason for the additional training time."
     });
   });
 

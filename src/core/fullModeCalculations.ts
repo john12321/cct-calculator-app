@@ -217,14 +217,18 @@ export const computeGradeProgressionForTimeline = (
     computeTimelineAccrual(programme, timeline).totalWteMonthsCompleted.toFixed(2)
   );
 
-  return baseRows.map(row => ({
-    ...row,
-    endDate:
-      completedWteMonths >=
-      row.yearNumber * 12 +
-        programme.additionalMonths -
-        programme.acceleratedMonths
-        ? findLastEndDateForGrade(timeline, row.grade)
-        : row.endDate
-  }));
+  let additionalMonthsToDate = 0;
+  return baseRows.map(row => {
+    additionalMonthsToDate += row.additionalMonths;
+    return {
+      ...row,
+      endDate:
+        completedWteMonths >=
+        row.yearNumber * 12 +
+          additionalMonthsToDate -
+          programme.acceleratedMonths
+          ? findLastEndDateForGrade(timeline, row.grade)
+          : row.endDate
+    };
+  });
 };

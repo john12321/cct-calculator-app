@@ -24,6 +24,7 @@ export type GradeYear = {
   extendedToEighteenMonths: boolean;
   extendedToTwentyFourMonths: boolean;
   exceedsKnownTrainingGrade: boolean;
+  additionalMonths: number;
 };
 
 type ParsedGrade = { prefix: string; year: number };
@@ -175,6 +176,7 @@ export const computeGradeProgressionForSegments = (
   const rows: GradeYear[] = [];
   let previousEighteenMonthExtension = 0;
   let carriedExtension = 0;
+  let carriedAdditionalMonths = 0;
   let skippedGradeOffset = 0;
   const maxYears = 50;
 
@@ -218,13 +220,18 @@ export const computeGradeProgressionForSegments = (
     const isTwentyFourMonth =
       twentyFourMonthGrade !== null && grade === twentyFourMonthGrade;
     const thisYearExtension = isTwentyFourMonth ? 12 : 0;
+    // Note: additional time lengthens its own grade and moves every later grade on.
+    const additionalMonths = programme.additionalTrainingTime
+      .filter(entry => entry.grade === grade)
+      .reduce((total, entry) => total + entry.months, 0);
+    carriedAdditionalMonths += additionalMonths;
 
     const targetMonths = Math.min(
       yearNumber * 12 +
         carriedExtension +
         thisYearExtension +
         finalYearExtension +
-        programme.additionalMonths -
+        carriedAdditionalMonths -
         programme.acceleratedMonths,
       adjustedLengthMonths
     );
@@ -239,7 +246,8 @@ export const computeGradeProgressionForSegments = (
         : null,
       extendedToEighteenMonths: isEighteenMonthFinalYear,
       extendedToTwentyFourMonths: isTwentyFourMonth,
-      exceedsKnownTrainingGrade
+      exceedsKnownTrainingGrade,
+      additionalMonths
     });
 
     previousEighteenMonthExtension = finalYearExtension;
@@ -248,6 +256,12 @@ export const computeGradeProgressionForSegments = (
 
   return rows;
 };
+
+// Note: the grades additional training time can be recorded against.
+export const programmeGrades = (programme: ProgrammeDetails): string[] =>
+  computeGradeProgressionForSegments(programme, [])
+    .filter(row => !row.exceedsKnownTrainingGrade)
+    .map(row => row.grade);
 
 export const computeGradeProgression = (
   programme: ProgrammeDetails,

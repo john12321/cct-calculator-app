@@ -20,8 +20,11 @@ const programme = (
   specialty: "Paediatrics",
   startDate,
   lengthMonths,
-  additionalMonths,
-  additionalMonthsNotes: "",
+  // Note: the engine only uses the total, so one entry stands in for the BE's single value.
+  additionalTrainingTime:
+    additionalMonths > 0
+      ? [{ id: "additional", grade: "ST1", months: additionalMonths, notes: "" }]
+      : [],
   acceleratedMonths,
   acceleratedMonthsNotes: "",
   eighteenMonthFinalGrade: "",

@@ -5,7 +5,7 @@ import {
   type GradeYear,
   type ProgrammeDetails
 } from "../core";
-import { formatDate } from "../utils/format";
+import { formatDate, formatMonths } from "../utils/format";
 
 type GradeTableProps = {
   programme: ProgrammeDetails;
@@ -23,6 +23,7 @@ export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
   const hasTwentyFourMonthYear = rows.some(r => r.extendedToTwentyFourMonths);
   const hasSkippedGrade = rows.some(r => r.skippedGradeBeforeThisRow !== null);
   const hasBeyondKnownGrade = rows.some(r => r.exceedsKnownTrainingGrade);
+  const hasAdditionalTime = rows.some(r => r.additionalMonths > 0);
   const finalGrade = rows.at(-1)?.grade;
 
   return (
@@ -76,6 +77,18 @@ export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
                       }}
                     >
                       (24-month year)
+                    </span>
+                  )}
+                  {row.additionalMonths > 0 && (
+                    <span
+                      className="nhsuk-u-margin-left-2"
+                      style={{
+                        fontSize: "0.85em",
+                        color: "#005eb8",
+                        fontWeight: 600
+                      }}
+                    >
+                      (+{formatMonths(row.additionalMonths)} additional time)
                     </span>
                   )}
                   {row.exceedsKnownTrainingGrade && (
@@ -164,6 +177,20 @@ export const GradeTable: FC<GradeTableProps> = ({ programme, rows }) => {
             accordingly, so the programme finishes at{" "}
             <strong>{finalGrade}</strong> rather than one grade higher within
             the standard {programme.lengthMonths}-month programme.
+          </p>
+        </div>
+      )}
+
+      {hasAdditionalTime && (
+        <div
+          className="nhsuk-inset-text nhsuk-u-margin-top-3"
+          style={{ borderLeftColor: "#005eb8" }}
+        >
+          <p className="nhsuk-u-margin-0">
+            <strong>Why are some grades longer?</strong> Additional training
+            time lengthens the grade it was recorded against. Earlier grades are
+            unchanged; that grade and every later grade end later by the same
+            amount.
           </p>
         </div>
       )}

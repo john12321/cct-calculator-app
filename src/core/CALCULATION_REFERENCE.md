@@ -116,7 +116,7 @@ auto-fills. The field is read-only, with a hint
 ("Default for X is N months.").
 
 This remains the baseline programme length. Changes to the required training
-duration are recorded explicitly under **Other training time adjustments**,
+duration are recorded explicitly under **Training time adjustments**,
 so summaries and exports can state why the Completion of Training Date differs from the
 specialty default.
 
@@ -171,45 +171,60 @@ As far as I understand, a doctor in **Foundation** training is in **F1** or **F2
 - some run-through specialties start directly in **ST1** after foundation, without a separate core stage;
 - some specialties start later, in **ST3** or **ST4**, after core training has already been completed.
 
-### 3.5 Other training time adjustments
+### 3.5 Training time and grade progression adjustments
 
-The **Other training time adjustments** subsection separates programme-level
-adjustments from the core programme inputs.
+Adjustments are kept out of the **Programme details** form, which holds only
+the specialty, programme length, start date and start grade. They are recorded
+in two sections below it, each saved on its own.
 
-The optional **"Add additional training time"** checked checkbox reveals a months input
-for programme-level extensions, for example extra training required following
-an ARCP outcome. This is stored as `ProgrammeDetails.additionalMonths`,
-defaulting to `0`, with an `additionalMonthsNotes` reason required whenever
-additional time is recorded. Stored values are validated from `0` to `24`
-months, matching Excel validation for `I9:I10`; when the optional checkbox is
-checked in the form, a positive value is required.
+**Training time adjustments** change the programme's length. It has three
+parts:
 
-The optional **"Add accelerated training time (reduce programme length)"**
-checkbox captures recognised prior learning or other approved reductions in
-training time. This is stored as `ProgrammeDetails.acceleratedMonths`,
-defaulting to `0`, with an `acceleratedMonthsNotes` reason required whenever
-accelerated time is recorded. Stored values are validated from `0` to `12`
-months, following Excel's on-screen prompt for `I11`; when the optional
-toggle is used in the form, a positive value is required.
+- **Additional training time.** Each entry names the grade it applies to, a
+  positive number of months (at most 1 decimal place) and a required reason,
+  for example extra training after an ARCP outcome 3. Entries are stored as
+  `ProgrammeDetails.additionalTrainingTime`; a trainee can have entries in as
+  many grades as needed, and the total across them is validated to at most
+  `24` months (Excel's `I9:I10` limit). See §9.1.
+- **Accelerated training time** captures recognised prior learning or other
+  approved reductions in training time. It is stored as
+  `ProgrammeDetails.acceleratedMonths`, defaulting to `0`, with an
+  `acceleratedMonthsNotes` reason required whenever accelerated time is
+  recorded. Stored values are validated from `0` to `12` months, following
+  Excel's on-screen prompt for `I11`; the form requires a positive value.
+- **Adjusted programme length** is shown once either adjustment is recorded:
+  initial length, + additional, − accelerated, the adjusted length and the
+  adjusted programme end date.
 
-The optional **"Set an 18-month final year"** checkbox records a specialty whose
-final grade uses 18 months rather than 12, for example intensive care medicine
-with a dual specialty. The user selects the final grade and enters a required
-reason; these are stored as `eighteenMonthFinalGrade` and
-`eighteenMonthFinalGradeNotes`.
+**Grade progression adjustments** change how the grades progress, not the
+total training time:
 
-The optional **"Skip one grade year"** checkbox records a grade which should be
-omitted from the displayed progression. The user selects the skipped grade
-and enters a required reason; these are stored as `skippedGrade` and
-`skippedGradeNotes`.
+- **"Set an 18-month final year"** records a specialty whose final grade uses
+  18 months rather than 12, for example intensive care medicine with a dual
+  specialty. The user selects the final grade and enters a required reason;
+  these are stored as `eighteenMonthFinalGrade` and
+  `eighteenMonthFinalGradeNotes`.
+- **"Skip one grade year"** records a grade which should be omitted from the
+  displayed progression. The user selects the skipped grade and enters a
+  required reason; these are stored as `skippedGrade` and
+  `skippedGradeNotes`.
+
+Both grade choices are limited to grades in the programme's progression
+(`skippableGrades`, `eighteenMonthFinalGradeOptions`). An 18-month final year
+cannot be set on the skipped grade. Because these choices are saved
+separately from the programme details, a later change to the specialty or
+start grade can leave a choice outside the progression.
+`gradeProgressionAdjustmentIssues` flags such choices, as
+`additionalTrainingTimeIssues` does for additional time entries, and either
+kind of issue blocks **Show summary** until it is fixed.
 
 The original programme length and original Completion of Training Date remain visible as the
 baseline. Both end dates are programme start + floor(months × 30.4) days. When additional or accelerated training time is recorded, the
 summary also shows an **Adjusted programme end date before changes** with an explanation that
 it reflects those duration adjustments.
 
-Both adjustment inputs must contain a positive number and a reason when their
-toggle is selected, and the number may use at most 1 decimal place. The net
+Both adjustment inputs must contain a positive number and a reason, and the
+number may use at most 1 decimal place. The net
 adjusted duration:
 
 ```
@@ -217,8 +232,8 @@ Programme length + additional training time - accelerated training time
 ```
 
 must remain greater than zero. Reasons do not affect the calculation; they
-are shown alongside their adjustment in the saved programme details, summary
-page, and CSV export so the justification for an adjusted date remains
+are shown alongside their adjustment in the setup sections, summary page,
+and CSV export so the justification for an adjusted date remains
 visible.
 
 The 18-month final year is different: it changes the grade progression table
@@ -516,11 +531,13 @@ For calculated dates, this becomes (see `dateAtCumulativeWteMonths` in
 For the ordinary case without a 24-month grade, the target is:
 
 ```
-N × 12 + additional training time - accelerated training time
+N × 12 + additional training time in this and earlier grades - accelerated training time
 ```
 
-Additional time therefore shifts each displayed grade end date later;
-accelerated time shifts it earlier. The final threshold is wide but is capped at the net
+Additional time therefore leaves earlier grades unchanged and shifts the
+grade it was recorded against, and every later grade, later. (Excel has one
+additional-time input and adds it to every year; see §9.1.) Accelerated time
+shifts every grade end date earlier. The final threshold is wide but is capped at the net
 adjusted programme duration, while the standard specialty length continues
 to determine which grade rows exist.
 
@@ -638,6 +655,8 @@ for (let yearNumber = 1; yearNumber <= maxYears; yearNumber += 1) {
   const thisYearExtension = isTwentyFourMonth ? 12 : 0;
   const finalYearExtension =
     grade === programme.eighteenMonthFinalGrade ? 6 : 0;
+  // additional time recorded against this grade, carried into later grades
+  carriedAdditionalMonths += additionalMonthsFor(grade);
 
   // WTE-month threshold for this year-end
   const targetMonths = Math.min(
@@ -645,7 +664,7 @@ for (let yearNumber = 1; yearNumber <= maxYears; yearNumber += 1) {
       carriedExtension +
       thisYearExtension +
       finalYearExtension +
-      programme.additionalMonths -
+      carriedAdditionalMonths -
       programme.acceleratedMonths,
     programmeAdjustedLengthMonths(programme)
   );
@@ -704,16 +723,30 @@ User-entered. Excel adds it to every year's WTE-month threshold, extending
 the whole programme. Common scenario: ARCP outcome adds 6 months for missed
 competencies.
 
-Implemented as `additionalMonths` with required `additionalMonthsNotes` when
-used on `ProgrammeDetails`, entered behind a checkbox in the programme details form. It
-increases the required training total for the projected Completion of Training Date,
-extends the valid date range for recorded changes, and is added directly to
-each grade threshold in `grades.ts` without creating an extra grade row.
+**The app deliberately goes beyond Excel here** (and beyond
+tis-trainee-details, which has one total). Excel's single input lands the
+whole extension in the starting grade, even when it was given in, say, year 3.
+The app instead records a list, `ProgrammeDetails.additionalTrainingTime`,
+of `{ grade, months, notes }` entries in a separate **Additional training
+time** section:
 
-Excel validation for `I9:I10` accepts values from `0` to `24` months. The app
-now validates that same stored range and presents `24` as the maximum in the
-programme-details input. Because the input is behind an optional checkbox, the
-form is required once additional time is selected.
+- The total (`totalAdditionalMonths`) feeds `programmeAdjustedLengthMonths`,
+  so the CCT engine, the projected Completion of Training Date and the valid
+  date range for recorded changes are the same as for a single Excel value.
+- In `grades.ts`, an entry's months are added to its own grade's threshold
+  and carried into every later grade, the same way as the 24-month grade's
+  extension. Earlier grades are unaffected. No extra grade row is created.
+  Several entries in the same grade add together.
+- Full mode's switch to recorded grade end dates uses the same running total.
+
+`validateAdditionalTrainingTime` checks each entry: the grade must be in the
+programme's displayed progression (`programmeGrades`, so not a skipped grade
+or a beyond-ST9 row), months greater than zero with at most 1 decimal place, a
+reason, at most `20` entries, and a total across all entries of at most `24`
+months (Excel's `I9:I10` limit). The 20-entry limit is an app limit, not an
+Excel one. Entries are checked separately from the programme details, so
+changing the start grade or skipped grade can flag an entry as invalid. The
+summary is then blocked until the entry is edited or removed.
 
 ### 9.2 I11 — Accelerated training time (months) — implemented
 
@@ -933,7 +966,7 @@ behaviour differs between modes, both are noted:
 | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Specialty lookup, school grouping, dual/triple marker, length, entry grade, additional info and 24-month grade | Implemented from all 173 `Lists` rows in `specialties.ts`; the workbook's `St4` entry is normalised to `ST4`. Shared by both modes.                                                                                                                                                                                                                                                                                                  |
 | Start-grade default and user override                                                                          | Implemented, with an added mandatory reason for auditability. Shared by both modes.                                                                                                                                                                                                                                                                                                                                                  |
-| `I9` additional training time                                                                                  | Implemented, with mandatory reason and Excel-aligned `0..24` month validation. Shared by both modes.                                                                                                                                                                                                                                                                                                                                 |
+| `I9` additional training time                                                                                  | Extended beyond Excel: recorded per grade (see §9.1), with mandatory reasons and a `0..24` month total. Shared by both modes. |
 | `I11` accelerated training time                                                                                | Implemented, with mandatory reason and `0..12` month validation following Excel's on-screen prompt. Shared by both modes.                                                                                                                                                                                                                                                                                                            |
 | `I17` / `Q9:Q17` 24-month grade rule                                                                           | Implemented for the three DRE-EM specialties. Shared by both modes.                                                                                                                                                                                                                                                                                                                                                                  |
 | `K20` / `P9:P17` 18-month final year rule                                                                      | Implemented, with mandatory reason and clear summary display. Shared by both modes.                                                                                                                                                                                                                                                                                                                                                  |

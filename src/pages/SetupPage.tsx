@@ -1,13 +1,17 @@
 import { useState, type FC } from "react";
 import { CompletionDateWarning } from "../components/CompletionDateWarning";
+import { GradeProgressionAdjustmentsSection } from "../components/GradeProgressionAdjustmentsSection";
 import { GradeTable } from "../components/GradeTable";
 import { PastChangeForm } from "../components/PastChangeForm";
 import { PastChangesList } from "../components/PastChangesList";
 import { ProgrammeDetailsSection } from "../components/ProgrammeDetailsSection";
+import { TrainingTimeAdjustmentsSection } from "../components/TrainingTimeAdjustmentsSection";
 import {
+  additionalTrainingTimeIssues,
   calculateCct,
   computeGradeProgression,
   deriveQuickProjection,
+  gradeProgressionAdjustmentIssues,
   getCalculationTypeLabel,
   isOpenProjectedLtftChange,
   validatePastChange,
@@ -34,6 +38,8 @@ export const SetupPage: FC<SetupPageProps> = ({
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [timeAdjustmentFormOpen, setTimeAdjustmentFormOpen] = useState(false);
+  const [progressionFormOpen, setProgressionFormOpen] = useState(false);
 
   const handleOpenAdd = () => {
     setEditingId(null);
@@ -95,11 +101,18 @@ export const SetupPage: FC<SetupPageProps> = ({
   const projected = programme
     ? deriveQuickProjection(programme, pastChanges)
     : null;
+  const hasAdjustmentIssues =
+    programme !== null &&
+    (additionalTrainingTimeIssues(programme).length > 0 ||
+      gradeProgressionAdjustmentIssues(programme).length > 0);
   const canShowSummary =
     programme !== null &&
     editingId === null &&
     !formOpen &&
-    pastChangeIssues.length === 0;
+    !timeAdjustmentFormOpen &&
+    !progressionFormOpen &&
+    pastChangeIssues.length === 0 &&
+    !hasAdjustmentIssues;
 
   return (
     <>
@@ -110,6 +123,21 @@ export const SetupPage: FC<SetupPageProps> = ({
         onChange={onProgrammeChange}
         onSaved={() => scrollTo({ id: "past-changes-section" })}
       />
+
+      {programme && (
+        <>
+          <TrainingTimeAdjustmentsSection
+            programme={programme}
+            onChange={onProgrammeChange}
+            onFormOpenChange={setTimeAdjustmentFormOpen}
+          />
+          <GradeProgressionAdjustmentsSection
+            programme={programme}
+            onChange={onProgrammeChange}
+            onFormOpenChange={setProgressionFormOpen}
+          />
+        </>
+      )}
 
       {programme && projected && (
         <ChangesSection
@@ -150,6 +178,14 @@ export const SetupPage: FC<SetupPageProps> = ({
           {!canShowSummary && pastChangeIssues.length > 0 && (
             <p className="nhsuk-u-margin-top-3">
               <em>Fix the change errors above before continuing to summary.</em>
+            </p>
+          )}
+          {hasAdjustmentIssues && (
+            <p className="nhsuk-u-margin-top-3">
+              <em>
+                Fix the training time or grade progression adjustment errors
+                above before continuing to summary.
+              </em>
             </p>
           )}
         </section>

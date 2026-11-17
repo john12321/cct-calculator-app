@@ -1,14 +1,18 @@
 import { useState, type FC } from "react";
 import { CompletionDateWarning } from "../components/CompletionDateWarning";
+import { GradeProgressionAdjustmentsSection } from "../components/GradeProgressionAdjustmentsSection";
 import { GradeTable } from "../components/GradeTable";
 import { ProgrammeDetailsSection } from "../components/ProgrammeDetailsSection";
+import { TrainingTimeAdjustmentsSection } from "../components/TrainingTimeAdjustmentsSection";
 import { TimelineGrid } from "../components/TimelineGrid";
 import { TimelineProjection } from "../components/TimelineProjection";
 import { TrainingPeriodForm } from "../components/TrainingPeriodForm";
 import {
+  additionalTrainingTimeIssues,
   computeGradeProgressionForTimeline,
   describeTrainingPeriod,
   firstContiguityGapStart,
+  gradeProgressionAdjustmentIssues,
   insertPeriodChronologically,
   projectedCompletionDateForTimeline,
   validateTimeline,
@@ -35,6 +39,8 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [timeAdjustmentFormOpen, setTimeAdjustmentFormOpen] = useState(false);
+  const [progressionFormOpen, setProgressionFormOpen] = useState(false);
 
   const handleOpenAdd = () => {
     setEditingId(null);
@@ -92,6 +98,10 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
     ? validateTimeline(programme, timeline)
     : { rowErrors: {}, issues: [] };
   const hasTimelineErrors = validation.issues.length > 0;
+  const hasAdjustmentIssues =
+    programme !== null &&
+    (additionalTrainingTimeIssues(programme).length > 0 ||
+      gradeProgressionAdjustmentIssues(programme).length > 0);
 
   // Note: gap-fill start, and whether the add form should insert rather than append.
   const gapStart = programme
@@ -122,6 +132,21 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
         onChange={onProgrammeChange}
         onSaved={() => scrollTo({ id: "training-timeline-section" })}
       />
+
+      {programme && (
+        <>
+          <TrainingTimeAdjustmentsSection
+            programme={programme}
+            onChange={onProgrammeChange}
+            onFormOpenChange={setTimeAdjustmentFormOpen}
+          />
+          <GradeProgressionAdjustmentsSection
+            programme={programme}
+            onChange={onProgrammeChange}
+            onFormOpenChange={setProgressionFormOpen}
+          />
+        </>
+      )}
 
       {programme && (
         <section id="training-timeline-section" className="nhsuk-u-margin-top-4">
@@ -249,11 +274,24 @@ export const SetupFullPage: FC<SetupFullPageProps> = ({
                   and continue to the summary.
                 </p>
               )}
+              {hasAdjustmentIssues && (
+                <p className="nhsuk-hint nhsuk-u-margin-top-4">
+                  Fix the training time or grade progression adjustment errors
+                  above to continue to the summary.
+                </p>
+              )}
               <button
                 type="button"
                 className="nhsuk-button nhsuk-u-margin-top-4"
                 onClick={onContinue}
-                disabled={editingId !== null || formOpen || hasTimelineErrors}
+                disabled={
+                  editingId !== null ||
+                  formOpen ||
+                  hasTimelineErrors ||
+                  timeAdjustmentFormOpen ||
+                  progressionFormOpen ||
+                  hasAdjustmentIssues
+                }
               >
                 Show summary
               </button>

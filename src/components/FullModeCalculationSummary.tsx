@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { Table } from "nhsuk-react-components";
+import { AdditionalTrainingTimeSummaryRow } from "./AdditionalTrainingTimeSummaryRow";
 import { GradeTable } from "./GradeTable";
 import { TimelineProjection } from "./TimelineProjection";
 import {
@@ -69,21 +70,7 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
             {formatMonths(programme.lengthMonths)}
           </dd>
         </div>
-        {programme.additionalMonths > 0 && (
-          <div className="nhsuk-summary-list__row">
-            <dt className="nhsuk-summary-list__key">
-              Additional training time
-            </dt>
-            <dd className="nhsuk-summary-list__value">
-              {formatMonths(programme.additionalMonths)}
-              {programme.additionalMonthsNotes && (
-                <div className="nhsuk-hint nhsuk-u-margin-top-1">
-                  {programme.additionalMonthsNotes}
-                </div>
-              )}
-            </dd>
-          </div>
-        )}
+        <AdditionalTrainingTimeSummaryRow programme={programme} />
         {programme.acceleratedMonths > 0 && (
           <div className="nhsuk-summary-list__row">
             <dt className="nhsuk-summary-list__key">
@@ -153,7 +140,7 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
           </dt>
           <dd className="nhsuk-summary-list__value">{formatDate(originalEnd)}</dd>
         </div>
-        {(programme.additionalMonths > 0 ||
+        {(programme.additionalTrainingTime.length > 0 ||
           programme.acceleratedMonths > 0) && (
           <div className="nhsuk-summary-list__row">
             <dt className="nhsuk-summary-list__key">

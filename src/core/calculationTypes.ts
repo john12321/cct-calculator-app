@@ -61,12 +61,19 @@ export type TrainingPeriod = {
   notes: string;
 };
 
+// Note: extra time in one grade, e.g. after an ARCP outcome 3.
+export type AdditionalTrainingTime = {
+  id: string;
+  grade: string;
+  months: number;
+  notes: string;
+};
+
 export type ProgrammeDetails = {
   specialty: string;
   startDate: string;
   lengthMonths: number;
-  additionalMonths: number;
-  additionalMonthsNotes: string;
+  additionalTrainingTime: AdditionalTrainingTime[];
   acceleratedMonths: number;
   acceleratedMonthsNotes: string;
   eighteenMonthFinalGrade: string;

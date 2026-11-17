@@ -5,6 +5,8 @@ import type {
   ProgrammeDetails
 } from "./calculationTypes";
 import {
+  gradeProgressionAdjustmentIssues,
+  validateAdditionalTrainingTime,
   validatePastChange,
   validateProgrammeDetails
 } from "./validation";
@@ -13,8 +15,7 @@ const programme: ProgrammeDetails = {
   specialty: "Cardiology",
   startDate: "2020-01-01",
   lengthMonths: 120,
-  additionalMonths: 0,
-  additionalMonthsNotes: "",
+  additionalTrainingTime: [],
   acceleratedMonths: 0,
   acceleratedMonthsNotes: "",
   eighteenMonthFinalGrade: "",
@@ -353,14 +354,64 @@ describe("programme detail validation", () => {
 
   it("restricts training-time adjustments to one decimal place", () => {
     expect(
-      validateProgrammeDetails({
-        ...programme,
-        additionalMonths: 1.25,
-        additionalMonthsNotes: "Recorded adjustment"
-      })
+      validateAdditionalTrainingTime(
+        { id: "a", grade: "ST4", months: 1.25, notes: "Recorded adjustment" },
+        programme,
+        []
+      )
     ).toEqual({
       ok: false,
       message: "Additional training time can have at most 1 decimal place."
     });
+  });
+});
+
+describe("grade progression adjustment issues", () => {
+  const withChoices: ProgrammeDetails = {
+    ...programme,
+    skippedGrade: "ST5",
+    skippedGradeNotes: "Progressed early",
+    eighteenMonthFinalGrade: "ST7",
+    eighteenMonthFinalGradeNotes: "Dual specialty"
+  };
+
+  it("accepts choices within the grade progression", () => {
+    expect(gradeProgressionAdjustmentIssues(withChoices)).toEqual([]);
+  });
+
+  it("flags choices the progression no longer reaches after the start grade changes", () => {
+    expect(
+      gradeProgressionAdjustmentIssues({
+        ...withChoices,
+        startGrade: "CT1",
+        lengthMonths: 24
+      })
+    ).toEqual([
+      {
+        label: "Skipped grade year",
+        grade: "ST5",
+        message: "ST5 is not part of this programme's grade progression."
+      },
+      {
+        label: "18-month final year",
+        grade: "ST7",
+        message: "ST7 is not part of this programme's grade progression."
+      }
+    ]);
+  });
+
+  it("flags an 18-month final year on the skipped grade", () => {
+    expect(
+      gradeProgressionAdjustmentIssues({
+        ...withChoices,
+        eighteenMonthFinalGrade: "ST5"
+      })
+    ).toEqual([
+      {
+        label: "18-month final year",
+        grade: "ST5",
+        message: "ST5 is not part of this programme's grade progression."
+      }
+    ]);
   });
 });

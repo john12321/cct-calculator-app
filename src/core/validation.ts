@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import type {
+  AdditionalTrainingTime,
   PastChange,
   ProgrammeDetails,
   TrainingPeriod
@@ -9,6 +10,7 @@ import {
   programmeAdjustedLengthMonths
 } from "./calculations";
 import { calculateCct } from "./cctEngine";
+import { programmeGrades } from "./grades";
 import { TRAINING_GRADES, findSpecialty } from "./specialties";
 
 export type ValidationResult = { ok: true } | { ok: false; message: string };
@@ -178,6 +180,105 @@ export const validatePastChange = (
   return ok;
 };
 
+export const MAX_TOTAL_ADDITIONAL_MONTHS = 24;
+export const MAX_ADDITIONAL_TRAINING_TIME_ENTRIES = 20;
+
+export const validateAdditionalTrainingTime = (
+  candidate: AdditionalTrainingTime,
+  programme: ProgrammeDetails,
+  existing: AdditionalTrainingTime[]
+): ValidationResult => {
+  if (!candidate.grade) {
+    return err("Please choose the grade the additional time applies to.");
+  }
+  if (!programmeGrades(programme).includes(candidate.grade)) {
+    return err(
+      `${candidate.grade} is not part of this programme's grade progression.`
+    );
+  }
+  if (!Number.isFinite(candidate.months) || candidate.months <= 0) {
+    return err("Additional training time must be greater than zero.");
+  }
+  if (Math.round(candidate.months * 10) / 10 !== candidate.months) {
+    return err("Additional training time can have at most 1 decimal place.");
+  }
+  if (!candidate.notes.trim()) {
+    return err("Please enter a reason for the additional training time.");
+  }
+  const others = existing.filter(entry => entry.id !== candidate.id);
+  if (others.length + 1 > MAX_ADDITIONAL_TRAINING_TIME_ENTRIES) {
+    return err(
+      `You cannot add more than ${MAX_ADDITIONAL_TRAINING_TIME_ENTRIES} additional training time entries.`
+    );
+  }
+  const total = others.reduce(
+    (sum, entry) => sum + entry.months,
+    candidate.months
+  );
+  // Note: rounded because summing 1 dp months in floating point can drift.
+  if (Math.round(total * 10) / 10 > MAX_TOTAL_ADDITIONAL_MONTHS) {
+    return err(
+      `Total additional training time cannot be more than ${MAX_TOTAL_ADDITIONAL_MONTHS} months.`
+    );
+  }
+  return ok;
+};
+
+// Note: entries can become invalid when the programme details change after they were added.
+export const additionalTrainingTimeIssues = (
+  programme: ProgrammeDetails
+): { entry: AdditionalTrainingTime; message: string }[] =>
+  programme.additionalTrainingTime.flatMap(entry => {
+    const result = validateAdditionalTrainingTime(
+      entry,
+      programme,
+      programme.additionalTrainingTime
+    );
+    return result.ok ? [] : [{ entry, message: result.message }];
+  });
+
+// Note: the grades a skipped year or 18-month final year can be set on.
+export const skippableGrades = (programme: ProgrammeDetails): string[] =>
+  programmeGrades({
+    ...programme,
+    skippedGrade: "",
+    eighteenMonthFinalGrade: ""
+  });
+
+export const eighteenMonthFinalGradeOptions = (
+  programme: ProgrammeDetails
+): string[] => programmeGrades({ ...programme, eighteenMonthFinalGrade: "" });
+
+// Note: choices can become invalid when the programme details change after they were made.
+export const gradeProgressionAdjustmentIssues = (
+  programme: ProgrammeDetails
+): { label: string; grade: string; message: string }[] => {
+  const issues: { label: string; grade: string; message: string }[] = [];
+  if (
+    programme.skippedGrade &&
+    !skippableGrades(programme).includes(programme.skippedGrade)
+  ) {
+    issues.push({
+      label: "Skipped grade year",
+      grade: programme.skippedGrade,
+      message: `${programme.skippedGrade} is not part of this programme's grade progression.`
+    });
+  }
+  if (
+    programme.eighteenMonthFinalGrade &&
+    !eighteenMonthFinalGradeOptions(programme).includes(
+      programme.eighteenMonthFinalGrade
+    )
+  ) {
+    issues.push({
+      label: "18-month final year",
+      grade: programme.eighteenMonthFinalGrade,
+      message: `${programme.eighteenMonthFinalGrade} is not part of this programme's grade progression.`
+    });
+  }
+  return issues;
+};
+
 export const validateProgrammeDetails = (
   programme: ProgrammeDetails
 ): ValidationResult => {
@@ -192,25 +293,6 @@ export const validateProgrammeDetails = (
   const rounded = Math.round(programme.lengthMonths * 10) / 10;
   if (rounded !== programme.lengthMonths) {
     return err("Programme length can have at most 1 decimal place.");
-  }
-  if (!Number.isFinite(programme.additionalMonths)) {
-    return err("Please enter additional training time in months.");
-  }
-  if (programme.additionalMonths < 0) {
-    return err("Additional training time cannot be less than zero.");
-  }
-  if (programme.additionalMonths > 24) {
-    return err("Additional training time cannot be more than 24 months.");
-  }
-  const roundedAdditional = Math.round(programme.additionalMonths * 10) / 10;
-  if (roundedAdditional !== programme.additionalMonths) {
-    return err("Additional training time can have at most 1 decimal place.");
-  }
-  if (
-    programme.additionalMonths > 0 &&
-    !programme.additionalMonthsNotes.trim()
-  ) {
-    return err("Please enter a reason for additional training time.");
   }
   if (!Number.isFinite(programme.acceleratedMonths)) {
     return err("Please enter accelerated training time in months.");

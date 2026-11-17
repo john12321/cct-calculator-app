@@ -1,6 +1,7 @@
 import { useState, type FC } from "react";
 import dayjs from "dayjs";
 import { Table } from "nhsuk-react-components";
+import { AdditionalTrainingTimeSummaryRow } from "./AdditionalTrainingTimeSummaryRow";
 import { GradeTable } from "./GradeTable";
 import { NextPostSummary } from "./NextPostSummary";
 import {
@@ -124,21 +125,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
             {formatMonths(programme.lengthMonths)}
           </dd>
         </div>
-        {programme.additionalMonths > 0 && (
-          <div className="nhsuk-summary-list__row">
-            <dt className="nhsuk-summary-list__key">
-              Additional training time
-            </dt>
-            <dd className="nhsuk-summary-list__value">
-              {formatMonths(programme.additionalMonths)}
-              {programme.additionalMonthsNotes && (
-                <div className="nhsuk-hint nhsuk-u-margin-top-1">
-                  {programme.additionalMonthsNotes}
-                </div>
-              )}
-            </dd>
-          </div>
-        )}
+        <AdditionalTrainingTimeSummaryRow programme={programme} />
         {programme.acceleratedMonths > 0 && (
           <div className="nhsuk-summary-list__row">
             <dt className="nhsuk-summary-list__key">
@@ -210,7 +197,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
             {formatDate(result.originalProgrammeEndDate)}
           </dd>
         </div>
-        {(programme.additionalMonths > 0 ||
+        {(programme.additionalTrainingTime.length > 0 ||
           programme.acceleratedMonths > 0) && (
           <div className="nhsuk-summary-list__row">
             <dt className="nhsuk-summary-list__key">

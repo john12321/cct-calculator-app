@@ -45,11 +45,17 @@ export const programmeOriginalEndDate = (
   programme: ProgrammeDetails
 ): string => dateAfterMonths(programme.startDate, programme.lengthMonths);
 
+export const totalAdditionalMonths = (programme: ProgrammeDetails): number =>
+  programme.additionalTrainingTime.reduce(
+    (total, entry) => total + entry.months,
+    0
+  );
+
 export const programmeAdjustedLengthMonths = (
   programme: ProgrammeDetails
 ): number =>
   programme.lengthMonths +
-  programme.additionalMonths -
+  totalAdditionalMonths(programme) -
   programme.acceleratedMonths;
 
 export const programmeAdjustedEndDate = (

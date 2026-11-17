@@ -58,17 +58,10 @@ export const SummaryPage: FC<SummaryPageProps> = ({
       ...(startGradeIsOverridden && programme.startGradeOverrideNotes
         ? [["Start grade override notes", programme.startGradeOverrideNotes]]
         : []),
-      ...(programme.additionalMonths > 0
-        ? [
-            [
-              "Additional training time (months)",
-              programme.additionalMonths.toFixed(1)
-            ],
-            ...(programme.additionalMonthsNotes
-              ? [["Additional training time notes", programme.additionalMonthsNotes]]
-              : [])
-          ]
-        : []),
+      ...programme.additionalTrainingTime.flatMap(entry => [
+        [`Additional training time ${entry.grade} (months)`, entry.months.toFixed(1)],
+        [`Additional training time ${entry.grade} notes`, entry.notes]
+      ]),
       ...(programme.acceleratedMonths > 0
         ? [
             [
@@ -100,7 +93,8 @@ export const SummaryPage: FC<SummaryPageProps> = ({
             ["Skipped grade year reason", programme.skippedGradeNotes]
           ]
         : []),
-      ...(programme.additionalMonths > 0 || programme.acceleratedMonths > 0
+      ...(programme.additionalTrainingTime.length > 0 ||
+      programme.acceleratedMonths > 0
         ? [
             [
               "Adjusted programme end date before changes",
