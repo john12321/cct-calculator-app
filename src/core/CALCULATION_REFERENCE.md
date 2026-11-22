@@ -798,7 +798,8 @@ prompt. As in tis-trainee-details, the accelerated time on a grade must also
 be less than that grade's months (`gradeMonths`: 12, 18, 24, or less for a
 short final year) plus its additional time, so no grade shrinks to nothing.
 Because removing additional time can break this, saved entries are
-re-checked (`acceleratedTrainingTimeIssues`).
+re-checked (`acceleratedTrainingTimeIssues`). The limit is checked once per
+grade, and only the first saved entry on an over-limit grade is flagged.
 
 ### 9.3 P9–P17 — +6 for an 18-month final year — implemented
 

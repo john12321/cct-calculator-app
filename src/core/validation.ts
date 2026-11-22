@@ -284,22 +284,29 @@ export const validateAcceleratedTrainingTime = (
     ACCELERATED_RULES
   );
   if (!result.ok) return result;
+  return validateAcceleratedLimit(candidate.grade, programme, [
+    ...existing.filter(entry => entry.id !== candidate.id),
+    candidate
+  ]);
+};
+
+const validateAcceleratedLimit = (
+  grade: string,
+  programme: ProgrammeDetails,
+  entries: AcceleratedTrainingTime[]
+): ValidationResult => {
   const gradeMonths = computeGradeProgressionForSegments(programme, [])
-    .filter(row => row.grade === candidate.grade)
+    .filter(row => row.grade === grade)
     .reduce((total, row) => total + row.gradeMonths, 0);
   const limit =
     Math.round(
-      (gradeMonths +
-        monthsOnGrade(programme.additionalTrainingTime, candidate.grade)) *
+      (gradeMonths + monthsOnGrade(programme.additionalTrainingTime, grade)) *
         10
     ) / 10;
-  const accelerated = monthsOnGrade(
-    [...existing.filter(entry => entry.id !== candidate.id), candidate],
-    candidate.grade
-  );
+  const accelerated = monthsOnGrade(entries, grade);
   if (Math.round(accelerated * 10) / 10 >= limit) {
     return err(
-      `Accelerated training time in ${candidate.grade} must be less than ${limit} months.`
+      `Accelerated training time in ${grade} must be less than ${limit} months.`
     );
   }
   return ok;
@@ -320,15 +327,26 @@ export const additionalTrainingTimeIssues = (
 
 export const acceleratedTrainingTimeIssues = (
   programme: ProgrammeDetails
-): { entry: AcceleratedTrainingTime; message: string }[] =>
-  programme.acceleratedTrainingTime.flatMap(entry => {
-    const result = validateAcceleratedTrainingTime(
+): { entry: AcceleratedTrainingTime; message: string }[] => {
+  const checked = new Set<string>();
+  return programme.acceleratedTrainingTime.flatMap(entry => {
+    const entryResult = validateTrainingTimeEntry(
       entry,
+      programme,
+      programme.acceleratedTrainingTime,
+      ACCELERATED_RULES
+    );
+    if (!entryResult.ok) return [{ entry, message: entryResult.message }];
+    if (checked.has(entry.grade)) return [];
+    checked.add(entry.grade);
+    const limitResult = validateAcceleratedLimit(
+      entry.grade,
       programme,
       programme.acceleratedTrainingTime
     );
-    return result.ok ? [] : [{ entry, message: result.message }];
+    return limitResult.ok ? [] : [{ entry, message: limitResult.message }];
   });
+};
 
 // Note: the grades a skipped year can be set on.
 export const skippableGrades = (programme: ProgrammeDetails): string[] =>

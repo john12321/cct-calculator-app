@@ -493,6 +493,22 @@ describe("accelerated training time per grade", () => {
       }
     ]);
   });
+
+  it("flags only the first saved accelerated entry on an over-limit grade", () => {
+    const first = entry("a", "ST2", 6);
+
+    expect(
+      acceleratedTrainingTimeIssues({
+        ...st1Programme(84),
+        acceleratedTrainingTime: [first, entry("b", "ST2", 6)]
+      })
+    ).toEqual([
+      {
+        entry: first,
+        message: "Accelerated training time in ST2 must be less than 12 months."
+      }
+    ]);
+  });
 });
 
 describe("grade progression adjustment issues", () => {
