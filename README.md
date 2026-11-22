@@ -120,20 +120,23 @@ The app will be available at **http://localhost:5173** by default.
 
 ```
 src/
-├── App.tsx                            # Mode picker and setup-to-summary routing
+├── App.tsx                            # Mode picker, five-step flow and step gating
 ├── main.tsx                           # Entry point
 ├── pages/
-│   ├── SetupPage.tsx                  # Quick-mode entry flow
+│   ├── ChangesPage.tsx                # Quick-mode changes entry
 │   ├── SummaryPage.tsx                # Quick-mode output and export
-│   ├── SetupFullPage.tsx              # Full-mode timeline entry, correction and validation
+│   ├── TrainingTimelinePage.tsx       # Full-mode timeline entry, correction and validation
 │   └── FullModeSummaryPage.tsx        # Full-mode output and export
 ├── components/
 │   ├── ModePicker.tsx                 # Quick / Full selection
-│   ├── ProgrammeDetailsSection.tsx    # Shared programme inputs and adjustments
+│   ├── ProgrammeDetailsSection.tsx    # Shared programme inputs
+│   ├── TrainingTimeAdjustmentsSection.tsx     # Additional and accelerated training time
+│   ├── GradeProgressionAdjustmentsSection.tsx # 18-month final year and skipped grade
 │   ├── PastChangeForm.tsx             # Quick-mode change and projection entry
 │   ├── PastChangesList.tsx            # Quick-mode changes table with assumed full-time toggle
 │   ├── TrainingPeriodForm.tsx         # Full-mode timeline row entry and editing
 │   ├── TimelineGrid.tsx               # Full-mode timeline display and invalid-row highlighting
+│   ├── GradeProgressionPanel.tsx      # Grade progression shown on each setup step
 │   └── GradeTable.tsx                 # Grade-progression display
 ├── core/
 │   ├── calculations.ts                # Shared calculation helpers

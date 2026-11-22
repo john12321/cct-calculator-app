@@ -16,6 +16,7 @@ type ProgrammeDetailsSectionProps = {
   programme: ProgrammeDetails | null;
   onChange: (programme: ProgrammeDetails) => void;
   onSaved?: () => void;
+  onEditingChange?: (editing: boolean) => void;
 };
 
 const sortedTrainingGrades = [...TRAINING_GRADES].sort((a, b) =>
@@ -25,7 +26,8 @@ const sortedTrainingGrades = [...TRAINING_GRADES].sort((a, b) =>
 export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
   programme,
   onChange,
-  onSaved
+  onSaved,
+  onEditingChange
 }) => {
   const initialSpecialty = findSpecialty(programme?.specialty ?? "");
   const initialLengthOverride =
@@ -37,7 +39,11 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     initialSpecialty !== undefined &&
     programme.startGrade !== initialSpecialty.entryGrade;
 
-  const [editing, setEditing] = useState(programme === null);
+  const [editing, setEditingState] = useState(programme === null);
+  const setEditing = (next: boolean) => {
+    setEditingState(next);
+    onEditingChange?.(next);
+  };
   const [specialty, setSpecialty] = useState(programme?.specialty ?? "");
   const [startDate, setStartDate] = useState(programme?.startDate ?? "");
   const [lengthMonths, setLengthMonths] = useState(

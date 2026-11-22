@@ -1,18 +1,9 @@
 import { useState, type FC } from "react";
-import { CompletionDateWarning } from "../components/CompletionDateWarning";
-import { GradeProgressionAdjustmentsSection } from "../components/GradeProgressionAdjustmentsSection";
-import { GradeTable } from "../components/GradeTable";
+import { GradeProgressionPanel } from "../components/GradeProgressionPanel";
 import { PastChangeForm } from "../components/PastChangeForm";
 import { PastChangesList } from "../components/PastChangesList";
-import { ProgrammeDetailsSection } from "../components/ProgrammeDetailsSection";
-import { TrainingTimeAdjustmentsSection } from "../components/TrainingTimeAdjustmentsSection";
 import {
-  acceleratedTrainingTimeIssues,
-  additionalTrainingTimeIssues,
   calculateCct,
-  computeGradeProgression,
-  deriveQuickProjection,
-  gradeProgressionAdjustmentIssues,
   getCalculationTypeLabel,
   isOpenProjectedLtftChange,
   validatePastChange,
@@ -22,25 +13,25 @@ import {
 import { formatDate } from "../utils/format";
 import { scrollTo } from "../utils/scroll";
 
-type SetupPageProps = {
-  programme: ProgrammeDetails | null;
+type ChangesPageProps = {
+  programme: ProgrammeDetails;
   pastChanges: PastChange[];
-  onProgrammeChange: (programme: ProgrammeDetails) => void;
   onPastChangesChange: (changes: PastChange[]) => void;
-  onContinue: () => void;
+  onFormOpenChange: (open: boolean) => void;
 };
 
-export const SetupPage: FC<SetupPageProps> = ({
+export const ChangesPage: FC<ChangesPageProps> = ({
   programme,
   pastChanges,
-  onProgrammeChange,
   onPastChangesChange,
-  onContinue
+  onFormOpenChange
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const [timeAdjustmentFormOpen, setTimeAdjustmentFormOpen] = useState(false);
-  const [progressionFormOpen, setProgressionFormOpen] = useState(false);
+  const [formOpen, setFormOpenState] = useState(false);
+  const setFormOpen = (open: boolean) => {
+    setFormOpenState(open);
+    onFormOpenChange(open);
+  };
 
   const handleOpenAdd = () => {
     setEditingId(null);
@@ -94,109 +85,28 @@ export const SetupPage: FC<SetupPageProps> = ({
       ? null
       : (pastChanges.find(c => c.id === editingId) ?? null);
 
-  const pastChangeIssues = programme
-    ? pastChanges.filter(
-        change => !validatePastChange(change, programme, pastChanges).ok
-      )
-    : [];
-  const projected = programme
-    ? deriveQuickProjection(programme, pastChanges)
-    : null;
-  const hasAdjustmentIssues =
-    programme !== null &&
-    (additionalTrainingTimeIssues(programme).length > 0 ||
-      acceleratedTrainingTimeIssues(programme).length > 0 ||
-      gradeProgressionAdjustmentIssues(programme).length > 0);
-  const canShowSummary =
-    programme !== null &&
-    editingId === null &&
-    !formOpen &&
-    !timeAdjustmentFormOpen &&
-    !progressionFormOpen &&
-    pastChangeIssues.length === 0 &&
-    !hasAdjustmentIssues;
-
   return (
     <>
-      <CompletionDateWarning />
-
-      <ProgrammeDetailsSection
+      <GradeProgressionPanel
+        mode="QUICK"
         programme={programme}
-        onChange={onProgrammeChange}
-        onSaved={() => scrollTo({ id: "training-time-adjustments-section" })}
+        pastChanges={pastChanges}
+        timeline={[]}
       />
 
-      {programme && projected && (
-        <section className="nhsuk-u-margin-bottom-6">
-          <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
-            Grade progression
-          </h2>
-          <p className="nhsuk-hint">
-            Updates automatically as you record adjustments and changes.
-          </p>
-          <GradeTable
-            programme={programme}
-            rows={computeGradeProgression(programme, pastChanges, projected)}
-          />
-        </section>
-      )}
-
-      {programme && (
-        <>
-          <TrainingTimeAdjustmentsSection
-            programme={programme}
-            onChange={onProgrammeChange}
-            onFormOpenChange={setTimeAdjustmentFormOpen}
-          />
-          <GradeProgressionAdjustmentsSection
-            programme={programme}
-            onChange={onProgrammeChange}
-            onFormOpenChange={setProgressionFormOpen}
-          />
-        </>
-      )}
-
-      {programme && projected && (
-        <ChangesSection
-          programme={programme}
-          pastChanges={pastChanges}
-          editingId={editingId}
-          editingChange={editingChange}
-          formOpen={formOpen}
-          onOpenAdd={handleOpenAdd}
-          onAddPast={handleAddPast}
-          onUpdatePast={handleUpdatePast}
-          onCancelEdit={handleCancelEdit}
-          onStartEdit={handleStartEdit}
-          onRemovePast={handleRemovePast}
-        />
-      )}
-      {programme && projected && (
-        <section className="nhsuk-u-margin-top-4">
-          {canShowSummary && (
-            <button
-              type="button"
-              className="nhsuk-button nhsuk-u-margin-top-4"
-              onClick={onContinue}
-            >
-              Show summary
-            </button>
-          )}
-          {!canShowSummary && pastChangeIssues.length > 0 && (
-            <p className="nhsuk-u-margin-top-3">
-              <em>Fix the change errors above before continuing to summary.</em>
-            </p>
-          )}
-          {hasAdjustmentIssues && (
-            <p className="nhsuk-u-margin-top-3">
-              <em>
-                Fix the training time or grade progression adjustment errors
-                above before continuing to summary.
-              </em>
-            </p>
-          )}
-        </section>
-      )}
+      <ChangesSection
+        programme={programme}
+        pastChanges={pastChanges}
+        editingId={editingId}
+        editingChange={editingChange}
+        formOpen={formOpen}
+        onOpenAdd={handleOpenAdd}
+        onAddPast={handleAddPast}
+        onUpdatePast={handleUpdatePast}
+        onCancelEdit={handleCancelEdit}
+        onStartEdit={handleStartEdit}
+        onRemovePast={handleRemovePast}
+      />
     </>
   );
 };

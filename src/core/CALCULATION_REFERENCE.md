@@ -231,8 +231,8 @@ separately from the programme details, a later change to the specialty or
 start grade can leave a choice outside the progression.
 `gradeProgressionAdjustmentIssues` flags such choices, as
 `additionalTrainingTimeIssues` and `acceleratedTrainingTimeIssues` do for
-time entries, and any of these issues blocks **Show summary** until it is
-fixed.
+time entries, and any of these issues blocks **Continue** on its step
+until it is fixed.
 
 The original programme length and original Completion of Training Date remain visible as the
 baseline. Both end dates are programme start + floor(months × 30.4) days. When additional or accelerated training time is recorded, the
@@ -1116,11 +1116,12 @@ an optional reporting enhancement rather than identified formula parity gaps.
 | `../components/TimelineGrid.tsx`                       | Full-mode timeline table with edit/remove actions and invalid-row highlighting                                                                |
 | `../components/TimelineProjection.tsx`                 | Full-mode WTE totals and projected Completion of Training Date                                                                                |
 | `../components/GradeTable.tsx`                         | Year-by-year grade progression with end dates and special-duration/skipped-grade explanations                                                 |
+| `../components/GradeProgressionPanel.tsx`              | Grade progression section shown on each setup step                                                                                            |
 | `../components/CalculationSummary.tsx`                 | Quick-mode summary block, including optional assumed full-time rows in the completed-changes table                                            |
 | `../components/FullModeCalculationSummary.tsx`         | Full-mode summary block                                                                                                                       |
 | `../components/StepIndicator.tsx`, `BackLink.tsx`      | Wizard chrome                                                                                                                                 |
-| `../pages/SetupPage.tsx`                               | Quick-mode setup page (programme details, changes, projection and grade progression)                                                          |
+| `../pages/ChangesPage.tsx`                             | Quick-mode Changes step (changes, projection and grade progression)                                                                           |
 | `../pages/SummaryPage.tsx`                             | Quick-mode final summary page with CSV / print export                                                                                         |
-| `../pages/SetupFullPage.tsx`                           | Full-mode setup page (programme details, timeline correction, validation gating and calculated outputs)                                       |
+| `../pages/TrainingTimelinePage.tsx`                    | Full-mode Training timeline step (timeline correction, validation and calculated outputs)                                                     |
 | `../pages/FullModeSummaryPage.tsx`                     | Full-mode final summary page with CSV / print export                                                                                          |
-| `../App.tsx`                                           | Mode picker and setup-to-summary flow for Quick and Full modes                                                                                |
+| `../App.tsx`                                           | Mode picker and the five-step flow for Quick and Full modes, with step gating                                                                 |
