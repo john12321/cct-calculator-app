@@ -112,8 +112,16 @@ calculation.
 ### 3.3 Programme length
 
 When a specialty is picked, the **default length** from `Specialty.lengthMonths`
-auto-fills. The field is read-only, with a hint
-("Default for X is N months.").
+auto-fills, with a hint ("Default for X is N months. Change it if your
+programme length is different (1-120 months)."). The user can edit it, as a
+trainee's programme length may differ from the specialty's standard one:
+
+- The length must be a whole number of months from 1 to 120, as in
+  tis-trainee-details.
+- When it differs from the specialty default, a reason is required. It is
+  stored as `ProgrammeDetails.lengthOverrideNotes`.
+- The view-mode, the calculation summaries and the CSV exports then show
+  "(default for this specialty is N months)" and the reason.
 
 This remains the baseline programme length. Changes to the required training
 duration are recorded explicitly under **Training time adjustments**,
@@ -138,7 +146,8 @@ This app does the same:
 - A read-only text field shows the value with hint "Default for X is Y."
 - "Check this box if you want to choose a different start grade" swaps the field to a
   `<select>` of all training grades (F1, F2, CT1-CT4, ST1-ST9, DFT, DCT1-DCT3).
-- The view-mode shows "(overridden — default X)" annotation when applicable.
+- The view-mode shows a "(default for this specialty is X)" annotation when
+  applicable.
 - A reason field is required when the start grade override checkbox is checked,
   and is shown with the changed grade in the summary and CSV export.
 
@@ -181,15 +190,15 @@ in two sections below it, each saved on its own.
 parts:
 
 - **Additional training time.** Each entry names the grade it applies to, a
-  positive number of months (at most 1 decimal place) and a required reason,
+  whole number of months from 1 to 24 and a required reason,
   for example extra training after an ARCP outcome 3. Entries are stored as
   `ProgrammeDetails.additionalTrainingTime`; a trainee can have entries in as
   many grades as needed, and the total across them is validated to at most
   `24` months (Excel's `I9:I10` limit). See §9.1.
 - **Accelerated training time** captures recognised prior learning or other
   approved reductions in training time. Like additional time, each entry
-  names the grade it applies to, a positive number of months (at most 1
-  decimal place) and a required reason. Entries are stored as
+  names the grade it applies to, a whole number of months from 1 to 24 and a
+  required reason. Entries are stored as
   `ProgrammeDetails.acceleratedTrainingTime`, and the total across them is
   validated to at most `12` months, following Excel's on-screen prompt for
   `I11`. See §9.2.
@@ -230,9 +239,9 @@ baseline. Both end dates are programme start + floor(months × 30.4) days. When 
 summary also shows an **Adjusted programme end date before changes** with an explanation that
 it reflects those duration adjustments.
 
-Both adjustment inputs must contain a positive number and a reason of at
-most 1000 characters (tis-trainee-details' limit), and the number may use at
-most 1 decimal place. The net
+Each entry in both adjustment inputs must contain a whole number of months
+from 1 to 24 and a reason of at most 1000 characters (tis-trainee-details'
+limit). The net
 adjusted duration:
 
 ```
@@ -753,7 +762,7 @@ time** section:
 
 `validateAdditionalTrainingTime` checks each entry: the grade must be in the
 programme's displayed progression (`programmeGrades`, so not a skipped grade
-or a beyond-ST9 row), months greater than zero with at most 1 decimal place, a
+or a beyond-ST9 row), a whole number of months from 1 to 24, a
 reason, at most `20` entries, and a total across all entries of at most `24`
 months (Excel's `I9:I10` limit). The 20-entry limit is an app limit, not an
 Excel one. Entries are checked separately from the programme details, so
