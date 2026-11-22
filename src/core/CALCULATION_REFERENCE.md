@@ -297,8 +297,8 @@ record changes (LTFT periods, absences), not the in-between full-time work.
 This differs from the Excel sheet, where the user types every period
 (including full-time) into the rows 24–46 table.
 
-Quick mode makes those inferred gaps visible on demand. The Changes table and
-the final Summary completed-changes table both expose a **Show assumed
+Quick mode shows those inferred gaps by default. The Changes table and the
+final Summary completed-changes table both expose a **Hide assumed
 full-time periods** toggle when at least one gap exists. These inferred rows
 are read-only, styled separately, labelled as not added by the user, and count
 as 100% WTE training. When the rows are hidden, the tables show separate

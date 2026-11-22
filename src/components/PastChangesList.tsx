@@ -45,7 +45,7 @@ export const PastChangesList: FC<PastChangesListProps> = ({
   onRemove,
   onEdit
 }) => {
-  const [showAssumedPeriods, setShowAssumedPeriods] = useState(false);
+  const [hideAssumedPeriods, setHideAssumedPeriods] = useState(false);
 
   const { changes: calculatedChanges, result } = calculateCct(
     programme,
@@ -63,14 +63,14 @@ export const PastChangesList: FC<PastChangesListProps> = ({
     (calculated): ChangeRow => ({ kind: "user", calculated })
   );
   const rows = sortRows(
-    showAssumedPeriods
-      ? [
+    hideAssumedPeriods
+      ? userRows
+      : [
           ...userRows,
           ...assumedPeriods.map(
             (period): ChangeRow => ({ kind: "assumed", period })
           )
         ]
-      : userRows
   );
   const userCalendarMonths = calculatedChanges.reduce(
     (sum, calculated) => sum + (calculated.calendarMonths ?? 0),
@@ -115,16 +115,16 @@ export const PastChangesList: FC<PastChangesListProps> = ({
           <div className="nhsuk-checkboxes__item">
             <input
               className="nhsuk-checkboxes__input"
-              id="show-assumed-full-time-periods"
+              id="hide-assumed-full-time-periods"
               type="checkbox"
-              checked={showAssumedPeriods}
-              onChange={e => setShowAssumedPeriods(e.target.checked)}
+              checked={hideAssumedPeriods}
+              onChange={e => setHideAssumedPeriods(e.target.checked)}
             />
             <label
               className="nhsuk-label nhsuk-checkboxes__label"
-              htmlFor="show-assumed-full-time-periods"
+              htmlFor="hide-assumed-full-time-periods"
             >
-              Show assumed full-time periods
+              Hide assumed full-time periods
             </label>
           </div>
         </div>
@@ -226,13 +226,8 @@ export const PastChangesList: FC<PastChangesListProps> = ({
               );
             })}
             {changes.length > 0 &&
-              (showAssumedPeriods
-                ? renderTotalsRow(
-                    "Total",
-                    userCalendarMonths + assumedCalendarMonths,
-                    userWteMonths + assumedCalendarMonths
-                  )
-                : (
+              (hideAssumedPeriods
+                ? (
                     <>
                       {renderTotalsRow(
                         "Entered changes total",
@@ -246,6 +241,11 @@ export const PastChangesList: FC<PastChangesListProps> = ({
                           userWteMonths + assumedCalendarMonths
                         )}
                     </>
+                  )
+                : renderTotalsRow(
+                    "Total",
+                    userCalendarMonths + assumedCalendarMonths,
+                    userWteMonths + assumedCalendarMonths
                   ))}
             <Table.Row className="projection-row">
               <Table.Cell>

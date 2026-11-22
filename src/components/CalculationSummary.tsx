@@ -48,7 +48,7 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
   proposed,
   variant = "inline"
 }) => {
-  const [showAssumedPeriods, setShowAssumedPeriods] = useState(false);
+  const [hideAssumedPeriods, setHideAssumedPeriods] = useState(false);
   const { changes: calculatedChanges, result } = calculateCct(
     programme,
     pastChanges
@@ -63,14 +63,14 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
     (calculated): ChangeRow => ({ kind: "user", calculated })
   );
   const rows = sortRows(
-    showAssumedPeriods
-      ? [
+    hideAssumedPeriods
+      ? userRows
+      : [
           ...userRows,
           ...assumedPeriods.map(
             (period): ChangeRow => ({ kind: "assumed", period })
           )
         ]
-      : userRows
   );
   const totalUserCalendar = calculatedChanges.reduce(
     (sum, calculated) => sum + (calculated.calendarMonths ?? 0),
@@ -248,16 +248,16 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
               <div className="nhsuk-checkboxes__item">
                 <input
                   className="nhsuk-checkboxes__input"
-                  id="summary-show-assumed-full-time-periods"
+                  id="summary-hide-assumed-full-time-periods"
                   type="checkbox"
-                  checked={showAssumedPeriods}
-                  onChange={e => setShowAssumedPeriods(e.target.checked)}
+                  checked={hideAssumedPeriods}
+                  onChange={e => setHideAssumedPeriods(e.target.checked)}
                 />
                 <label
                   className="nhsuk-label nhsuk-checkboxes__label"
-                  htmlFor="summary-show-assumed-full-time-periods"
+                  htmlFor="summary-hide-assumed-full-time-periods"
                 >
-                  Show assumed full-time periods
+                  Hide assumed full-time periods
                 </label>
               </div>
             </div>
@@ -330,13 +330,8 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                     </Table.Row>
                   );
                 })}
-                {showAssumedPeriods
-                  ? renderTotalsRow(
-                      "Total",
-                      totalUserCalendar + totalAssumedCalendar,
-                      totalUserWte + totalAssumedCalendar
-                    )
-                  : (
+                {hideAssumedPeriods
+                  ? (
                       <>
                         {renderTotalsRow(
                           "Entered changes total",
@@ -350,6 +345,11 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
                             totalUserWte + totalAssumedCalendar
                           )}
                       </>
+                    )
+                  : renderTotalsRow(
+                      "Total",
+                      totalUserCalendar + totalAssumedCalendar,
+                      totalUserWte + totalAssumedCalendar
                     )}
               </Table.Body>
             </Table>
