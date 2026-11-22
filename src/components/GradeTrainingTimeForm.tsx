@@ -39,7 +39,7 @@ export const GradeTrainingTimeForm: FC<GradeTrainingTimeFormProps> = ({
     const candidate: AdditionalTrainingTime = {
       id: editing?.id ?? newId(label),
       grade,
-      months: Number.parseFloat(monthsText),
+      months: monthsText.trim() === "" ? Number.NaN : Number(monthsText),
       notes: notes.trim()
     };
     const result = kind.validate(candidate, programme, programme[kind.field]);
@@ -91,14 +91,16 @@ export const GradeTrainingTimeForm: FC<GradeTrainingTimeFormProps> = ({
           {kind.title} (months)
         </label>
         <p className="nhsuk-hint" id={`${label}-months-hint`}>
-          Up to {kind.maxTotalMonths} months in total across all grades.
+          Whole months, up to {kind.maxTotalMonths} months in total across all
+          grades.
         </p>
         <input
           className="nhsuk-input nhsuk-input--width-3"
           id={`${label}-months`}
           aria-describedby={`${label}-months-hint`}
           type="text"
-          inputMode="decimal"
+          inputMode="numeric"
+          maxLength={2}
           value={monthsText}
           onChange={e => setMonthsText(e.target.value)}
         />

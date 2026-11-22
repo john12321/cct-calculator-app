@@ -13,6 +13,7 @@ const longProgramme: ProgrammeDetails = {
   specialty: "Long comparison programme",
   startDate: "2018-01-01",
   lengthMonths: 120,
+  lengthOverrideNotes: "",
   additionalTrainingTime: [],
   acceleratedTrainingTime: [],
   eighteenMonthFinalGrade: "",

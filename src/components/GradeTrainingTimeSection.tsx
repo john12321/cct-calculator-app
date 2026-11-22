@@ -5,7 +5,6 @@ import {
   type AdditionalTrainingTime,
   type ProgrammeDetails
 } from "../core";
-import { formatMonths } from "../utils/format";
 import { scrollTo } from "../utils/scroll";
 import { GradeTrainingTimeForm } from "./GradeTrainingTimeForm";
 import type { GradeTrainingTimeKind } from "./gradeTrainingTimeKinds";
@@ -118,7 +117,7 @@ export const GradeTrainingTimeSection: FC<GradeTrainingTimeSectionProps> = ({
               {issues.map(issue => (
                 <li key={issue.entry.id}>
                   <strong>
-                    {issue.entry.grade} ({formatMonths(issue.entry.months)})
+                    {issue.entry.grade} ({issue.entry.months} months)
                   </strong>{" "}
                   - {issue.message}
                 </li>
@@ -165,7 +164,7 @@ export const GradeTrainingTimeSection: FC<GradeTrainingTimeSectionProps> = ({
                         </span>
                       )}
                     </Table.Cell>
-                    <Table.Cell>{formatMonths(entry.months)}</Table.Cell>
+                    <Table.Cell>{entry.months} months</Table.Cell>
                     <Table.Cell>{entry.notes}</Table.Cell>
                     <Table.Cell>
                       <div className="table-actions">
@@ -195,7 +194,7 @@ export const GradeTrainingTimeSection: FC<GradeTrainingTimeSectionProps> = ({
                   <strong>Total</strong>
                 </Table.Cell>
                 <Table.Cell>
-                  <strong>{formatMonths(kind.total(programme))}</strong>
+                  <strong>{kind.total(programme)} months</strong>
                 </Table.Cell>
                 <Table.Cell />
                 <Table.Cell />

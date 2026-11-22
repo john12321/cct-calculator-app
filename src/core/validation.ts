@@ -204,7 +204,6 @@ const validateTrainingTimeEntry = (
   existing: (AdditionalTrainingTime | AcceleratedTrainingTime)[],
   { label, maxTotalMonths, maxEntries }: TrainingTimeEntryRules
 ): ValidationResult => {
-  const Label = label.charAt(0).toUpperCase() + label.slice(1);
   if (!candidate.grade) {
     return err(`Please choose the grade the ${label} time applies to.`);
   }
@@ -213,11 +212,12 @@ const validateTrainingTimeEntry = (
       `${candidate.grade} is not part of this programme's grade progression.`
     );
   }
-  if (!Number.isFinite(candidate.months) || candidate.months <= 0) {
-    return err(`${Label} training time must be greater than zero.`);
-  }
-  if (Math.round(candidate.months * 10) / 10 !== candidate.months) {
-    return err(`${Label} training time can have at most 1 decimal place.`);
+  if (
+    !Number.isInteger(candidate.months) ||
+    candidate.months < 1 ||
+    candidate.months > 24
+  ) {
+    return err("Enter a whole number of months between 1 and 24.");
   }
   if (!candidate.notes.trim()) {
     return err(`Please enter a reason for the ${label} training time.`);
@@ -237,8 +237,7 @@ const validateTrainingTimeEntry = (
     (sum, entry) => sum + entry.months,
     candidate.months
   );
-  // Note: rounded because summing 1 dp months in floating point can drift.
-  if (Math.round(total * 10) / 10 > maxTotalMonths) {
+  if (total > maxTotalMonths) {
     return err(
       `Total ${label} training time cannot be more than ${maxTotalMonths} months.`
     );
@@ -389,12 +388,14 @@ export const validateProgrammeDetails = (
   if (!isRealIsoDate(programme.startDate)) {
     return err("Programme start date must be a real date.");
   }
-  if (!Number.isFinite(programme.lengthMonths) || programme.lengthMonths <= 0) {
-    return err("Programme length must be greater than zero.");
-  }
-  const rounded = Math.round(programme.lengthMonths * 10) / 10;
-  if (rounded !== programme.lengthMonths) {
-    return err("Programme length can have at most 1 decimal place.");
+  if (
+    !Number.isInteger(programme.lengthMonths) ||
+    programme.lengthMonths < 1 ||
+    programme.lengthMonths > 120
+  ) {
+    return err(
+      "Programme length must be a whole number of months between 1 and 120."
+    );
   }
   if (programmeAdjustedLengthMonths(programme) <= 0) {
     return err("Adjusted training duration must be greater than zero.");
@@ -426,6 +427,13 @@ export const validateProgrammeDetails = (
   }
   if (!programme.startGrade.trim()) return err("Please choose a start grade.");
   const specialty = findSpecialty(programme.specialty);
+  if (
+    specialty !== undefined &&
+    programme.lengthMonths !== specialty.lengthMonths &&
+    !programme.lengthOverrideNotes.trim()
+  ) {
+    return err("Please enter a reason for a different programme length.");
+  }
   if (
     specialty !== undefined &&
     programme.startGrade !== specialty.entryGrade &&

@@ -42,6 +42,9 @@ export const SummaryPage: FC<SummaryPageProps> = ({
   );
   const newCct = result.cctDate;
   const specialtyMeta = findSpecialty(programme.specialty);
+  const lengthIsOverridden =
+    specialtyMeta !== undefined &&
+    programme.lengthMonths !== specialtyMeta.lengthMonths;
   const startGradeIsOverridden =
     specialtyMeta !== undefined &&
     programme.startGrade !== specialtyMeta.entryGrade;
@@ -53,17 +56,20 @@ export const SummaryPage: FC<SummaryPageProps> = ({
     const headerLines = [
       ["Specialty", programme.specialty],
       ["Programme start", dayjs(programme.startDate).format("YYYY-MM-DD")],
-      ["Programme length (months)", programme.lengthMonths.toFixed(1)],
+      ["Programme length (months)", String(programme.lengthMonths)],
+      ...(lengthIsOverridden && programme.lengthOverrideNotes
+        ? [["Programme length override notes", programme.lengthOverrideNotes]]
+        : []),
       ["Start grade", programme.startGrade],
       ...(startGradeIsOverridden && programme.startGradeOverrideNotes
         ? [["Start grade override notes", programme.startGradeOverrideNotes]]
         : []),
       ...programme.additionalTrainingTime.flatMap(entry => [
-        [`Additional training time ${entry.grade} (months)`, entry.months.toFixed(1)],
+        [`Additional training time ${entry.grade} (months)`, String(entry.months)],
         [`Additional training time ${entry.grade} notes`, entry.notes]
       ]),
       ...programme.acceleratedTrainingTime.flatMap(entry => [
-        [`Accelerated training time ${entry.grade} (months)`, entry.months.toFixed(1)],
+        [`Accelerated training time ${entry.grade} (months)`, String(entry.months)],
         [`Accelerated training time ${entry.grade} notes`, entry.notes]
       ]),
       ...(programme.eighteenMonthFinalGrade

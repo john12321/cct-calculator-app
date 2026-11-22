@@ -1,6 +1,5 @@
 import type { FC } from "react";
 import type { ProgrammeDetails } from "../core";
-import { formatMonths } from "../utils/format";
 import type { GradeTrainingTimeKind } from "./gradeTrainingTimeKinds";
 
 type GradeTrainingTimeSummaryRowProps = {
@@ -20,7 +19,7 @@ export const GradeTrainingTimeSummaryRow: FC<
       <dd className="nhsuk-summary-list__value">
         {entries.map(entry => (
           <div key={entry.id} className="nhsuk-u-margin-bottom-1">
-            {entry.grade}: {formatMonths(entry.months)}
+            {entry.grade}: {entry.months} months
             <div className="nhsuk-hint nhsuk-u-margin-bottom-0">
               {entry.notes}
             </div>

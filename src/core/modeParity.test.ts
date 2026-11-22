@@ -15,6 +15,7 @@ const baseProgramme: ProgrammeDetails = {
   specialty: "Cardiology",
   startDate: "2020-08-05",
   lengthMonths: 60,
+  lengthOverrideNotes: "",
   additionalTrainingTime: [],
   acceleratedTrainingTime: [],
   eighteenMonthFinalGrade: "",

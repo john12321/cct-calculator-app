@@ -18,6 +18,7 @@ const programme: ProgrammeDetails = {
   specialty: "Cardiology",
   startDate: "2020-01-01",
   lengthMonths: 120,
+  lengthOverrideNotes: "",
   additionalTrainingTime: [],
   acceleratedTrainingTime: [],
   eighteenMonthFinalGrade: "",
@@ -326,7 +327,11 @@ describe("programme detail validation", () => {
 
   it("requires a reason when the specialty default start grade is overridden", () => {
     expect(
-      validateProgrammeDetails({ ...programme, startGrade: "ST3" })
+      validateProgrammeDetails({
+        ...programme,
+        lengthMonths: 60,
+        startGrade: "ST3"
+      })
     ).toEqual({
       ok: false,
       message: "Please enter a reason for overriding the default start grade."
@@ -335,10 +340,48 @@ describe("programme detail validation", () => {
     expect(
       validateProgrammeDetails({
         ...programme,
+        lengthMonths: 60,
         startGrade: "ST3",
         startGradeOverrideNotes: "Approved entry point"
       })
     ).toEqual({ ok: true });
+  });
+
+  it("requires a reason when the specialty default length is overridden", () => {
+    expect(
+      validateProgrammeDetails({ ...programme, lengthMonths: 60 })
+    ).toEqual({ ok: true });
+
+    expect(
+      validateProgrammeDetails({ ...programme, lengthMonths: 72 })
+    ).toEqual({
+      ok: false,
+      message: "Please enter a reason for a different programme length."
+    });
+
+    expect(
+      validateProgrammeDetails({
+        ...programme,
+        lengthMonths: 72,
+        lengthOverrideNotes: "Agreed with my local office"
+      })
+    ).toEqual({ ok: true });
+  });
+
+  it("requires a whole programme length between 1 and 120 months", () => {
+    for (const lengthMonths of [0, 121, 60.5, Number.NaN]) {
+      expect(
+        validateProgrammeDetails({
+          ...programme,
+          lengthMonths,
+          lengthOverrideNotes: "Agreed with my local office"
+        })
+      ).toEqual({
+        ok: false,
+        message:
+          "Programme length must be a whole number of months between 1 and 120."
+      });
+    }
   });
 
   it("rejects unsupported selected special grade values", () => {
@@ -354,17 +397,19 @@ describe("programme detail validation", () => {
     });
   });
 
-  it("restricts training-time adjustments to one decimal place", () => {
-    expect(
-      validateAdditionalTrainingTime(
-        { id: "a", grade: "ST4", months: 1.25, notes: "Recorded adjustment" },
-        programme,
-        []
-      )
-    ).toEqual({
-      ok: false,
-      message: "Additional training time can have at most 1 decimal place."
-    });
+  it("requires training time to be a whole number of months between 1 and 24", () => {
+    for (const months of [0, 25, 1.5, Number.NaN]) {
+      expect(
+        validateAdditionalTrainingTime(
+          { id: "a", grade: "ST4", months, notes: "Recorded adjustment" },
+          programme,
+          []
+        )
+      ).toEqual({
+        ok: false,
+        message: "Enter a whole number of months between 1 and 24."
+      });
+    }
   });
 
   it("limits a training time reason to 1000 characters", () => {

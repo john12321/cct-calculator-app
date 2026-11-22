@@ -8,7 +8,7 @@ import {
   validateProgrammeDetails,
   type ProgrammeDetails
 } from "../core";
-import { formatDate, formatMonths } from "../utils/format";
+import { formatDate } from "../utils/format";
 import { DateInput } from "./DateInput";
 import { SpecialtyAutocompleteSelect } from "./SpecialtyAutocompleteSelect";
 
@@ -28,6 +28,10 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
   onSaved
 }) => {
   const initialSpecialty = findSpecialty(programme?.specialty ?? "");
+  const initialLengthOverride =
+    programme !== null &&
+    initialSpecialty !== undefined &&
+    programme.lengthMonths !== initialSpecialty.lengthMonths;
   const initialGradeOverride =
     programme !== null &&
     initialSpecialty !== undefined &&
@@ -36,6 +40,12 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
   const [editing, setEditing] = useState(programme === null);
   const [specialty, setSpecialty] = useState(programme?.specialty ?? "");
   const [startDate, setStartDate] = useState(programme?.startDate ?? "");
+  const [lengthMonths, setLengthMonths] = useState(
+    programme ? String(programme.lengthMonths) : ""
+  );
+  const [lengthOverrideNotes, setLengthOverrideNotes] = useState(
+    initialLengthOverride ? (programme?.lengthOverrideNotes ?? "") : ""
+  );
   const [overrideGrade, setOverrideGrade] = useState(initialGradeOverride);
   const [startGrade, setStartGrade] = useState(programme?.startGrade ?? "");
   const [startGradeOverrideNotes, setStartGradeOverrideNotes] = useState(
@@ -46,6 +56,10 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
   const shouldFocusStartGradeSelect = useRef(false);
 
   const selectedSpecialty = findSpecialty(specialty);
+  const isLengthOverridden =
+    selectedSpecialty !== undefined &&
+    lengthMonths.trim() !== "" &&
+    Number(lengthMonths) !== selectedSpecialty.lengthMonths;
 
   useEffect(() => {
     if (!overrideGrade || !shouldFocusStartGradeSelect.current) return;
@@ -56,11 +70,14 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
   const handleSpecialtyChange = (next: string) => {
     setSpecialty(next);
     const found = findSpecialty(next);
+    setLengthOverrideNotes("");
     if (found) {
+      setLengthMonths(String(found.lengthMonths));
       setOverrideGrade(false);
       setStartGrade(found.entryGrade);
       setStartGradeOverrideNotes("");
     } else {
+      setLengthMonths("");
       setStartGrade("");
       setStartGradeOverrideNotes("");
     }
@@ -80,7 +97,6 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const lengthMonths = selectedSpecialty?.lengthMonths ?? Number.NaN;
     const isGradeOverridden =
       overrideGrade &&
       selectedSpecialty !== undefined &&
@@ -92,7 +108,8 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     const next: ProgrammeDetails = {
       specialty: specialty.trim(),
       startDate,
-      lengthMonths,
+      lengthMonths: lengthMonths.trim() === "" ? Number.NaN : Number(lengthMonths),
+      lengthOverrideNotes: isLengthOverridden ? lengthOverrideNotes.trim() : "",
       // Note: edited in their own sections, so carried over unchanged.
       additionalTrainingTime: programme?.additionalTrainingTime ?? [],
       acceleratedTrainingTime: programme?.acceleratedTrainingTime ?? [],
@@ -123,6 +140,10 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
     if (!programme) return;
     setSpecialty(programme.specialty);
     setStartDate(programme.startDate);
+    setLengthMonths(String(programme.lengthMonths));
+    setLengthOverrideNotes(
+      initialLengthOverride ? programme.lengthOverrideNotes : ""
+    );
     setStartGrade(programme.startGrade);
     setOverrideGrade(initialGradeOverride);
     setStartGradeOverrideNotes(
@@ -175,23 +196,47 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                 <label className="nhsuk-label" htmlFor="programme-length">
                   Programme length (months)
                 </label>
-                {selectedSpecialty && (
-                  <p className="nhsuk-hint nhsuk-u-margin-top-1">
-                    Default for {selectedSpecialty.name} is{" "}
-                    {selectedSpecialty.lengthMonths} months.
-                  </p>
-                )}
+                <p
+                  className="nhsuk-hint nhsuk-u-margin-top-1"
+                  id="programme-length-hint"
+                >
+                  Default for {selectedSpecialty.name} is{" "}
+                  {selectedSpecialty.lengthMonths} months. Change it if your
+                  programme length is different (1-120 months).
+                </p>
                 <input
                   className="nhsuk-input nhsuk-input--width-3"
                   id="programme-length"
                   type="text"
-                  value={selectedSpecialty?.lengthMonths ?? ""}
-                  readOnly
+                  inputMode="numeric"
+                  maxLength={3}
+                  aria-describedby="programme-length-hint"
+                  value={lengthMonths}
+                  onChange={e => setLengthMonths(e.target.value)}
                 />
-                {selectedSpecialty?.info && (
+                {selectedSpecialty.info && (
                   <p className="nhsuk-hint nhsuk-u-margin-top-2">
                     {selectedSpecialty.info}
                   </p>
+                )}
+                {isLengthOverridden && (
+                  <div className="nhsuk-u-margin-top-3">
+                    <label
+                      className="nhsuk-label"
+                      htmlFor="programme-length-override-notes"
+                    >
+                      Reason for a different programme length
+                    </label>
+                    <input
+                      className="nhsuk-input nhsuk-input--width-30"
+                      id="programme-length-override-notes"
+                      type="text"
+                      value={lengthOverrideNotes}
+                      onChange={e => setLengthOverrideNotes(e.target.value)}
+                      placeholder="e.g. Programme length agreed with my local office"
+                      required
+                    />
+                  </div>
                 )}
               </div>
 
@@ -334,7 +379,18 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
               <div className="nhsuk-summary-list__row">
                 <dt className="nhsuk-summary-list__key">Length</dt>
                 <dd className="nhsuk-summary-list__value">
-                  {formatMonths(programme.lengthMonths)}
+                  {programme.lengthMonths} months
+                  {initialLengthOverride && initialSpecialty && (
+                    <span className="nhsuk-hint nhsuk-u-margin-left-2">
+                      (default for this specialty is{" "}
+                      {initialSpecialty.lengthMonths} months)
+                    </span>
+                  )}
+                  {initialLengthOverride && programme.lengthOverrideNotes && (
+                    <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                      {programme.lengthOverrideNotes}
+                    </div>
+                  )}
                 </dd>
               </div>
               <div className="nhsuk-summary-list__row">
@@ -343,7 +399,7 @@ export const ProgrammeDetailsSection: FC<ProgrammeDetailsSectionProps> = ({
                   {programme.startGrade}
                   {initialGradeOverride && initialSpecialty && (
                     <span className="nhsuk-hint nhsuk-u-margin-left-2">
-                      (overridden — default {initialSpecialty.entryGrade})
+                      (default for this specialty is {initialSpecialty.entryGrade})
                     </span>
                   )}
                   {initialGradeOverride &&

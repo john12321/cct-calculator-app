@@ -69,7 +69,7 @@ export const TrainingTimeAdjustmentsSection: FC<
                 Initial programme length
               </dt>
               <dd className="nhsuk-summary-list__value">
-                {formatMonths(programme.lengthMonths)}
+                {programme.lengthMonths} months
               </dd>
             </div>
             {additionalMonths > 0 && (

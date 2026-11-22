@@ -26,6 +26,7 @@ const tripleCctProgramme: ProgrammeDetails = {
   specialty: "Intensive care with Acute internal medicine, and GIM",
   startDate: "2026-01-01",
   lengthMonths: 90,
+  lengthOverrideNotes: "",
   additionalTrainingTime: [],
   acceleratedTrainingTime: [],
   eighteenMonthFinalGrade: "",
@@ -287,7 +288,7 @@ describe("programme training time adjustment limits", () => {
 
   it("rejects a total of additional training time above 24 months", () => {
     const result = validateAdditionalTrainingTime(
-      additional("ST6", 12.1),
+      additional("ST6", 13),
       tripleCctProgramme,
       [additional("ST4", 12)]
     );
@@ -389,7 +390,7 @@ describe("programme training time adjustment limits", () => {
 
   it("rejects a total of accelerated training time above 12 months", () => {
     const result = validateAcceleratedTrainingTime(
-      accelerated("ST6", 6.1),
+      accelerated("ST6", 7),
       tripleCctProgramme,
       [accelerated("ST3", 6)]
     );

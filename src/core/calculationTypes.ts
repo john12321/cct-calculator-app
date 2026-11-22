@@ -72,6 +72,7 @@ export type ProgrammeDetails = {
   specialty: string;
   startDate: string;
   lengthMonths: number;
+  lengthOverrideNotes: string;
   additionalTrainingTime: AdditionalTrainingTime[];
   acceleratedTrainingTime: AcceleratedTrainingTime[];
   eighteenMonthFinalGrade: string;

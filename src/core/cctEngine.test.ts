@@ -20,6 +20,7 @@ const programme = (
   specialty: "Paediatrics",
   startDate,
   lengthMonths,
+  lengthOverrideNotes: "",
   // Note: the engine only uses the totals, so one entry each stands in for the BE's single values.
   additionalTrainingTime:
     additionalMonths > 0

@@ -47,6 +47,9 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
   const adjustedEnd = programmeAdjustedEndDate(programme);
   const adjustedLength = programmeAdjustedLengthMonths(programme);
   const specialtyMeta = findSpecialty(programme.specialty);
+  const lengthIsOverridden =
+    specialtyMeta !== undefined &&
+    programme.lengthMonths !== specialtyMeta.lengthMonths;
   const startGradeIsOverridden =
     specialtyMeta !== undefined &&
     programme.startGrade !== specialtyMeta.entryGrade;
@@ -68,7 +71,17 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
         <div className="nhsuk-summary-list__row">
           <dt className="nhsuk-summary-list__key">Programme length</dt>
           <dd className="nhsuk-summary-list__value">
-            {formatMonths(programme.lengthMonths)}
+            {programme.lengthMonths} months
+            {lengthIsOverridden && (
+              <span className="nhsuk-hint nhsuk-u-margin-left-2">
+                (default for this specialty is {specialtyMeta?.lengthMonths} months)
+              </span>
+            )}
+            {lengthIsOverridden && programme.lengthOverrideNotes && (
+              <div className="nhsuk-hint nhsuk-u-margin-top-1">
+                {programme.lengthOverrideNotes}
+              </div>
+            )}
           </dd>
         </div>
         <GradeTrainingTimeSummaryRow
@@ -111,7 +124,7 @@ export const FullModeCalculationSummary: FC<FullModeCalculationSummaryProps> = (
             {programme.startGrade}
             {startGradeIsOverridden && (
               <span className="nhsuk-hint nhsuk-u-margin-left-2">
-                (overridden - default {specialtyMeta?.entryGrade})
+                (default for this specialty is {specialtyMeta?.entryGrade})
               </span>
             )}
             {startGradeIsOverridden && programme.startGradeOverrideNotes && (
