@@ -81,7 +81,7 @@ The form for these fields lives in
 
 ### 3.1 Specialty
 
-The user picks from 173 specialties using a progressively enhanced
+The user picks from 178 specialties using a progressively enhanced
 **autocomplete select**
 ([`SpecialtyAutocompleteSelect.tsx`](../components/SpecialtyAutocompleteSelect.tsx)). A native
 `<select>` with school `<optgroup>`s is rendered first as the fallback, then
@@ -1103,7 +1103,7 @@ an optional reporting enhancement rather than identified formula parity gaps.
 | [`calculations.ts`](calculations.ts)                   | Shared month/day conventions, credited WTE fraction and programme end date helpers                                                            |
 | [`fullModeCalculations.ts`](fullModeCalculations.ts)   | Full-mode timeline insertion, accrual, completion projection and recorded-grade end-date lookup                                               |
 | [`grades.ts`](grades.ts)                               | Shared grade parsing, WTE segment traversal and grade-progression construction                                                                |
-| [`specialties.ts`](specialties.ts)                     | `Specialty` type, 173-entry `SPECIALTIES` array, `findSpecialty`, `specialtiesGroupedBySchool`, `TrainingGrade` / `TRAINING_GRADES`           |
+| [`specialties.ts`](specialties.ts)                     | `Specialty` type, 178-entry `SPECIALTIES` array, `findSpecialty`, `specialtiesGroupedBySchool`, `TrainingGrade` / `TRAINING_GRADES`           |
 | [`calculationTypeLabels.ts`](calculationTypeLabels.ts) | Display labels for change types and Full-mode timeline periods                                                                                 |
 | [`validation.ts`](validation.ts)                       | Programme, Quick-mode change/projection, Full-mode row and whole-timeline validation                                                          |
 | `../components/ProgrammeDetailsSection.tsx`            | Programme details form (specialty, dates, baseline length, start grade, training-time, final-year and skipped-grade adjustments with reasons) |
