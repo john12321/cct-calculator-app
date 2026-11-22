@@ -10,7 +10,7 @@ import {
   projectedCompletionDateForTimeline
 } from "./fullModeCalculations";
 import { DAYS_PER_MONTH } from "./calculations";
-import { BEYOND_ST9_GRADE_LABEL } from "./grades";
+import { beyondKnownGradeLabel } from "./grades";
 
 const programme: ProgrammeDetails = {
   specialty: "Cardiology",
@@ -385,7 +385,7 @@ describe("computeGradeProgressionForTimeline (lookup branch)", () => {
 
     expect(rows[6]).toMatchObject({ grade: "ST9", endDate: "2032-12-31" });
     expect(rows[7]).toMatchObject({
-      grade: BEYOND_ST9_GRADE_LABEL,
+      grade: beyondKnownGradeLabel("ST9"),
       endDate: null,
       exceedsKnownTrainingGrade: true
     });

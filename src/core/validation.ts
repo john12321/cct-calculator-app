@@ -11,7 +11,11 @@ import {
   programmeAdjustedLengthMonths
 } from "./calculations";
 import { calculateCct } from "./cctEngine";
-import { programmeGrades } from "./grades";
+import {
+  computeGradeProgressionForSegments,
+  endsInEighteenMonthYear,
+  programmeGrades
+} from "./grades";
 import { TRAINING_GRADES, findSpecialty } from "./specialties";
 
 export type ValidationResult = { ok: true } | { ok: false; message: string };
@@ -186,6 +190,7 @@ export const MAX_ADDITIONAL_TRAINING_TIME_ENTRIES = 20;
 // Note: 12 follows Excel's on-screen prompt for I11.
 export const MAX_TOTAL_ACCELERATED_MONTHS = 12;
 export const MAX_ACCELERATED_TRAINING_TIME_ENTRIES = 20;
+export const MAX_TRAINING_TIME_NOTES_LENGTH = 1000;
 
 type TrainingTimeEntryRules = {
   label: "additional" | "accelerated";
@@ -216,6 +221,11 @@ const validateTrainingTimeEntry = (
   }
   if (!candidate.notes.trim()) {
     return err(`Please enter a reason for the ${label} training time.`);
+  }
+  if (candidate.notes.trim().length > MAX_TRAINING_TIME_NOTES_LENGTH) {
+    return err(
+      `The reason for the ${label} training time must be ${MAX_TRAINING_TIME_NOTES_LENGTH} characters or less.`
+    );
   }
   const others = existing.filter(entry => entry.id !== candidate.id);
   if (others.length + 1 > maxEntries) {
@@ -255,12 +265,46 @@ export const validateAdditionalTrainingTime = (
 ): ValidationResult =>
   validateTrainingTimeEntry(candidate, programme, existing, ADDITIONAL_RULES);
 
+const monthsOnGrade = (
+  entries: (AdditionalTrainingTime | AcceleratedTrainingTime)[],
+  grade: string
+) =>
+  entries
+    .filter(entry => entry.grade === grade)
+    .reduce((total, entry) => total + entry.months, 0);
+
 export const validateAcceleratedTrainingTime = (
   candidate: AcceleratedTrainingTime,
   programme: ProgrammeDetails,
   existing: AcceleratedTrainingTime[]
-): ValidationResult =>
-  validateTrainingTimeEntry(candidate, programme, existing, ACCELERATED_RULES);
+): ValidationResult => {
+  const result = validateTrainingTimeEntry(
+    candidate,
+    programme,
+    existing,
+    ACCELERATED_RULES
+  );
+  if (!result.ok) return result;
+  const gradeMonths = computeGradeProgressionForSegments(programme, [])
+    .filter(row => row.grade === candidate.grade)
+    .reduce((total, row) => total + row.gradeMonths, 0);
+  const limit =
+    Math.round(
+      (gradeMonths +
+        monthsOnGrade(programme.additionalTrainingTime, candidate.grade)) *
+        10
+    ) / 10;
+  const accelerated = monthsOnGrade(
+    [...existing.filter(entry => entry.id !== candidate.id), candidate],
+    candidate.grade
+  );
+  if (Math.round(accelerated * 10) / 10 >= limit) {
+    return err(
+      `Accelerated training time in ${candidate.grade} must be less than ${limit} months.`
+    );
+  }
+  return ok;
+};
 
 // Note: entries can become invalid when the programme details change after they were added.
 export const additionalTrainingTimeIssues = (
@@ -287,7 +331,7 @@ export const acceleratedTrainingTimeIssues = (
     return result.ok ? [] : [{ entry, message: result.message }];
   });
 
-// Note: the grades a skipped year or 18-month final year can be set on.
+// Note: the grades a skipped year can be set on.
 export const skippableGrades = (programme: ProgrammeDetails): string[] =>
   programmeGrades({
     ...programme,
@@ -295,9 +339,8 @@ export const skippableGrades = (programme: ProgrammeDetails): string[] =>
     eighteenMonthFinalGrade: ""
   });
 
-export const eighteenMonthFinalGradeOptions = (
-  programme: ProgrammeDetails
-): string[] => programmeGrades({ ...programme, eighteenMonthFinalGrade: "" });
+export const EIGHTEEN_MONTH_FINAL_YEAR_MESSAGE =
+  "An 18-month final year must be the last full year of a programme length that includes a half year, such as 66 months.";
 
 // Note: choices can become invalid when the programme details change after they were made.
 export const gradeProgressionAdjustmentIssues = (
@@ -316,7 +359,7 @@ export const gradeProgressionAdjustmentIssues = (
   }
   if (
     programme.eighteenMonthFinalGrade &&
-    !eighteenMonthFinalGradeOptions(programme).includes(
+    !programmeGrades({ ...programme, eighteenMonthFinalGrade: "" }).includes(
       programme.eighteenMonthFinalGrade
     )
   ) {
@@ -324,6 +367,15 @@ export const gradeProgressionAdjustmentIssues = (
       label: "18-month final year",
       grade: programme.eighteenMonthFinalGrade,
       message: `${programme.eighteenMonthFinalGrade} is not part of this programme's grade progression.`
+    });
+  } else if (
+    programme.eighteenMonthFinalGrade &&
+    !endsInEighteenMonthYear(programme)
+  ) {
+    issues.push({
+      label: "18-month final year",
+      grade: programme.eighteenMonthFinalGrade,
+      message: EIGHTEEN_MONTH_FINAL_YEAR_MESSAGE
     });
   }
   return issues;

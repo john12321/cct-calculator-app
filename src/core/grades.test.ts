@@ -11,7 +11,11 @@ import {
   programmeAdjustedLengthMonths
 } from "./calculations";
 import { calculateCct, deriveQuickProjection } from "./cctEngine";
-import { BEYOND_ST9_GRADE_LABEL, computeGradeProgression } from "./grades";
+import {
+  beyondKnownGradeLabel,
+  computeGradeProgression,
+  eighteenMonthFinalGradeFor
+} from "./grades";
 import {
   validateAcceleratedTrainingTime,
   validateAdditionalTrainingTime,
@@ -425,7 +429,7 @@ describe("18-month final year", () => {
     const rows = computeGradeProgression(withFinalYear, [], null);
 
     expect(withoutFinalYear.at(-1)).toMatchObject({
-      grade: BEYOND_ST9_GRADE_LABEL,
+      grade: beyondKnownGradeLabel("ST9"),
       exceedsKnownTrainingGrade: true
     });
     expect(rows.map(row => row.grade)).toEqual([
@@ -446,6 +450,57 @@ describe("18-month final year", () => {
     );
   });
 
+  const st1Programme = (lengthMonths: number): ProgrammeDetails => ({
+    ...tripleCctProgramme,
+    lengthMonths,
+    startGrade: "ST1"
+  });
+
+  it("takes in the 6-month row so the last full year runs 18 months", () => {
+    const months = (programme: ProgrammeDetails) =>
+      computeGradeProgression(programme, [], null).map(row => row.gradeMonths);
+
+    expect(months(st1Programme(90))).toEqual([12, 12, 12, 12, 12, 12, 12, 6]);
+    expect(
+      months({
+        ...st1Programme(90),
+        eighteenMonthFinalGrade: "ST7",
+        eighteenMonthFinalGradeNotes: "Dual CCT"
+      })
+    ).toEqual([12, 12, 12, 12, 12, 12, 18]);
+  });
+
+  it.each([
+    ["90 months from ST1", st1Programme(90), "ST7"],
+    ["90 months from ST3", tripleCctProgramme, "ST9"],
+    [
+      "90 months from ST1 with ST3 skipped",
+      { ...st1Programme(90), skippedGrade: "ST3", skippedGradeNotes: "Skip" },
+      "ST8"
+    ],
+    ["18 months of DFT", { ...st1Programme(18), startGrade: "DFT" }, "DFT"],
+    [
+      "66 months with a 24-month grade",
+      {
+        ...st1Programme(66),
+        specialty: "Emergency medicine DRE-EM",
+        startGrade: "ST3"
+      },
+      "ST6"
+    ]
+  ])("works out the 18-month grade for %s", (_, programme, grade) => {
+    expect(eighteenMonthFinalGradeFor(programme)).toBe(grade);
+  });
+
+  it.each([
+    ["no half year", st1Programme(84)],
+    ["only a half year", st1Programme(6)],
+    ["a last full year past ST9", { ...st1Programme(90), startGrade: "ST5" }],
+    ["30 months of DFT", { ...st1Programme(30), startGrade: "DFT" }]
+  ])("has no 18-month grade for %s", (_, programme) => {
+    expect(eighteenMonthFinalGradeFor(programme)).toBeNull();
+  });
+
   it("requires a reason when an 18-month final grade is selected", () => {
     const result = validateProgrammeDetails({
       ...tripleCctProgramme,
@@ -457,6 +512,29 @@ describe("18-month final year", () => {
       message: "Please enter a reason for the 18-month final year."
     });
   });
+});
+
+describe("past the highest known grade", () => {
+  it.each([
+    ["CT1", 60, ["CT1", "CT2", "CT3", "CT4"], "CT4"],
+    ["F1", 36, ["F1", "F2"], "F2"],
+    ["DCT1", 48, ["DCT1", "DCT2", "DCT3"], "DCT3"]
+  ])(
+    "flags a year past the last %s-kind grade",
+    (startGrade, lengthMonths, known, highest) => {
+      const rows = computeGradeProgression(
+        { ...tripleCctProgramme, startGrade, lengthMonths },
+        [],
+        null
+      );
+
+      expect(rows.map(row => row.grade)).toEqual([
+        ...known,
+        beyondKnownGradeLabel(highest)
+      ]);
+      expect(rows.at(-1)?.exceedsKnownTrainingGrade).toBe(true);
+    }
+  );
 });
 
 describe("specialty-defined 24-month grade", () => {
@@ -496,8 +574,8 @@ describe("skipped grade year", () => {
       "ST7",
       "ST8",
       "ST9",
-      BEYOND_ST9_GRADE_LABEL,
-      BEYOND_ST9_GRADE_LABEL
+      beyondKnownGradeLabel("ST9"),
+      beyondKnownGradeLabel("ST9")
     ]);
     expect(rows.slice(-2).every(row => row.exceedsKnownTrainingGrade)).toBe(true);
     expect(rows[2]?.skippedGradeBeforeThisRow).toBe("ST5");

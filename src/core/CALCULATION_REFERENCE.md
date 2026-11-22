@@ -202,17 +202,22 @@ total training time:
 
 - **"Set an 18-month final year"** records a specialty whose final grade uses
   18 months rather than 12, for example intensive care medicine with a dual
-  specialty. The user selects the final grade and enters a required reason;
-  these are stored as `eighteenMonthFinalGrade` and
-  `eighteenMonthFinalGradeNotes`.
+  specialty. It is only offered when the programme length includes a half
+  year (e.g. 66 months), or a grade is already saved. The grade isn't chosen:
+  it is shown read-only as the last full year's grade
+  (`eighteenMonthFinalGradeFor`), moved on one if the skipped grade comes
+  before it. The user enters a required reason; these are stored as
+  `eighteenMonthFinalGrade` and `eighteenMonthFinalGradeNotes`.
 - **"Skip one grade year"** records a grade which should be omitted from the
   displayed progression. The user selects the skipped grade and enters a
   required reason; these are stored as `skippedGrade` and
   `skippedGradeNotes`.
 
-Both grade choices are limited to grades in the programme's progression
-(`skippableGrades`, `eighteenMonthFinalGradeOptions`). An 18-month final year
-cannot be set on the skipped grade. Because these choices are saved
+Both grade choices must be grades in the programme's progression
+(`skippableGrades`). An 18-month final year cannot be set on the skipped
+grade, and, as in tis-trainee-details, it must end the progression and run
+18 months (`endsInEighteenMonthYear`), so it must be the last full year of a
+programme that ends in a half year (ST7 of 90 months from ST1). Because these choices are saved
 separately from the programme details, a later change to the specialty or
 start grade can leave a choice outside the progression.
 `gradeProgressionAdjustmentIssues` flags such choices, as
@@ -225,8 +230,9 @@ baseline. Both end dates are programme start + floor(months × 30.4) days. When 
 summary also shows an **Adjusted programme end date before changes** with an explanation that
 it reflects those duration adjustments.
 
-Both adjustment inputs must contain a positive number and a reason, and the
-number may use at most 1 decimal place. The net
+Both adjustment inputs must contain a positive number and a reason of at
+most 1000 characters (tis-trainee-details' limit), and the number may use at
+most 1 decimal place. The net
 adjusted duration:
 
 ```
@@ -488,7 +494,9 @@ Decision:
   `ST9`.
 - If the calculated progression would go past `ST9`, the row label becomes
   **"Additional training after ST9"** and `GradeTable` shows a warning that no
-  grade label has been assigned automatically.
+  grade label has been assigned automatically. As in tis-trainee-details, the
+  same applies past `CT4`, `DCT3` and `F2` (e.g. **"Additional training after
+  CT4"**), the highest known grade of each kind (`highestKnownGrade`).
 - Full mode can still record explicit `ST9` grade periods. The recorded-grade
   lookup can use those periods for the `ST9` row, but rows beyond that are not
   matched to an invented `ST10`.
@@ -777,14 +785,20 @@ value taken off the starting grade:
 Excel source is internally inconsistent for this input: its on-screen prompt
 says a maximum of `12` months, while the data-validation rule for `I11:I12`
 accepts values from `0` to `36` months. The app follows the user-facing
-prompt. Only the total is limited, so accelerated time can shorten a grade to
-nothing, which ends it on the same date as the grade before it.
+prompt. As in tis-trainee-details, the accelerated time on a grade must also
+be less than that grade's months (`gradeMonths`: 12, 18, 24, or less for a
+short final year) plus its additional time, so no grade shrinks to nothing.
+Because removing additional time can break this, saved entries are
+re-checked (`acceleratedTrainingTimeIssues`).
 
 ### 9.3 P9–P17 — +6 for an 18-month final year — implemented
 
 For triple-CCT specialties (e.g. ICM with a dual specialty), the final year
-can be 18 months long instead of 12. The user picks **which** grade-year gets
-the +6 from a dropdown (Excel cell K20).
+can be 18 months long instead of 12. In Excel the user picks **which**
+grade-year gets the +6 from a dropdown (cell K20). The app, like
+tis-trainee-details and tis-trainee-ui, only accepts the last full year of a
+programme length with a half year, so it shows that grade instead of a
+dropdown (see §3.5).
 
 Verified directly against `Training End Date Calculator v2.17 - unprotected.xlsx`:
 
@@ -798,7 +812,7 @@ Verified directly against `Training End Date Calculator v2.17 - unprotected.xlsx
 
 Implemented as `eighteenMonthFinalGrade` with required
 `eighteenMonthFinalGradeNotes` when selected on `ProgrammeDetails`, entered
-behind a checkbox in the programme details form. In `grades.ts`, the selected
+behind a checkbox in the grade progression adjustments section. In `grades.ts`, the selected
 row receives a 6-month threshold extension and its immediately following row
 uses the preceding +6 in its visibility gate, matching the workbook. The
 grade table marks and explains the 18-month final year; summaries and CSV

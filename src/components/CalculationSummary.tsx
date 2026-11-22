@@ -229,6 +229,14 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
       </dl>
 
       <h3 className="nhsuk-heading-m nhsuk-u-color-blue">
+        Grade progression
+      </h3>
+      <GradeTable
+        programme={programme}
+        rows={computeGradeProgression(programme, pastChanges, proposed)}
+      />
+
+      <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
         Completed changes
       </h3>
       {calculatedChanges.length === 0 ? (
@@ -353,13 +361,6 @@ export const CalculationSummary: FC<CalculationSummaryProps> = ({
         Projection
       </h3>
       <NextPostSummary programme={programme} pastChanges={pastChanges} />
-      <h3 className="nhsuk-heading-m nhsuk-u-color-blue nhsuk-u-margin-top-4">
-        Grade progression
-      </h3>
-      <GradeTable
-        programme={programme}
-        rows={computeGradeProgression(programme, pastChanges, proposed)}
-      />
     </section>
   );
 };

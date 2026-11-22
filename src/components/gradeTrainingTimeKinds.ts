@@ -42,7 +42,7 @@ export const ADDITIONAL_TIME: GradeTrainingTimeKind = {
   maxTotalMonths: MAX_TOTAL_ADDITIONAL_MONTHS,
   maxEntries: MAX_ADDITIONAL_TRAINING_TIME_ENTRIES,
   intro:
-    "Record any extra training time you have been given, for example after an ARCP outcome 3, against the grade it applies to. It makes that grade longer and moves later grades on. You can add time to as many grades as you need, up to 24 months in total.",
+    "Record any extra training time you have been given, for example after an ARCP outcome 3, against the grade it applies to. It moves that grade's end date and every later grade on. You can add time to as many grades as you need, up to 24 months in total.",
   gradeHint: "The grade the additional time was given in.",
   reasonPlaceholder: "e.g. Outcome 3 following ARCP",
   total: totalAdditionalMonths,
@@ -57,7 +57,7 @@ export const ACCELERATED_TIME: GradeTrainingTimeKind = {
   maxTotalMonths: MAX_TOTAL_ACCELERATED_MONTHS,
   maxEntries: MAX_ACCELERATED_TRAINING_TIME_ENTRIES,
   intro:
-    "Record any approved reduction in training time, for example for recognised prior learning, against the grade it applies to. It makes that grade shorter and moves later grades earlier. You can take time off as many grades as you need, up to 12 months in total.",
+    "Record any approved reduction in training time, for example for recognised prior learning, against the grade it applies to. It brings that grade's end date and every later grade forward. You can take time off as many grades as you need, up to 12 months in total.",
   gradeHint: "The grade the time is taken off.",
   reasonPlaceholder: "e.g. Recognised prior learning",
   total: totalAcceleratedMonths,

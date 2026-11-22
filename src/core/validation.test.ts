@@ -5,7 +5,10 @@ import type {
   ProgrammeDetails
 } from "./calculationTypes";
 import {
+  acceleratedTrainingTimeIssues,
+  EIGHTEEN_MONTH_FINAL_YEAR_MESSAGE,
   gradeProgressionAdjustmentIssues,
+  validateAcceleratedTrainingTime,
   validateAdditionalTrainingTime,
   validatePastChange,
   validateProgrammeDetails
@@ -363,14 +366,97 @@ describe("programme detail validation", () => {
       message: "Additional training time can have at most 1 decimal place."
     });
   });
+
+  it("limits a training time reason to 1000 characters", () => {
+    const entry = (notes: string) => ({
+      id: "a",
+      grade: "ST4",
+      months: 1,
+      notes
+    });
+
+    expect(
+      validateAdditionalTrainingTime(entry("x".repeat(1000)), programme, [])
+    ).toEqual({ ok: true });
+    expect(
+      validateAdditionalTrainingTime(entry("x".repeat(1001)), programme, [])
+    ).toEqual({
+      ok: false,
+      message:
+        "The reason for the additional training time must be 1000 characters or less."
+    });
+  });
+});
+
+describe("accelerated training time per grade", () => {
+  const st1Programme = (lengthMonths: number): ProgrammeDetails => ({
+    ...programme,
+    startGrade: "ST1",
+    lengthMonths
+  });
+  const entry = (id: string, grade: string, months: number) => ({
+    id,
+    grade,
+    months,
+    notes: "Recognised prior learning"
+  });
+
+  it.each([
+    [84, "ST2", 12],
+    [90, "ST8", 6]
+  ])(
+    "rejects accelerated time that fills the grade (%i months, %s)",
+    (lengthMonths, grade, gradeMonths) => {
+      expect(
+        validateAcceleratedTrainingTime(
+          entry("second", grade, 1),
+          st1Programme(lengthMonths),
+          [entry("first", grade, gradeMonths - 1)]
+        )
+      ).toEqual({
+        ok: false,
+        message: `Accelerated training time in ${grade} must be less than ${gradeMonths} months.`
+      });
+    }
+  );
+
+  it("allows accelerated time less than the grade and its additional time", () => {
+    expect(
+      validateAcceleratedTrainingTime(
+        entry("a", "ST2", 12),
+        {
+          ...st1Programme(84),
+          additionalTrainingTime: [entry("b", "ST2", 1)]
+        },
+        []
+      )
+    ).toEqual({ ok: true });
+  });
+
+  it("flags saved accelerated time when the additional time on its grade is removed", () => {
+    const accelerated = entry("a", "ST2", 12);
+
+    expect(
+      acceleratedTrainingTimeIssues({
+        ...st1Programme(84),
+        acceleratedTrainingTime: [accelerated]
+      })
+    ).toEqual([
+      {
+        entry: accelerated,
+        message: "Accelerated training time in ST2 must be less than 12 months."
+      }
+    ]);
+  });
 });
 
 describe("grade progression adjustment issues", () => {
   const withChoices: ProgrammeDetails = {
     ...programme,
+    lengthMonths: 66,
     skippedGrade: "ST5",
     skippedGradeNotes: "Progressed early",
-    eighteenMonthFinalGrade: "ST7",
+    eighteenMonthFinalGrade: "ST9",
     eighteenMonthFinalGradeNotes: "Dual specialty"
   };
 
@@ -393,10 +479,47 @@ describe("grade progression adjustment issues", () => {
       },
       {
         label: "18-month final year",
-        grade: "ST7",
-        message: "ST7 is not part of this programme's grade progression."
+        grade: "ST9",
+        message: "ST9 is not part of this programme's grade progression."
       }
     ]);
+  });
+
+  it.each([
+    [90, "ST5"],
+    [90, "ST8"],
+    [84, "ST7"]
+  ])(
+    "flags an 18-month final year that isn't the last full year before a half year (%i months, %s)",
+    (lengthMonths, grade) => {
+      expect(
+        gradeProgressionAdjustmentIssues({
+          ...programme,
+          startGrade: "ST1",
+          lengthMonths,
+          eighteenMonthFinalGrade: grade,
+          eighteenMonthFinalGradeNotes: "Dual CCT"
+        })
+      ).toEqual([
+        {
+          label: "18-month final year",
+          grade,
+          message: EIGHTEEN_MONTH_FINAL_YEAR_MESSAGE
+        }
+      ]);
+    }
+  );
+
+  it("accepts an 18-month final year on the last full year before a half year", () => {
+    expect(
+      gradeProgressionAdjustmentIssues({
+        ...programme,
+        startGrade: "ST1",
+        lengthMonths: 90,
+        eighteenMonthFinalGrade: "ST7",
+        eighteenMonthFinalGradeNotes: "Dual CCT"
+      })
+    ).toEqual([]);
   });
 
   it("flags an 18-month final year on the skipped grade", () => {

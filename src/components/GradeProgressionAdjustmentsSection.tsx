@@ -1,6 +1,6 @@
 import { useState, type FC, type FormEvent } from "react";
 import {
-  eighteenMonthFinalGradeOptions,
+  eighteenMonthFinalGradeFor,
   gradeProgressionAdjustmentIssues,
   skippableGrades,
   validateProgrammeDetails,
@@ -19,7 +19,6 @@ export const GradeProgressionAdjustmentsSection: FC<
   const [editing, setEditing] = useState(false);
   const [hasEighteenMonthFinalYear, setHasEighteenMonthFinalYear] =
     useState(false);
-  const [eighteenMonthFinalGrade, setEighteenMonthFinalGrade] = useState("");
   const [eighteenMonthFinalGradeNotes, setEighteenMonthFinalGradeNotes] =
     useState("");
   const [hasSkippedGrade, setHasSkippedGrade] = useState(false);
@@ -32,14 +31,16 @@ export const GradeProgressionAdjustmentsSection: FC<
   const hasAdjustment =
     programme.eighteenMonthFinalGrade !== "" || programme.skippedGrade !== "";
   const skipOptions = skippableGrades(programme);
-  const eighteenMonthOptions = eighteenMonthFinalGradeOptions({
-    ...programme,
-    skippedGrade: hasSkippedGrade ? skippedGrade : ""
-  });
+  const eighteenMonthFinalGrade =
+    eighteenMonthFinalGradeFor({
+      ...programme,
+      skippedGrade: hasSkippedGrade ? skippedGrade : ""
+    }) ?? programme.eighteenMonthFinalGrade;
+  const keepsEighteenMonthFinalYear =
+    hasEighteenMonthFinalYear && eighteenMonthFinalGrade !== "";
 
   const startEditing = () => {
     setHasEighteenMonthFinalYear(programme.eighteenMonthFinalGrade !== "");
-    setEighteenMonthFinalGrade(programme.eighteenMonthFinalGrade);
     setEighteenMonthFinalGradeNotes(programme.eighteenMonthFinalGradeNotes);
     setHasSkippedGrade(programme.skippedGrade !== "");
     setSkippedGrade(programme.skippedGrade);
@@ -57,7 +58,6 @@ export const GradeProgressionAdjustmentsSection: FC<
   const handleEighteenMonthFinalYearToggle = (checked: boolean) => {
     setHasEighteenMonthFinalYear(checked);
     if (!checked) {
-      setEighteenMonthFinalGrade("");
       setEighteenMonthFinalGradeNotes("");
     }
   };
@@ -72,11 +72,7 @@ export const GradeProgressionAdjustmentsSection: FC<
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (hasEighteenMonthFinalYear && !eighteenMonthFinalGrade) {
-      setError("Please choose the grade with an 18-month final year.");
-      return;
-    }
-    if (hasEighteenMonthFinalYear && !eighteenMonthFinalGradeNotes.trim()) {
+    if (keepsEighteenMonthFinalYear && !eighteenMonthFinalGradeNotes.trim()) {
       setError("Please enter a reason for the 18-month final year.");
       return;
     }
@@ -90,10 +86,10 @@ export const GradeProgressionAdjustmentsSection: FC<
     }
     const next: ProgrammeDetails = {
       ...programme,
-      eighteenMonthFinalGrade: hasEighteenMonthFinalYear
+      eighteenMonthFinalGrade: keepsEighteenMonthFinalYear
         ? eighteenMonthFinalGrade
         : "",
-      eighteenMonthFinalGradeNotes: hasEighteenMonthFinalYear
+      eighteenMonthFinalGradeNotes: keepsEighteenMonthFinalYear
         ? eighteenMonthFinalGradeNotes.trim()
         : "",
       skippedGrade: hasSkippedGrade ? skippedGrade : "",
@@ -165,76 +161,60 @@ export const GradeProgressionAdjustmentsSection: FC<
 
       {editing ? (
         <form onSubmit={handleSubmit} noValidate>
-          <div className="nhsuk-form-group">
-            <div
-              className="nhsuk-checkboxes__item"
-              style={{ paddingLeft: "32px" }}
-            >
-              <input
-                className="nhsuk-checkboxes__input"
-                id="programme-eighteen-month-final-year-toggle"
-                type="checkbox"
-                checked={hasEighteenMonthFinalYear}
-                onChange={e =>
-                  handleEighteenMonthFinalYearToggle(e.target.checked)
-                }
-              />
-              <label
-                className="nhsuk-label nhsuk-checkboxes__label"
-                htmlFor="programme-eighteen-month-final-year-toggle"
+          {eighteenMonthFinalGrade && (
+            <div className="nhsuk-form-group">
+              <div
+                className="nhsuk-checkboxes__item"
+                style={{ paddingLeft: "32px" }}
               >
-                Set an 18-month final year
-              </label>
-            </div>
-            {hasEighteenMonthFinalYear && (
-              <div className="nhsuk-u-margin-top-3">
-                <label
-                  className="nhsuk-label"
-                  htmlFor="programme-eighteen-month-final-grade"
-                >
-                  Final grade lasting 18 months
-                </label>
-                <p className="nhsuk-hint">
-                  For specialties with an 18-month final year, for example
-                  intensive care medicine with a dual specialty. This changes
-                  grade progression, not total training time.
-                </p>
-                <select
-                  className="nhsuk-select"
-                  id="programme-eighteen-month-final-grade"
-                  value={eighteenMonthFinalGrade}
-                  onChange={e => setEighteenMonthFinalGrade(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>
-                    Select the final grade
-                  </option>
-                  {eighteenMonthOptions.map(g => (
-                    <option key={g} value={g}>
-                      {g}
-                    </option>
-                  ))}
-                </select>
-                <label
-                  className="nhsuk-label nhsuk-u-margin-top-3"
-                  htmlFor="programme-eighteen-month-final-grade-notes"
-                >
-                  Reason for 18-month final year
-                </label>
                 <input
-                  className="nhsuk-input nhsuk-input--width-30"
-                  id="programme-eighteen-month-final-grade-notes"
-                  type="text"
-                  value={eighteenMonthFinalGradeNotes}
+                  className="nhsuk-checkboxes__input"
+                  id="programme-eighteen-month-final-year-toggle"
+                  type="checkbox"
+                  checked={hasEighteenMonthFinalYear}
                   onChange={e =>
-                    setEighteenMonthFinalGradeNotes(e.target.value)
+                    handleEighteenMonthFinalYearToggle(e.target.checked)
                   }
-                  placeholder="e.g. ICM dual-specialty final year"
-                  required
                 />
+                <label
+                  className="nhsuk-label nhsuk-checkboxes__label"
+                  htmlFor="programme-eighteen-month-final-year-toggle"
+                >
+                  Set an 18-month final year
+                </label>
               </div>
-            )}
-          </div>
+              {hasEighteenMonthFinalYear && (
+                <div className="nhsuk-u-margin-top-3">
+                  <p className="nhsuk-body nhsuk-u-margin-bottom-1">
+                    Final grade lasting 18 months:{" "}
+                    <strong>{eighteenMonthFinalGrade}</strong>
+                  </p>
+                  <p className="nhsuk-hint">
+                    For specialties with an 18-month final year, for example
+                    intensive care medicine with a dual specialty. This changes
+                    grade progression, not total training time.
+                  </p>
+                  <label
+                    className="nhsuk-label nhsuk-u-margin-top-3"
+                    htmlFor="programme-eighteen-month-final-grade-notes"
+                  >
+                    Reason for 18-month final year
+                  </label>
+                  <input
+                    className="nhsuk-input nhsuk-input--width-30"
+                    id="programme-eighteen-month-final-grade-notes"
+                    type="text"
+                    value={eighteenMonthFinalGradeNotes}
+                    onChange={e =>
+                      setEighteenMonthFinalGradeNotes(e.target.value)
+                    }
+                    placeholder="e.g. ICM dual-specialty final year"
+                    required
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="nhsuk-form-group">
             <div

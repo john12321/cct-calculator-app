@@ -14,7 +14,11 @@ import type {
   ProposedChange
 } from "./calculationTypes";
 import { countedChange } from "./cctEngine";
-import { findSpecialty } from "./specialties";
+import {
+  TRAINING_GRADES,
+  findSpecialty,
+  type TrainingGrade
+} from "./specialties";
 
 export type GradeYear = {
   yearNumber: number;
@@ -26,12 +30,13 @@ export type GradeYear = {
   exceedsKnownTrainingGrade: boolean;
   additionalMonths: number;
   acceleratedMonths: number;
+  gradeMonths: number;
 };
 
 type ParsedGrade = { prefix: string; year: number };
 
-export const MAX_GENERATED_ST_GRADE = 9;
-export const BEYOND_ST9_GRADE_LABEL = "Additional training after ST9";
+export const beyondKnownGradeLabel = (highestGrade: string) =>
+  `Additional training after ${highestGrade}`;
 
 export const parseGrade = (grade: string): ParsedGrade | null => {
   const match = /^([A-Za-z]+)(\d+)$/.exec(grade.trim());
@@ -48,21 +53,31 @@ export const gradeForYearOffset = (
   return gradeLabelForParsedGrade(parsed, offset).grade;
 };
 
+export const highestKnownGrade = (grade: string): string | undefined => {
+  const prefix = parseGrade(grade)?.prefix.toUpperCase();
+  return prefix === undefined
+    ? undefined
+    : TRAINING_GRADES.filter(known => parseGrade(known)?.prefix === prefix).at(
+        -1
+      );
+};
+
 const gradeLabelForParsedGrade = (
   parsed: ParsedGrade,
   offset: number
 ): { grade: string; exceedsKnownTrainingGrade: boolean } => {
-  const year = parsed.year + offset;
-  if (parsed.prefix.toUpperCase() === "ST" && year > MAX_GENERATED_ST_GRADE) {
+  const grade = `${parsed.prefix}${parsed.year + offset}`;
+  const highestGrade = highestKnownGrade(grade);
+  if (
+    highestGrade !== undefined &&
+    !TRAINING_GRADES.includes(grade.toUpperCase() as TrainingGrade)
+  ) {
     return {
-      grade: BEYOND_ST9_GRADE_LABEL,
+      grade: beyondKnownGradeLabel(highestGrade),
       exceedsKnownTrainingGrade: true
     };
   }
-  return {
-    grade: `${parsed.prefix}${year}`,
-    exceedsKnownTrainingGrade: false
-  };
+  return { grade, exceedsKnownTrainingGrade: false };
 };
 
 export type Segment = {
@@ -179,6 +194,7 @@ export const computeGradeProgressionForSegments = (
   let carriedExtension = 0;
   let carriedAdditionalMonths = 0;
   let carriedAcceleratedMonths = 0;
+  let previousBaseMonths = 0;
   let skippedGradeOffset = 0;
   const maxYears = 50;
 
@@ -233,16 +249,18 @@ export const computeGradeProgressionForSegments = (
       .reduce((total, entry) => total + entry.months, 0);
     carriedAcceleratedMonths += acceleratedMonths;
 
-    const targetMonths = Math.min(
+    const baseMonths =
       yearNumber * 12 +
-        carriedExtension +
-        thisYearExtension +
-        finalYearExtension +
-        carriedAdditionalMonths -
-        carriedAcceleratedMonths,
+      carriedExtension +
+      thisYearExtension +
+      finalYearExtension;
+    const targetMonths = Math.min(
+      baseMonths + carriedAdditionalMonths - carriedAcceleratedMonths,
       adjustedLengthMonths
     );
     const endDate = dateAtCumulativeWteMonths(segments, targetMonths);
+    const gradeMonths =
+      Math.min(baseMonths, programme.lengthMonths) - previousBaseMonths;
 
     rows.push({
       yearNumber,
@@ -255,11 +273,13 @@ export const computeGradeProgressionForSegments = (
       extendedToTwentyFourMonths: isTwentyFourMonth,
       exceedsKnownTrainingGrade,
       additionalMonths,
-      acceleratedMonths
+      acceleratedMonths,
+      gradeMonths
     });
 
     previousEighteenMonthExtension = finalYearExtension;
     carriedExtension += thisYearExtension;
+    previousBaseMonths = Math.min(baseMonths, programme.lengthMonths);
   }
 
   return rows;
@@ -270,6 +290,27 @@ export const programmeGrades = (programme: ProgrammeDetails): string[] =>
   computeGradeProgressionForSegments(programme, [])
     .filter(row => !row.exceedsKnownTrainingGrade)
     .map(row => row.grade);
+
+export const endsInEighteenMonthYear = (programme: ProgrammeDetails): boolean => {
+  const lastYear = computeGradeProgressionForSegments(programme, []).at(-1);
+  return lastYear?.extendedToEighteenMonths === true && lastYear.gradeMonths === 18;
+};
+
+export const eighteenMonthFinalGradeFor = (
+  programme: ProgrammeDetails
+): string | null => {
+  const lastFullYear = computeGradeProgressionForSegments(
+    { ...programme, eighteenMonthFinalGrade: "" },
+    []
+  ).at(-2);
+  if (!lastFullYear || lastFullYear.exceedsKnownTrainingGrade) return null;
+  return endsInEighteenMonthYear({
+    ...programme,
+    eighteenMonthFinalGrade: lastFullYear.grade
+  })
+    ? lastFullYear.grade
+    : null;
+};
 
 export const computeGradeProgression = (
   programme: ProgrammeDetails,

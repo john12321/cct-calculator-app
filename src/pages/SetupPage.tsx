@@ -126,6 +126,21 @@ export const SetupPage: FC<SetupPageProps> = ({
         onSaved={() => scrollTo({ id: "training-time-adjustments-section" })}
       />
 
+      {programme && projected && (
+        <section className="nhsuk-u-margin-bottom-6">
+          <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
+            Grade progression
+          </h2>
+          <p className="nhsuk-hint">
+            Updates automatically as you record adjustments and changes.
+          </p>
+          <GradeTable
+            programme={programme}
+            rows={computeGradeProgression(programme, pastChanges, projected)}
+          />
+        </section>
+      )}
+
       {programme && (
         <>
           <TrainingTimeAdjustmentsSection
@@ -158,16 +173,6 @@ export const SetupPage: FC<SetupPageProps> = ({
       )}
       {programme && projected && (
         <section className="nhsuk-u-margin-top-4">
-          <h2 className="nhsuk-heading-l nhsuk-u-color-blue">
-            Grade progression
-          </h2>
-          <p className="nhsuk-hint">
-            Updates automatically as you add changes and set the projection.
-          </p>
-          <GradeTable
-            programme={programme}
-            rows={computeGradeProgression(programme, pastChanges, projected)}
-          />
           {canShowSummary && (
             <button
               type="button"
